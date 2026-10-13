@@ -1301,6 +1301,7 @@
     if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100) {
       throw new Error("Le taux de taxe configuré doit être compris entre 0 et 100 %.");
     }
+    const applyTaxToggle = document.getElementById("pos-apply-tax");
     let cashSession = sessionRows.find((item) => item.statut === "ouverte") ?? null;
 
     if (clientSelect) {
@@ -1335,7 +1336,8 @@
       ));
       const discount = roundedMoney(subtotal * discountPercent() / 100);
       const montantHT = roundedMoney(subtotal - discount);
-      const taxe = roundedMoney(montantHT * taxRate / 100);
+      const applyTax = applyTaxToggle?.checked ?? true;
+      const taxe = applyTax ? roundedMoney(montantHT * taxRate / 100) : 0;
       return { subtotal, discount, montantHT, taxe, total: roundedMoney(montantHT + taxe) };
     }
     function updateSessionStatus() {
@@ -1470,7 +1472,8 @@
       document.getElementById("pos-total").textContent = money(total);
       const discountAmount = document.getElementById("pos-discount-amount");
       if (discountAmount) discountAmount.textContent = discount ? `(${money(discount)})` : "";
-      document.getElementById("pos-tax-label")?.replaceChildren(document.createTextNode(`TVA (${taxRate}%)`));
+      const taxApplied = applyTaxToggle?.checked ?? true;
+      document.getElementById("pos-tax-label").textContent = taxApplied ? `TVA (${taxRate}%)` : "TVA — non appliquée";
       const isCash = paymentMethod() === "especes";
       document.getElementById("pos-cash-row")?.classList.toggle("d-none", !isCash);
       const received = Number(receivedInput?.value || 0);
@@ -1490,6 +1493,7 @@
     function resetSale() {
       cart.clear();
       document.getElementById("pos-discount").value = "0";
+      if (applyTaxToggle) applyTaxToggle.checked = true;
       if (receivedInput) receivedInput.value = "";
       drawCart();
     }
@@ -1520,6 +1524,7 @@
       drawCart();
     });
     receivedInput?.addEventListener("input", drawCart);
+    applyTaxToggle?.addEventListener("change", drawCart);
     paymentRadios.forEach((radio) => radio.addEventListener("change", drawCart));
     categoryContainer?.addEventListener("click", (event) => {
       const button = event.target.closest(".category-pill");
@@ -1570,6 +1575,7 @@
           idClient: clientSelect?.value ? Number(clientSelect.value) : null,
           idSessionCaisse: cashSession.id,
           tauxTaxe: taxRate,
+          tvaAppliquee: applyTaxToggle?.checked ?? true,
           montantPaye: total,
           ...(modePaiement === "especes" ? { montantRecu: received } : {}),
           modePaiement,

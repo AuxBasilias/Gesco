@@ -64,6 +64,13 @@
       "when": 1791560000000,
       "tag": "0008_sale_linked_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791561000000,
+      "tag": "0009_optional_tva",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ node_modules/
 jspm_packages/
 web_modules/
 perso/
+src/public/assets/img/
 
 # src/tests/images/*
 # assets/images/*
@@ -32,7 +33,7 @@ build/Release
 .npm
 .eslintcache
 
-src/public/assets/img
+
 
 # Environment Variables (CRITICAL for security)
 .env*

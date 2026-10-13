@@ -201,7 +201,8 @@ const createFacture = endpoint(async (req, res) => {
   const montantHT = lignes.reduce((sum, line) => sum + Number(line.montantTotal), 0);
   const tauxTaxe = amount(body.tauxTaxe ?? 0, "Le taux de taxe");
   if (tauxTaxe > 100) throw new ApiError(400, "Le taux de taxe ne peut pas dépasser 100 %.");
-  const montantTaxe = Math.round(montantHT * tauxTaxe) / 100;
+  const tvaAppliquee = body.tvaAppliquee !== false;
+  const montantTaxe = tvaAppliquee ? Math.round(montantHT * tauxTaxe) / 100 : 0;
   const montantTotal = montantHT + montantTaxe;
   const [result] = await db.transaction(async (tx) => {
     const [facture] = await tx.insert(factures).values({
@@ -212,6 +213,7 @@ const createFacture = endpoint(async (req, res) => {
       dateEcheance: body.dateEcheance ? new Date(String(body.dateEcheance)) : null,
       montantHT: String(montantHT),
       montantTaxe: String(montantTaxe),
+      tvaAppliquee,
       montantTotal: String(montantTotal),
       notes: body.notes ? String(body.notes) : null,
       donneesDocument: record(body.donneesDocument),
@@ -267,18 +269,21 @@ const updateFacture = endpoint(async (req, res) => {
     let montantHT = Number(current.montantHT);
     let montantTaxe = Number(current.montantTaxe);
     let montantTotal = Number(current.montantTotal);
-    if (lines) {
-      montantHT = lines.reduce((sum, line) => sum + Number(line.montantTotal), 0);
+    const recomputeTotals = Boolean(lines || body.tvaAppliquee !== undefined || body.tauxTaxe !== undefined);
+    if (recomputeTotals) {
+      if (lines) montantHT = lines.reduce((sum, line) => sum + Number(line.montantTotal), 0);
       const metadata = record(body.donneesDocument ?? current.donneesDocument);
       const tauxTaxe = amount(body.tauxTaxe ?? metadata.tauxTaxe ?? 0, "Le taux de taxe");
       if (tauxTaxe > 100) throw new ApiError(400, "Le taux de taxe ne peut pas dépasser 100 %.");
-      montantTaxe = Math.round(montantHT * tauxTaxe) / 100;
+      const tvaAppliquee = body.tvaAppliquee === undefined ? current.tvaAppliquee : body.tvaAppliquee !== false;
+      montantTaxe = tvaAppliquee ? Math.round(montantHT * tauxTaxe) / 100 : 0;
       montantTotal = montantHT + montantTaxe;
       if (Number(current.montantPaye) > montantTotal) {
         throw new ApiError(409, "Le nouveau total ne peut pas être inférieur au montant déjà payé.");
       }
       updates.montantHT = String(montantHT);
       updates.montantTaxe = String(montantTaxe);
+      updates.tvaAppliquee = tvaAppliquee;
       updates.montantTotal = String(montantTotal);
     }
     const [result] = await tx.update(factures).set(updates).where(eq(factures.id, id)).returning();
@@ -415,10 +420,11 @@ const createFactureFromVente = endpoint(async (req, res) => {
       dateFacture: vente.dateVente,
       montantHT: vente.montantHT,
       montantTaxe: vente.montantTaxe,
+      tvaAppliquee: vente.tvaAppliquee,
       montantTotal: vente.montantTotal,
       montantPaye: vente.montantPaye,
       donneesDocument: {
-        tauxTaxe: montantHT > 0 ? Number(vente.montantTaxe) / montantHT * 100 : 0,
+        tauxTaxe: vente.tvaAppliquee && montantHT > 0 ? Number(vente.montantTaxe) / montantHT * 100 : 0,
         orderBanner: `Vente ${vente.reference}`,
         paymentCondition: `Paiement : ${vente.modePaiement}`,
       },
@@ -459,6 +465,7 @@ const createVente = endpoint(async (req, res) => {
   }
   const tauxTaxe = amount(body.tauxTaxe ?? 0, "Le taux de taxe");
   if (tauxTaxe > 100) throw new ApiError(400, "Le taux de taxe ne peut pas dépasser 100 %.");
+  const tvaAppliquee = body.tvaAppliquee !== false;
   const vente = await db.transaction(async (tx) => {
     const [session] = await tx.select().from(sessionsCaisse)
       .where(eq(sessionsCaisse.id, idSessionCaisse)).for("update");
@@ -496,7 +503,7 @@ const createVente = endpoint(async (req, res) => {
       if (!client) throw new ApiError(404, "Client introuvable.");
     }
     const montantHT = Math.round(lignes.reduce((sum, line) => sum + line.montantTotal, 0) * 100) / 100;
-    const montantTaxe = Math.round((montantHT * tauxTaxe / 100) * 100) / 100;
+    const montantTaxe = tvaAppliquee ? Math.round((montantHT * tauxTaxe / 100) * 100) / 100 : 0;
     const montantTotal = Math.round((montantHT + montantTaxe) * 100) / 100;
     const montantPaye = amount(body.montantPaye ?? montantTotal, "Montant payé");
     if (montantPaye > montantTotal) throw new ApiError(400, "Le paiement dépasse le montant de la vente.");
@@ -511,6 +518,7 @@ const createVente = endpoint(async (req, res) => {
       statut: montantPaye >= montantTotal ? "payee" : "partiellement_payee",
       montantHT: String(montantHT),
       montantTaxe: String(montantTaxe),
+      tvaAppliquee,
       montantTotal: String(montantTotal),
       montantPaye: String(montantPaye),
       modePaiement,
