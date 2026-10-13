@@ -1,0 +1,215 @@
+/* =========================================================
+   GESCO / SOLUTECH — surcharge de thème
+   Palette officielle extraite du logo :
+   Bleu #013688 · Rouge #C10108 · Gris #979A9E · Noir #070506
+   Ce fichier ne modifie pas app.css : il redéfinit les mêmes
+   variables CSS, chargé juste après, pour rester non destructif
+   et facile à retirer/ajuster.
+   ========================================================= */
+
+:root,
+[data-bs-theme="light"] {
+  /* --- Système de thème AdminUIUX (sidebar, nav active, .bg-theme-*, .text-theme-*) --- */
+  --adminuiux-theme-1: #013688;
+  --adminuiux-theme-1-hover: #022f74;
+  --adminuiux-theme-1-active: #032761;
+  --adminuiux-theme-1-rgb: 1, 54, 136;
+  --adminuiux-theme-1-text: #fff;
+
+  --adminuiux-theme-2: #c10108;
+  --adminuiux-theme-2-rgb: 193, 1, 8;
+  --adminuiux-theme-2-text: #fff;
+
+  --adminuiux-theme-accent-1: #c10108;
+  --adminuiux-theme-accent-1-hover: #a50208;
+  --adminuiux-theme-accent-1-active: #890207;
+  --adminuiux-theme-accent-1-rgb: 193, 1, 8;
+  --adminuiux-theme-accent-1-text: #fff;
+
+  --adminuiux-theme-accent-2: #979a9e;
+  --adminuiux-theme-accent-2-rgb: 151, 154, 158;
+  --adminuiux-theme-accent-2-text: #000;
+
+  --adminuiux-bg-1: #f0f3f8;
+  --adminuiux-bg-2: #d1dbea;
+  --adminuiux-text: #14161a;
+
+  /* --- Bootstrap : primary = bleu SOLUTECH --- */
+  --bs-primary: #013688;
+  --bs-primary-rgb: 1, 54, 136;
+  --bs-primary-bg-subtle: #ebeff5;
+  --bs-primary-border-subtle: #a6b9d5;
+  --bs-primary-text-emphasis: #022c6e;
+
+  /* --- Bootstrap : danger = rouge SOLUTECH (les deux couleurs de marque sont co-titulaires) --- */
+  --bs-danger: #c10108;
+  --bs-danger-rgb: 193, 1, 8;
+  --bs-danger-bg-subtle: #faebeb;
+  --bs-danger-border-subtle: #e9a6a9;
+  --bs-danger-text-emphasis: #9c0208;
+
+  --bs-link-color: #013688;
+  --bs-link-color-rgb: 1, 54, 136;
+  --bs-link-hover-color: #022f74;
+}
+
+[data-bs-theme="dark"] {
+  --adminuiux-theme-1: #3b6fc4;
+  --adminuiux-theme-1-hover: #5a86d1;
+  --adminuiux-theme-1-active: #7a9ddc;
+  --adminuiux-theme-1-rgb: 59, 111, 196;
+  --adminuiux-theme-1-text: #fff;
+
+  --adminuiux-theme-2: #e14751;
+  --adminuiux-theme-2-rgb: 225, 71, 81;
+  --adminuiux-theme-2-text: #fff;
+
+  --adminuiux-theme-accent-1: #e14751;
+  --adminuiux-theme-accent-1-rgb: 225, 71, 81;
+  --adminuiux-theme-accent-1-text: #fff;
+
+  --adminuiux-theme-accent-2: #979a9e;
+  --adminuiux-theme-accent-2-rgb: 151, 154, 158;
+
+  /* Fond bleu-noir plutôt que gris neutre plat, comme demandé pour le mode sombre */
+  --adminuiux-bg-1: #080b12;
+  --adminuiux-bg-2: #121a2c;
+
+  --bs-primary: #3b6fc4;
+  --bs-primary-rgb: 59, 111, 196;
+  --bs-primary-bg-subtle: #060b16;
+  --bs-primary-border-subtle: #041b40;
+  --bs-primary-text-emphasis: #8da5c9;
+
+  --bs-danger: #e14751;
+  --bs-danger-rgb: 225, 71, 81;
+  --bs-danger-bg-subtle: #1d0506;
+  --bs-danger-border-subtle: #5b0307;
+  --bs-danger-text-emphasis: #e38d90;
+
+  --bs-link-color: #5a86d1;
+  --bs-link-color-rgb: 90, 134, 209;
+  --bs-link-hover-color: #7a9ddc;
+}
+
+/* Le sélecteur de thèmes de démonstration du template (theme-blue, theme-red, etc.)
+   ne doit plus pouvoir écraser l'identité SOLUTECH — sera retiré lors du nettoyage
+   des fichiers inutiles, en attendant on neutralise son effet ici. */
+[class*="theme-"]:not(.theme-solutech) {
+  --adminuiux-theme-1: #013688 !important;
+  --adminuiux-theme-1-hover: #022f74 !important;
+  --adminuiux-theme-1-active: #032761 !important;
+  --adminuiux-theme-1-rgb: 1, 54, 136 !important;
+  --adminuiux-theme-2: #c10108 !important;
+  --adminuiux-theme-2-rgb: 193, 1, 8 !important;
+  --adminuiux-bg-1: #f4f6f9 !important;
+  --adminuiux-bg-2: #e7ebf1 !important;
+}
+
+body {
+  background: var(--adminuiux-bg-1, #f4f6f9) !important;
+}
+
+/* Le scroll interne de la sidebar doit toujours fonctionner, quel que soit
+   l'état (standard/iconic) — une règle conditionnelle du thème d'origine
+   pouvait le désactiver selon le contexte. */
+.adminuiux-sidebar .adminuiux-sidebar-inner {
+  overflow-y: auto !important;
+}
+
+/* Sidebar mobile : fond opaque garanti (pas de dépendance au flou,
+   qui peut ne pas s'appliquer selon le navigateur) + halo derrière
+   pour bien la séparer du contenu quand elle est ouverte en recouvrement. */
+@media (max-width: 991.98px) {
+  .adminuiux-sidebar {
+    background-color: var(--surface, #ffffff) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18) !important;
+  }
+  body.sidebar-open::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 5, 6, 0.45);
+    z-index: 98;
+  }
+}
+
+/* Onglets (nav-pills) : l'onglet actif a un fond bleu SOLUTECH, son libellé
+   doit donc être blanc. Le thème d'origine laissait la couleur du texte
+   identique au fond, rendant le libellé actif invisible. */
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link,
+.nav.adminuiux-nav .nav-link.active {
+  color: #ffffff !important;
+}
+
+.gesco-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  background: rgba(7, 5, 6, 0.52);
+  backdrop-filter: blur(3px);
+}
+
+.gesco-form-dialog {
+  width: min(42rem, 100%);
+  max-height: min(90vh, 54rem);
+  overflow: auto;
+  border: 0;
+  border-radius: var(--bs-border-radius-xl, 1rem);
+  color: var(--bs-body-color);
+  background: var(--bs-body-bg);
+}
+
+.gesco-form-dialog .card-header,
+.gesco-form-dialog .card-footer {
+  background: transparent;
+}
+
+.gesco-form-dialog .card-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 1.25rem 1.5rem;
+  border-bottom-color: var(--bs-border-color);
+}
+
+.gesco-form-dialog .card-body {
+  padding: 1.5rem;
+}
+
+.gesco-form-dialog .card-footer {
+  position: sticky;
+  bottom: 0;
+  padding: 1rem 1.5rem;
+  border-top-color: var(--bs-border-color);
+}
+
+.gesco-form-dialog .form-label {
+  font-weight: 600;
+}
+
+.gesco-form-dialog textarea {
+  min-height: 6rem;
+}
+
+@media (max-width: 575.98px) {
+  .gesco-modal-backdrop {
+    padding: 0.5rem;
+  }
+
+  .gesco-form-dialog {
+    max-height: 94vh;
+  }
+
+  .gesco-form-dialog .card-header,
+  .gesco-form-dialog .card-body,
+  .gesco-form-dialog .card-footer {
+    padding: 1rem;
+  }
+}

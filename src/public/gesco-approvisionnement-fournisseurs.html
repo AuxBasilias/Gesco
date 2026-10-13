@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- dir="rtl"-->
+
+<head>
+    <!-- Required meta tags  -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta name="application-name" content="smartUIUX">
+    <meta name="apple-mobile-web-app-title" content="smartUIUX">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="white">
+    <link rel="apple-touch-icon" href="assets/img/logo-512.png">
+
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>GESCO — Approvisionnement — Fournisseurs | SOLUTECH</title>
+    <meta name="description" content="Smart Home Gardening Reminder Vehicle IOT App HTML Templates | Bootstrap 5 | UI/UX | Mobile | Admin | Dashboard | Universal App | Build stunning smart IOT Automation apps with our premium templates.">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Poppins:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --adminuiux-content-font: "Open Sans", serif;
+            --adminuiux-content-font-weight: 400;
+            --adminuiux-title-font: "Poppins", serif;
+            --adminuiux-title-font-weight: 600;
+        }
+    </style>
+<script defer src="assets/js/app13a2.js?5242d2f600103545528d"></script><link href="assets/css/app13a2.css?5242d2f600103545528d" rel="stylesheet"><link href="assets/css/solutech-theme.css" rel="stylesheet"><script>
+// Filet de sécurité : si l'écran de chargement ne se masque pas naturellement
+// (ex: police externe lente/bloquée sur réseau mobile), on le force à disparaître
+// après 2.5s pour ne jamais bloquer l'interface.
+setTimeout(function () {
+    var loader = document.querySelector('.pageloader');
+    if (loader && loader.style.display !== 'none') { loader.style.display = 'none'; }
+}, 2500);
+</script>
+</head>
+
+    <body class="main-bg main-bg-opac main-bg-blur roundedui adminuiux-header-standard adminuiux-sidebar-standard adminuiux-mobile-footer-fill-theme adminuiux-header-transparent adminuiux-sidebar-fill-none scrollup" data-theme="light" data-sidebarfill="adminuiux-sidebar-fill-none" data-bs-spy="scroll" data-bs-target="#list-example" data-bs-smooth-scroll="true" tabindex="0" data-sidebarlayout="adminuiux-sidebar-standard"
+        data-headerlayout="adminuiux-header-standard" data-headerfill="adminuiux-header-transparent" data-bggradient="bg-r-gradient" style="">
+        <!-- Pageloader -->
+<div class="pageloader">
+    <div class="container h-100">
+        <div class="row justify-content-center align-items-center text-center h-100 pb-ios">
+            <div class="col-12 mb-auto pt-4"></div>
+            <div class="col-auto">
+                <img src="assets/img/logo.svg" alt="" class="height-80 mb-3">
+                <p class="h2 mb-0 text-theme-accent-1">SOLUTECH</p>
+                <p class="display-3 text-theme-1 fw-bold mb-4">GESCO</p>
+                <div class="loader12 mb-2 mx-auto"></div>
+            </div>
+            <div class="col-12 mt-auto pb-4">
+                <p class="small text-secondary">Veuillez patienter, préparation en cours...</p>
+            </div>
+        </div>
+    </div>
+</div>
+            <!-- standard header -->
+<header class="adminuiux-header">
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container-fluid">
+            <!-- main sidebar toggle -->
+            <button class="btn btn-link btn-square sidebar-toggler" type="button" onclick="initSidebar()">
+                <i class="sidebar-svg" data-feather="menu"></i>
+            </button>
+            <!-- logo -->
+            <a class="navbar-brand" href="gesco-dashboard.html">
+                <img data-bs-img="light" src="assets/img/logo-light.svg" alt="">
+                <img data-bs-img="dark" src="assets/img/logo.svg" alt="">
+                <div class="">
+                    <span class="h4">GESCO</span>
+                    <p class="company-tagline">SOLUTECH Innovation Group</p>
+                </div>
+            </a>
+
+            <!-- right icons button -->
+            <div class="ms-auto">
+<!-- search toggle -->
+                <button class="btn btn-link btn-square btn-icon btn-link-header" type="button" data-bs-toggle="modal" data-bs-target="#searchmodalfull">
+                    <i data-feather="search"></i>
+                </button>
+
+                <!-- dark mode -->
+                <button class="btn btn-link btn-square btnsunmoon btn-link-header" id="btn-layout-modes-dark-page">
+                    <i class="sun mx-auto" data-feather="sun"></i>
+                    <i class="moon mx-auto" data-feather="moon"></i>
+                </button>
+<!-- notification dropdown -->
+                <button class="btn btn-link btn-square btn-icon btn-link-header position-relative" data-bs-toggle="offcanvas" data-bs-target="#view-notification">
+                    <i data-feather="bell"></i>
+                    <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger p-1">
+                        <small>9+</small>
+                        <span class="visually-hidden">unread messages</span>
+                    </span>
+                </button>
+                <!-- profile dropdown -->
+                <div class="dropdown d-inline-block">
+                    <a class="dropdown-toggle btn btn-link btn-link-header style-none" id="userprofiledd" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        <div class="row gx-0 d-inline-flex">
+                            <div class="col-auto align-self-center">
+                                <div class="avatar avatar-28 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center fw-semibold" style="font-size:12px;">AK</div>
+                            </div>
+                            <div class="col align-self-center d-none d-xl-block px-2 lh-14 text-start">
+                                <span class="mb-0 small">Utilisateur <br><small class="opacity-75">Compte actif</small></span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end width-300 pt-0 px-0 sm-mi-45px" aria-labelledby="userprofiledd">
+                        <div class="rounded p-3 dropdown-dontclose">
+                            <div class="row gx-3 align-items-center">
+                                <div class="col-auto">
+                                    <div class="avatar avatar-60 rounded bg-theme-1 text-white d-flex align-items-center justify-content-center fw-bold fs-5">AK</div>
+                                </div>
+                                <div class="col">
+                                    <h5 class="mb-1">Utilisateur</h5>
+                                    <p class="small opacity-50">Compte GESCO</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-2">
+                            <div><a class="dropdown-item" href="gesco-profil.html"><i data-feather="user" class="avatar avatar-18 me-1"></i> Mon profil</a>
+                            </div>
+                            <div><a class="dropdown-item" href="gesco-dashboard.html"><i data-feather="layout" class="avatar avatar-18 me-1"></i> Tableau de bord</a></div>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <div><a class="dropdown-item active" data-value="EN">EN - English</a></div>
+                                    <div><a class="dropdown-item" data-value="FR">FR - French</a></div>
+                                    <div><a class="dropdown-item" data-value="CH">CH - Chinese</a></div>
+                                    <div><a class="dropdown-item" data-value="HI">HI - Hindi</a></div>
+                                </div>
+                            </div>
+                            <div>
+                                <a class="dropdown-item" href="gesco-profil.html">
+                                    <i data-feather="settings" class="avatar avatar-18 me-1"></i> Paramètres du compte
+                                </a>
+                            </div>
+                            <div>
+                                <a class="dropdown-item theme-red" href="index.html">
+                                    <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+</header>
+
+<!-- full-screen search modal -->
+<div class="modal fade" tabindex="-1" id="searchmodalfull" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-none border-0">
+            <div class="modal-body z-index-1">
+                <div class="input-group input-group-md w-100 rounded search-wrap mb-3 mb-lg-4">
+                    <span class="input-group-text border-0 bg-none">
+                        <i data-feather="search"></i>
+                    </span>
+                    <input class="form-control form-control-lg pe-0 border-0 bg-none" type="search" placeholder="Type something here..." id="searchglobal">
+                    <div class="dropdown input-group-text border-0 px-2">
+                        <button class="dropdown-toggle btn btn-link btn-square no-caret" type="button" id="searchfilter" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i data-feather="sliders"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-dontclose width-300" aria-labelledby="searchfilter">
+                            <ul class="nav adminuiux-nav" id="searchtab" role="tablist">
+                                <li class="nav-item" role="presentation"><button class="nav-link active" id="searchall-tab" data-bs-toggle="tab" data-bs-target="#searchall" type="button" role="tab" aria-controls="searchall" aria-selected="true">Tous</button></li>
+                                <li class="nav-item" role="presentation"><button class="nav-link" id="searchorders-tab" data-bs-toggle="tab" data-bs-target="#searchorders" type="button" role="tab" aria-controls="searchorders" aria-selected="false" tabindex="-1">Ventes</button></li>
+                                <li class="nav-item" role="presentation"><button class="nav-link" id="searchcontacts-tab" data-bs-toggle="tab" data-bs-target="#searchcontacts" type="button" role="tab" aria-controls="searchcontacts" aria-selected="false" tabindex="-1">Contacts</button></li>
+                            </ul>
+                            <div class="tab-content py-3" id="searchtabContent">
+                                <div class="tab-pane fade active show" id="searchall" role="tabpanel" aria-labelledby="searchall-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Rechercher</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch1"> <label class="form-check-label" for="isearchswitch1"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Inclure les pages</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch2" checked=""> <label class="form-check-label" for="isearchswitch2"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Ressource internet</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch3" checked=""> <label class="form-check-label" for="isearchswitch3"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Actualités</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch4"> <label class="form-check-label" for="isearchswitch4"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="searchorders" role="tabpanel" aria-labelledby="searchorders-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Afficher le n° de commande</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch5"> <label class="form-check-label" for="isearchswitch5"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Commande internationale</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch6" checked=""> <label class="form-check-label" for="isearchswitch6"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Produit taxable</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch7" checked=""> <label class="form-check-label" for="isearchswitch7"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Produit publié</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch8"> <label class="form-check-label" for="isearchswitch8"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="searchcontacts" role="tabpanel" aria-labelledby="searchcontacts-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Avec adresse email</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch9"> <label class="form-check-label" for="isearchswitch9"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Avec numéro de téléphone</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch10" checked=""> <label class="form-check-label" for="isearchswitch10"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Photo disponible</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch11" checked=""> <label class="form-check-label" for="isearchswitch11"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Parrainage</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch12"> <label class="form-check-label" for="isearchswitch12"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="">
+                                <div class="row">
+                                    <div class="col"><button class="btn btn-link">Réinitialiser</button></div>
+                                    <div class="col-auto"><button class="btn btn-theme">Appliquer</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- products -->
+                <div class="row gx-3 align-items-center mb-3">
+                    <div class="col">
+                        <h6 class="text-white">Results in Products (3)</h6>
+                    </div>
+                    <div class="col-auto">
+                        <a href="gesco-stock-produits.html" class="btn btn-sm btn-link text-white">Tout voir</a>
+                    </div>
+                </div>
+                <div class="row gx-3">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-5.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Souris sans fil Logitech M185</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></p>
+                                        <p class="small text-secondary">4.8 (15 reviews)</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h6 class="mb-0">65 FCFA</h6>
+                                        <p class="small text-secondary">10% OFF</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">6 Item in stock</p>
+                                        <p class="small text-secondary">In 36 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-6.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Clavier mécanique Redragon K552</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></p>
+                                        <p class="small text-secondary">4.5 (10 reviews)</p>
+                                    </div>
+                                    <div class="col-auto text-end">
+                                        <h6 class="mb-0">152 FCFA</h6>
+                                        <p class="small text-secondary">Bank Offer</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">3 Item in stock</p>
+                                        <p class="small text-secondary">In 2 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-7.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Tapis de souris XL</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></p>
+                                        <p class="small text-secondary">4.3 (12 reviews)</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h6 class="mb-0">8 FCFA</h6>
+                                        <p class="small text-secondary">10% OFF</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">25 Item in stock</p>
+                                        <p class="small text-secondary">In 21 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-link text-white" data-bs-dismiss="modal">Annuler la recherche</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                <div class="adminuiux-wrap">
+                    <!-- Standard sidebar -->
+                    <!-- Standard sidebar -->
+<div class="adminuiux-sidebar">
+    <div class="adminuiux-sidebar-inner">
+        <div class="px-3 not-iconic mt-3">
+            <h6 class="fw-medium small text-uppercase opacity-50">Menu</h6>
+        </div>
+        <ul class="nav flex-column menu-active-line mt-3">
+            <li class="nav-item">
+                <a href="gesco-dashboard.html" class="nav-link">
+                    <i class="menu-icon bi bi-columns-gap"></i>
+                    <span class="menu-name">Tableau de bord</span>
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-cash-coin"></i>
+                    <span class="menu-name">Ventes</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-ventes-terminal.html" class="nav-link">
+                            <i class="menu-icon bi bi-shop"></i>
+                            <span class="menu-name">Terminal de vente</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-ventes.html" class="nav-link">
+                            <i class="menu-icon bi bi-list-ul"></i>
+                            <span class="menu-name">Historique des ventes</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-ventes-retours.html" class="nav-link">
+                            <i class="menu-icon bi bi-arrow-counterclockwise"></i>
+                            <span class="menu-name">Retours &amp; annulations</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-ventes-sessions.html" class="nav-link">
+                            <i class="menu-icon bi bi-safe"></i>
+                            <span class="menu-name">Sessions de caisse</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-boxes"></i>
+                    <span class="menu-name">Stock</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-stock-produits.html" class="nav-link">
+                            <i class="menu-icon bi bi-list-ul"></i>
+                            <span class="menu-name">Produits</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-stock-mouvements.html" class="nav-link">
+                            <i class="menu-icon bi bi-arrow-left-right"></i>
+                            <span class="menu-name">Mouvements</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-stock-inventaires.html" class="nav-link">
+                            <i class="menu-icon bi bi-clipboard-check"></i>
+                            <span class="menu-name">Inventaires</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-truck"></i>
+                    <span class="menu-name">Approvisionnement</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-approvisionnement-fournisseurs.html" class="nav-link">
+                            <i class="menu-icon bi bi-people"></i>
+                            <span class="menu-name">Fournisseurs</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-approvisionnement-commandes.html" class="nav-link">
+                            <i class="menu-icon bi bi-cart-plus"></i>
+                            <span class="menu-name">Commandes</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-approvisionnement-receptions.html" class="nav-link">
+                            <i class="menu-icon bi bi-box-arrow-in-down"></i>
+                            <span class="menu-name">Réceptions</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-receipt"></i>
+                    <span class="menu-name">Facturation</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-facturation.html" class="nav-link">
+                            <i class="menu-icon bi bi-file-earmark-text"></i>
+                            <span class="menu-name">Factures</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-facturation-paiements.html" class="nav-link">
+                            <i class="menu-icon bi bi-credit-card"></i>
+                            <span class="menu-name">Paiements &amp; impayés</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a href="gesco-clients.html" class="nav-link">
+                    <i class="menu-icon bi bi-people"></i>
+                    <span class="menu-name">Clients</span>
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-gear-wide-connected"></i>
+                    <span class="menu-name">Administration</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-administration.html" class="nav-link">
+                            <i class="menu-icon bi bi-sliders"></i>
+                            <span class="menu-name">Paramètres &amp; utilisateurs</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-administration-rapports.html" class="nav-link">
+                            <i class="menu-icon bi bi-graph-up"></i>
+                            <span class="menu-name">Rapports &amp; statistiques</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+        </ul>
+        <div class=" mt-auto "></div>
+        <div class="px-3 not-iconic pb-3">
+            <div class="card adminuiux-card shadow-sm border-0">
+                <div class="card-body p-2">
+                    <div class="row gx-2">
+                        <div class="col-12 d-flex justify-content-between">
+                            <a href="gesco-profil.html" class="btn btn-square btn-link" title="Profil">
+                                <i data-feather="user"></i>
+                            </a>
+                            <a href="gesco-ventes-terminal.html" class="btn btn-square btn-link" title="Terminal de vente">
+                                <i data-feather="shopping-cart"></i>
+                            </a>
+                            <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
+                                <i data-feather="settings"></i>
+                            </a>
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                                <i data-feather="log-out"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                        <main class="adminuiux-content has-sidebar" onclick="contentClick()">
+    <div class="container-fluid mt-3">
+        <div class="row gx-1 align-items-center mb-3">
+            <div class="col">
+                <nav aria-label="breadcrumb" class="mb-1">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
+                        <li class="breadcrumb-item">Approvisionnement</li><li class="breadcrumb-item active" aria-current="page">Fournisseurs</li>
+                    </ol>
+                </nav>
+                <h4 class="mb-0">Fournisseurs</h4>
+            </div>
+            <div class="col-auto"><button class="btn btn-theme"><i class="bi bi-plus-lg"></i> Nouveau fournisseur</button></div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="card adminuiux-card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-truck"></i></span>
+                            <div>
+                                <h6 class="mb-0">Fournisseurs</h6>
+                                <p class="small text-secondary mb-0">Enregistrés</p>
+                            </div>
+                        </div>
+                        <h3 class="mb-0">12</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card adminuiux-card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-check-circle"></i></span>
+                            <div>
+                                <h6 class="mb-0">Actifs</h6>
+                                <p class="small text-secondary mb-0">Commande < 6 mois</p>
+                            </div>
+                        </div>
+                        <h3 class="mb-0">9</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card adminuiux-card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-cart-plus"></i></span>
+                            <div>
+                                <h6 class="mb-0">Commandes</h6>
+                                <p class="small text-secondary mb-0">Cette année</p>
+                            </div>
+                        </div>
+                        <h3 class="mb-0">41</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card adminuiux-card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-cash-stack"></i></span>
+                            <div>
+                                <h6 class="mb-0">Achats</h6>
+                                <p class="small text-secondary mb-0">Cette année</p>
+                            </div>
+                        </div>
+                        <h3 class="mb-0">21,5M</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card adminuiux-card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row gx-3 align-items-center mb-3">
+                    <div class="col">
+                        <h6 class="mb-0">Tous les fournisseurs</h6>
+                        <p class="small text-secondary mb-0">Coordonnées, historique de commandes et volume d'achats</p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="input-group">
+                            <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" placeholder="Rechercher un fournisseur...">
+                        </div>
+                    </div><div class="col-auto"><select class="form-select"><option selected>Tous</option><option>Actifs</option><option>Inactifs</option></select></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table adminuiux-table align-middle">
+                        <thead><tr><th>Référence</th><th>Fournisseur</th><th>Spécialité</th><th>Ville</th><th>Téléphone</th><th class="text-center">Commandes</th><th class="text-end">Total achats</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-012</a></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
+                                        <p class="mb-0 fw-medium">TechImport SARL</p>
+                                    </div>
+                                </td>
+                                <td class="small text-secondary">Ordinateurs, composants</td>
+                                <td class="small">Lomé</td>
+                                <td class="small">22 41 55 80</td>
+                                <td class="text-center small">18</td>
+                                <td class="text-end fw-medium">12 480 000 FCFA</td>
+                                <td><span class="badge badge-light text-bg-success">Actif</span></td>
+                                <td class="text-end">
+                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
+                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-008</a></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
+                                        <p class="mb-0 fw-medium">Global Access Togo</p>
+                                    </div>
+                                </td>
+                                <td class="small text-secondary">Réseau, câblage</td>
+                                <td class="small">Lomé</td>
+                                <td class="small">22 30 18 44</td>
+                                <td class="text-center small">11</td>
+                                <td class="text-end fw-medium">4 215 000 FCFA</td>
+                                <td><span class="badge badge-light text-bg-success">Actif</span></td>
+                                <td class="text-end">
+                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
+                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-021</a></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
+                                        <p class="mb-0 fw-medium">Sahel Informatique</p>
+                                    </div>
+                                </td>
+                                <td class="small text-secondary">Accessoires, consommables</td>
+                                <td class="small">Kara</td>
+                                <td class="small">26 60 12 09</td>
+                                <td class="text-center small">7</td>
+                                <td class="text-end fw-medium">1 860 000 FCFA</td>
+                                <td><span class="badge badge-light text-bg-success">Actif</span></td>
+                                <td class="text-end">
+                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
+                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-005</a></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
+                                        <p class="mb-0 fw-medium">Dépôt Central Onduleurs</p>
+                                    </div>
+                                </td>
+                                <td class="small text-secondary">Onduleurs, énergie</td>
+                                <td class="small">Lomé</td>
+                                <td class="small">22 25 74 31</td>
+                                <td class="text-center small">5</td>
+                                <td class="text-end fw-medium">2 940 000 FCFA</td>
+                                <td><span class="badge badge-light text-bg-secondary">Inactif</span></td>
+                                <td class="text-end">
+                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
+                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
+                                </td>
+                            </tr></tbody>
+                    </table>
+                </div>
+                <div class="row gx-3 align-items-center mt-3">
+                    <div class="col"><p class="small text-secondary mb-0">Affichage de 1 à 4 sur 12 fournisseurs</p></div>
+                    <div class="col-auto">
+                        <nav><ul class="pagination mb-0">
+                            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
+                        </ul></nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+                </div>
+                <!-- View Order details -->
+                <div class="offcanvas offcanvas-end shadow border-0 w-100 maxwidth-dynamic" tabindex="-1" id="view-customer" data-bs-scroll="true" data-bs-backdrop="false" style="--mw-dynamic:450px;">
+                    <div class="offcanvas-header border-bottom">
+                        <div class="flex-grow-1">
+                            <button class="btn btn-link"><i class="bi bi-pencil"></i>Modifier</button>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
+                    </div>
+                    <div class="small text-center px-2 py-1 bg-theme-1-subtle text-theme-1 theme-green">Active Client</div>
+                    <div class="offcanvas-body">
+                        <!-- customer -->
+                        <div class="row align-items-center mb-3">
+                            <div class="col-12 text-center">
+                                <figure class="avatar avatar-100 coverimg rounded-circle mx-auto mb-3">
+                                    <img src="assets/img/modern-ai-image/user-1.jpg" alt="">
+                                </figure>
+                            </div>
+                            <div class="col-12">
+                                <a href="gesco-approvisionnement-fournisseur-detail.html" class="style-none">
+                                    <h5 class="text-center">John Doe <i class="bi bi-box-arrow-in-up-right fs-14"></i></h5>
+                                </a>
+                                <p class="text-theme-1 theme-yellow text-center mb-3"><i class="bi bi-star-fill"></i> Prime VIP</p>
+                                <div class="row gx-3 gx-lg-4">
+                                    <div class="col-12 col-md-6">
+                                        <p class="text-secondary mb-2"><i class="bi bi-cake"></i> 28 Jan 2001, 24 years</p>
+                                        <p class="text-secondary mb-2"><i class="bi bi-gender-male"></i> Male</p>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <p class="text-secondary mb-2"><i class="bi bi-envelope"></i> selom.agbeko@email.tg</p>
+                                        <p class="text-secondary mb-2"><i class="bi bi-whatsapp"></i> +820 58023O554A1</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- order items-->
+                        <h6 class="mb-3">Orders (2 Items)</h6>
+                        <div class="list-group mb-3 mb-lg-4">
+                            <a href="gesco-ventes-detail.html" class="list-group-item list-group-action px-2">
+                                <!-- order status -->
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <span class="badge badge-light text-bg-theme-1 theme-green">Acceptée</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn btn-sm btn-square btn-link"><i class="bi bi-arrow-right"></i></div>
+                                    </div>
+                                </div>
+                                <ul class="progress-stepbar mb-3 mb-lg-4">
+                                    <li class="completed"><span>Ordered</span></li>
+                                    <li class="stop"><span>Acceptée</span></li>
+                                    <li class=""><span>Ready</span></li>
+                                    <li class=" "><span>Shipped</span></li>
+                                    <li><span>Livrée</span></li>
+                                </ul>
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <h6 class="mb-0">265 FCFA</h6>
+                                        <p class="small text-secondary">#OR55213453</p>
+                                    </div>
+                                    <div class="col">
+                                        <p class="mb-0">26 Jan 2025</p>
+                                        <p class="small text-secondary">5 Items</p>
+                                    </div>
+                                    <div class="col-auto avatar-group">
+                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="Bracelet women Platinum">
+                                            <img src="assets/img/ecommerce/image-5.jpg" alt="">
+                                        </figure>
+                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="Sendal women Platinum">
+                                            <img src="assets/img/ecommerce/image-10.jpg" alt="">
+                                        </figure>
+                                        <div class="avatar avatar-40 bg-theme-accent-1 rounded" data-bs-toggle="tooltip" data-bs-html="true" title="Lightbulb WiFi connect<br>Lipsticks<br>Bag Vincent Toil">
+                                            <p>+3</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="gesco-ventes-retours.html" class="list-group-item px-2">
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <span class="badge badge-light text-bg-theme-1 theme-grey">Terminée</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="btn btn-sm btn-square btn-link"><i class="bi bi-arrow-right"></i></div>
+                                    </div>
+                                </div>
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <h6 class="mb-0">134 FCFA</h6>
+                                        <p class="small text-secondary">#OR55213453</p>
+                                    </div>
+                                    <div class="col">
+                                        <p class="mb-0">30 Feb 2025</p>
+                                        <p class="small text-secondary">2 Items</p>
+                                    </div>
+                                    <div class="col-auto avatar-group">
+                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="Sofa Single Coco">
+                                            <img src="assets/img/ecommerce/image-6.jpg" alt="">
+                                        </figure>
+                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="High Heels Footwear">
+                                            <img src="assets/img/ecommerce/image-9.jpg" alt="">
+                                        </figure>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <!-- address -->
+                        <h6 class="mb-3">Client Address</h6>
+                        <div class="row gx-3 gx-lg-4">
+                            <div class="col">
+                                <div class="card bg-none mb-3 mb-lg-4">
+                                    <div class="card-body">
+                                        <p class="mb-3 fw-medium"><i class="bi bi-house-door me-1"></i> Home</p>
+                                        <p class="small text-secondary">Test data 103909 Witamer CR, Niagara Falls, NY 14305,<br>Lomé</p>
+                                        <button class="btn btn-sm btn-link">Locate <i class="bi bi-arrow-right"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="card bg-none mb-3 mb-lg-4">
+                                    <div class="card-body">
+                                        <p class="mb-3 fw-medium"><i class="bi bi-buildings me-1"></i> Office</p>
+                                        <p class="small text-secondary">Test data 103909 Witamer CR, Niagara Falls, NY 14305,<br>Lomé</p>
+                                        <button class="btn btn-sm btn-link">Locate <i class="bi bi-arrow-right"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- payment -->
+                        <h6 class="mb-3">Payment Method</h6>
+                        <div class="row gx-3 gx-lg-4">
+                            <div class="col-12 col-md-6 mb-3 mb-lg-4">
+                                <div class="card bg-none mb-2">
+                                    <div class="card-body">
+                                        <p class="mb-3 fw-medium"><i class="bi bi-globe me-1"></i> Net Banking</p>
+                                        <p class="small text-secondary mb-1">AmericaSpice Bank</p>
+                                        <p class="small text-secondary mb-1">A/C: 200525XXXXXX5524</p>
+                                        <p class="small text-secondary">16 Transactions</p>
+                                    </div>
+                                </div>
+                                <p class="small text-secondary text-truncated text-center">Last: 265 FCFA <i class="bi bi-check-all text-theme-1 theme-green"></i></p>
+                            </div>
+                            <div class="col-12 col-md-6 mb-3 mb-lg-4">
+                                <div class="swiper swipernav">
+                                    <div class="swiper-wrapper">
+                                        <div class="swiper-slide maxwidth-200">
+                                            <div class="card adminuiux-card bg-theme-1 overflow-hidden w-100 mb-2">
+                                                <div class="card-body p-3 z-index-1">
+                                                    <div class="row align-items-center mb-3">
+                                                        <div class="col-auto align-self-center"><i class="bi bi-credit-card fs-5"></i></div>
+                                                        <div class="col text-end">
+                                                            <p class="lh-14"><span class="fs-12 opacity-50">City Bank</span><br><small>Carte bancaire</small></p>
+                                                        </div>
+                                                    </div>
+                                                    <p class="h6 small my-3">000 0000 0001 54659</p>
+                                                    <div class="row">
+                                                        <div class="col-auto">
+                                                            <p class="lh-14"><span class="fs-12 opacity-50">Expiration</span><br><small>09/023</small></p>
+                                                        </div>
+                                                        <div class="col text-end">
+                                                            <p class="lh-14"><span class="fs-12 opacity-50">Titulaire de la carte</span><br><small>adminuiux</small></p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <p class="small text-secondary text-truncated text-center">Last: 36 FCFA <i class="bi bi-check-all text-theme-1 theme-green"></i></p>
+                                        </div>
+                                        <div class="swiper-slide maxwidth-200">
+                                            <div class="card adminuiux-card bg-theme-1 theme-blue overflow-hidden w-100 mb-2">
+                                                <div class="card-body p-3 z-index-1">
+                                                    <div class="row align-items-center mb-3">
+                                                        <div class="col-auto align-self-center"><i class="bi bi-credit-card fs-5"></i></div>
+                                                        <div class="col text-end">
+                                                            <p class="lh-14"><span class="fs-12 opacity-50">City Bank</span><br><small>Carte bancaire</small></p>
+                                                        </div>
+                                                    </div>
+                                                    <p class="h6 small my-3">000 0000 0001 546598</p>
+                                                    <div class="row">
+                                                        <div class="col-auto">
+                                                            <p class="lh-14"><span class="fs-12 opacity-50">Expiration</span><br><small>09/023</small></p>
+                                                        </div>
+                                                        <div class="col text-end">
+                                                            <p class="lh-14"><span class="fs-12 opacity-50">Titulaire de la carte</span><br><small>adminuiux</small></p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <p class="small text-secondary text-truncated text-center">Last: 54 FCFA <i class="bi bi-check-all text-theme-1 theme-green"></i></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- chat -->
+                        <div class="row gx-3 align-items-center mb-3">
+                            <div class="col-auto">
+                                <h6>Chat</h6>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge badge-sm small text-bg-theme-1 theme-red">2 New</span>
+                            </div>
+                        </div>
+
+                        <div class="card bg-none overflow-hidden">
+                            <div class="card-body overflow-auto height-dynamic" style="--h-dynamic: 400px">
+                                <div class="chat-list small">
+                                    <div class="collapse" id="searchchat">
+                                        <div class="mb-3">
+                                            <div class="input-group"><input type="search" class="form-control" placeholder="Search in chat... " value=""> <button class="btn btn-square btn-theme theme-red" data-bs-toggle="collapse" data-bs-target="#searchchat"><i class="bi bi-x"></i></button></div>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin left-chat">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">
+                                                        <p class="small mb-2"><a href="#" class="style-none">Kodjo Amegan</a></p>
+                                                        <p>Hi!</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <p class="text-secondary small time"><i class="bi bi-check"></i> 9:00 pm</p>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin right-chat">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">Hi!<br>Yes please tell us your query.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 text-end">
+                                            <p class="text-secondary small time"><i class="bi bi-check"></i> 9:10 pm</p>
+                                        </div>
+                                    </div>
+                                    <div class="row justify-content-center text-center">
+                                        <div class="col-auto text-center">
+                                            <div class="alert alert-light small mx-auto py-1 mb-3">26 November 2024</div>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin left-chat">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">
+                                                        <p class="small mb-2"><a href="#" class="style-none">Mr. Edem Lawson</a></p>Adminuiux is amazing and we thank you. How can we buy?
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <p class="text-secondary small time"><i class="bi bi-check-all text-primary"></i> 8:00 pm</p>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin right-chat first">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">
+                                                        <div class="position-relative mb-2 figure">
+                                                            <div class="position-absolute end-0 top-0">
+                                                                <button class="btn btn-square btn-theme m-2"><i class="bi bi-download"></i></button>
+                                                            </div>
+                                                            <img src="assets/img/ecommerce/image-1.jpg" alt="">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin right-chat">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">Thank you too. You can buy it from preview page and click on buy now.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 text-end">
+                                            <p class="text-secondary small time"><i class="bi bi-check-all text-primary"></i> 8:00 pm</p>
+                                        </div>
+                                    </div>
+                                    <div class="row justify-content-center text-center">
+                                        <div class="col-auto text-center">
+                                            <div class="alert alert-light small mx-auto py-1 mb-3">27 November 2024</div>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin left-chat first">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">
+                                                        <p class="small mb-2"><a href="#" class="style-none">Ms. Jully CTO</a></p>
+                                                        <div class="position-relative figure">
+                                                            <video src="../adminuiux.mp4" controls="" preload="none" class="mb-0"></video>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin left-chat">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">We also love this small presentation.</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <p class="text-secondary small time"><i class="bi bi-check-all text-primary"></i> 8:00 pm</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row no-margin right-chat">
+                                        <div class="col-12">
+                                            <div class="chat-block">
+                                                <div class="row gx-3">
+                                                    <div class="col">
+                                                        <p>Ohh... Thats great. Adminuiux is HTML template can be used in various business domains like SAAS, CRM, Content Management, Manufacturing, inventory, IT, administration etc.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 text-end">
+                                            <p class="text-secondary small time"><i class="bi bi-check-all text-primary"></i> 8:00 pm</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-none">
+                                <div class="input-group">
+                                    <button class="btn btn-square btn-link rounded-circle"><i class="bi bi-paperclip"></i></button>
+                                    <input class="form-control rounded mx-2" placeholder="Type your message... " value="">
+                                    <button class="btn btn-square btn-link rounded-circle" type="button"><i class="bi bi-send"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- notification -->
+                <div class="offcanvas offcanvas-end shadow border-0 maxwidth-300" tabindex="-1" id="view-notification" data-bs-scroll="true" data-bs-backdrop="false">
+    <div class="offcanvas-header border-bottom">
+        <div class="flex-grow-1">
+            <h6 class="mb-0">Notifications</h6>
+            <p class="text-secondary">6 new updates</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
+    </div>
+    <div class="small text-center p-3 bg-theme-1-subtle text-theme-1 theme-blue">
+        <div class="input-group">
+            <input type="text" class="form-control" id="daterangepicker">
+            <span class="input-group-text text-secondary">
+                <i class="bi bi-calendar-week"></i>
+            </span>
+        </div>
+    </div>
+    <div class="offcanvas-body">
+        <div class="card bg-none mb-2">
+            <div class="card-body">
+                <div class="row gx-3">
+                    <div class="col-auto">
+                        <figure class="avatar avatar-30 coverimg rounded-circle">
+                            <img src="assets/img/modern-ai-image/user-2.jpg" alt="">
+                        </figure>
+                    </div>
+                    <div class="col">
+                        <p class="small mb-2"><a href="gesco-profil.html">Kodjo Amegan</a>, <a href="gesco-profil.html">Komi Adjavon</a> and <span class="fw-medium">36 others</span> are also ordered from same website</p>
+
+                        <div class="row gx-3 gx-lg-4 align-items-center">
+                            <div class="col">
+                                <p class="text-secondary small">2:14 pm</p>
+                            </div>
+                            <div class="col-auto">
+                                <a href="javascript:void(0)" class="btn btn-sm btn-square btn-link theme-red"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-none mb-2">
+            <div class="card-body">
+                <div class="row gx-3">
+                    <div class="col-auto">
+                        <figure class="avatar avatar-30 rounded-circle bg-theme-1 border border-theme-1">
+                            <p class="h6 fw-medium">JM</p>
+                        </figure>
+                    </div>
+                    <div class="col">
+                        <p class="small mb-2"><a href="gesco-profil.html">Edem Lawson</a> commented: "This one is most usable design with great user experience. w..."</p>
+
+                        <div class="row gx-3 gx-lg-4 align-items-center">
+                            <div class="col">
+                                <p class="text-secondary small">2 days ago</p>
+                            </div>
+                            <div class="col-auto">
+                                <a href="javascript:void(0)" class="btn btn-sm btn-square btn-link theme-red"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-warning mb-2">
+            <div class="row gx-3">
+                <div class="col-auto">
+                    <figure class="avatar avatar-30 rounded-circle bg-warning text-white">
+                        <i class="bi bi-bell"></i>
+                    </figure>
+                </div>
+                <div class="col">
+                    <p class="small mb-2">Votre session va bientôt expirer. Veuillez <a href="gesco-administration.html">upgrade</a> to get service interrupt free.</p>
+
+                    <div class="row gx-3 gx-lg-4 align-items-center">
+                        <div class="col">
+                            <p class="text-secondary small">4 days ago</p>
+                        </div>
+                        <div class="col-auto">
+                            <a href="javascript:void(0)" class="btn btn-sm btn-square btn-link theme-red"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-none mb-2">
+            <div class="card-body">
+                <div class="row gx-3">
+                    <div class="col-auto">
+                        <figure class="avatar avatar-30 coverimg rounded-circle">
+                            <img src="assets/img/modern-ai-image/user-4.jpg" alt="">
+                        </figure>
+                    </div>
+                    <div class="col ps-0">
+                        <p class="small mb-2"><a href="gesco-facturation.html">Yao Mensah</a> has requested to send 120 FCFA money.</p>
+
+                        <div class="row gx-3 gx-lg-4 align-items-center">
+                            <div class="col">
+                                <p class="text-secondary small">6 days ago</p>
+                            </div>
+                            <div class="col-auto">
+                                <a href="javascript:void(0)" class="btn btn-sm btn-square btn-link theme-red"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-none mb-2">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-auto">
+                        <figure class="avatar avatar-30 rounded-circle bg-theme-1-subtle text-theme-1 theme-orange">
+                            <i class="bi bi-calendar-event"></i>
+                        </figure>
+                    </div>
+                    <div class="col ps-0">
+                        <h6 class="mb-1">Adminuiux: #1 HTML Templates</h6>
+                        <p class="small mb-2">Learning for better user experience on Universal app. development</p>
+                        <div class="avatar-group mb-2">
+                            <figure class="avatar avatar-20 coverimg rounded-circle" data-bs-toggle="tooltip" title="Mickey">
+                                <img src="assets/img/modern-ai-image/user-3.jpg" alt="" style="display: none;">
+                            </figure>
+                            <figure class="avatar avatar-20 coverimg rounded-circle" data-bs-toggle="tooltip" title="Jacky">
+                                <img src="assets/img/modern-ai-image/user-4.jpg" alt="">
+                            </figure>
+                            <div class="avatar avatar-20 bg-theme-1 rounded-circle">
+                                <small class="fs-10 vm">9+</small>
+                            </div>
+                            <span class="text-secondary small"> are attending</span>
+                        </div>
+
+                        <div class="row gx-3 gx-lg-4 align-items-center">
+                            <div class="col">
+                                <p class="text-secondary small">7 days ago</p>
+                            </div>
+                            <div class="col-auto">
+                                <a href="javascript:void(0)" class="btn btn-sm btn-square btn-link theme-red"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-none mb-2">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-auto">
+                        <figure class="avatar avatar-30 coverimg rounded-circle">
+                            <img src="assets/img/modern-ai-image/user-3.jpg" alt="">
+                        </figure>
+                    </div>
+                    <div class="col ps-0">
+                        <p class="small mb-2"><a href="gesco-profil.html">SOLUTECH</a> commented: "Thank you so much for this deep view at Adminuiux..."</p>
+
+                        <div class="row gx-3 gx-lg-4 align-items-center">
+                            <div class="col">
+                                <p class="text-secondary small">1 year ago</p>
+                            </div>
+                            <div class="col-auto">
+                                <a href="javascript:void(0)" class="btn btn-sm btn-square btn-link theme-red"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+                    <!-- ai-chat  -->
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="ai-chat" data-bs-scroll="true" data-bs-backdrop="false" style="--bs-offcanvas-width: 500px;">
+    <div class="offcanvas-header border-bottom">
+        <div class="flex-grow-1">
+            <h6 class="mb-0">AI Assistant</h6>
+            <p class="text-secondary small">Toujours actif</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
+    </div>
+
+    <!-- Messages Body Container (matching ecommerce-ai.html layout) -->
+    <div class="offcanvas-body chat-list overflow-y-auto px-3" id="ai-offcanvas-messages-container">
+        <!-- Messages will be dynamically rendered here -->
+    </div>
+
+    <!-- Chat Input Area with Suggestions (matching ecommerce-ai.html layout) -->
+    <div class="offcanvas-footer border-top p-3 bg-light-opacity">
+        <div class="card adminuiux-card border-0 shadow-none bg-none mb-0">
+            <div class="card-header pb-0 bg-none border-0 px-0 pt-0">
+                <p class="small text-secondary mb-2">Tip: Select chips/tags (Preset) below to see preview different content.</p>
+                <!-- Suggestion Pills / Quick prompts -->
+                <div class="d-flex flex-wrap" id="ai-offcanvas-suggestions-bar">
+                    <!-- Suggestions will be dynamically rendered here -->
+                </div>
+            </div>
+            <div class="card-body px-0 pb-0 pt-2">
+                <textarea class="form-control bg-none mb-3" id="ai-offcanvas-input" placeholder="Type your message... " style="resize: none;" rows="1"></textarea>
+                <div class="row gx-3">
+                    <div class="col-auto"><button class="btn btn-square btn-link border"><i class="bi bi-emoji-smile"></i></button></div>
+                    <div class="col-auto"><button class="btn btn-square btn-link border"><i class="bi bi-paperclip"></i></button></div>
+                    <div class="col"></div>
+                    <div class="col-auto"><button class="btn btn-square btn-link border" type="button" id="ai-offcanvas-send-btn" onclick="handleOffcanvasSendMessage()"><i class="bi bi-send"></i></button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Offcanvas Interactive Javascript -->
+<script src="assets/js/ecommerce/ecommerce-ai-chat.js"></script>
+
+                        <!-- footer -->
+                        <!-- standard footer -->
+<footer class="adminuiux-footer has-adminuiux-sidebar mt-auto">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 col-md col-lg py-2"><span class="small">Copyright &copy; 2026 GESCO — SOLUTECH Innovation Group</span></div>
+            <div class="col-12 col-md-auto col-lg-auto align-self-center">
+                <ul class="nav small">
+                    <li class="nav-item"><a class="nav-link" href="#">Aide</a></li>
+                    <li class="nav-item">|</li>
+                    <li class="nav-item"><a class="nav-link" href="#">Conditions d'utilisation</a></li>
+                    <li class="nav-item">|</li>
+                    <li class="nav-item"><a class="nav-link" href="#">Confidentialité</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- Page Level js -->
+
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/profile.js"></script>
+    </body>
+
+
+</html>

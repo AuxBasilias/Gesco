@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GESCO — Facture | SOLUTECH</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/invoice-engine.css">
+  <link rel="icon" type="image/png" href="assets/favicon.ico">
+</head>
+<body>
+
+  <!-- BARRE D'OUTILS INTERACTIVE (ÉCRAN SEULEMENT) -->
+  <header class="toolbar no-print">
+    <div class="toolbar-left">
+      <div class="brand-badge">
+        <img src="assets/img/invoice/logo_solutech.png" alt="Solutech" class="mini-logo">
+        <div class="brand-text">
+          <span class="brand-name">SOLUTECH INNOVATION GROUP</span>
+          <span class="brand-sub">Facturation A4 — Haute Précision</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar-center">
+      <div class="zoom-bar">
+        <button type="button" id="btnZoomOut" class="tool-btn icon-only" title="Zoom arrière">−</button>
+        <span id="zoomValue" class="zoom-indicator">100%</span>
+        <button type="button" id="btnZoomIn" class="tool-btn icon-only" title="Zoom avant">+</button>
+        <button type="button" id="btnZoomFit" class="tool-btn" title="Ajuster à la page">⛶ Ajuster</button>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <a href="gesco-facturation.html" class="tool-btn" style="text-decoration:none;">← Retour à GESCO</a>
+      <button type="button" id="btnPrint" class="tool-btn btn-print">
+        <span class="icon">🖨️</span> Imprimer / PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENEUR DES PAGES A4 (SUPPORT MULTI-PAGES DYNAMIQUE) -->
+  <main class="page-container" id="pageContainer">
+    <!-- Rendu dynamique par script.js (gère 1 ou plusieurs pages automatiquement) -->
+  </main>
+
+  <!-- MODAL D'ÉDITION INTERACTIVE -->
+  <div class="modal-overlay no-print" id="editorModal" hidden>
+    <div class="modal-window">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>✏️ Éditeur de Facture SOLUTECH</h3>
+          <p>Personnalisez les coordonnées, articles, remises et conditions en temps réel</p>
+        </div>
+        <button type="button" class="btn-modal-close" id="btnCloseModal">&times;</button>
+      </div>
+
+      <div class="modal-content">
+        <form id="editorForm">
+          
+          <div class="form-row-3">
+            <div class="form-field">
+              <label>N° Facture</label>
+              <input type="text" id="editNumber" value="SIG 26/0074">
+            </div>
+            <div class="form-field">
+              <label>Date d'émission</label>
+              <input type="text" id="editDate" value="07/09/2026">
+            </div>
+            <div class="form-field">
+              <label>Dossier suivi par</label>
+              <input type="text" id="editFollowedBy" value="M. BANQUE">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-field">
+              <label>Téléphone Contact</label>
+              <input type="text" id="editPhone" value="90 45 51 05">
+            </div>
+            <div class="form-field">
+              <label>Email Contact</label>
+              <input type="email" id="editEmail" value="fredbank@solutechtic.com">
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-badge">Coordonnées Destinataire</div>
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Nom du Client / Raison Sociale</label>
+                <select id="editClientId" required></select>
+              </div>
+              <div class="form-field">
+                <label>Boîte Postale / Adresse Ligne 1</label>
+                <input type="text" id="editClientLine1" value="Postfach 01BP1510">
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Service / Département Ligne 2</label>
+                <input type="text" id="editClientLine2" value="Service Unit">
+              </div>
+              <div class="form-field">
+                <label>Ville - Pays Ligne 3 (Soulignée)</label>
+                <input type="text" id="editClientLine3" value="Lomé - Togo">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-badge">Référence Commande &amp; TVA</div>
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Bandeau Commande (optionnel)</label>
+                <input type="text" id="editOrderBanner" value="Suivant COMMANDE N° 4500046178">
+              </div>
+              <div class="form-field">
+                <label>Taux TVA (%)</label>
+                <input type="number" id="editVatRate" value="18" step="0.5" min="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-header-flex">
+              <div class="section-badge">Lignes d'Articles &amp; Prestations</div>
+              <button type="button" id="btnAddRow" class="btn-add-line">+ Ajouter une ligne</button>
+            </div>
+            <div id="itemRowsContainer" class="items-editor-list">
+              <!-- Rempli par JavaScript -->
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-badge">Conditions Générales &amp; Garantie</div>
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Validité</label>
+                <input type="text" id="editValidity" value="1 mois">
+              </div>
+              <div class="form-field">
+                <label>Délai de livraison</label>
+                <input type="text" id="editDeliveryTime" value="">
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Condition de paiement</label>
+                <input type="text" id="editPaymentCondition" value="60% à l'accord et 40% à la livraison">
+              </div>
+              <div class="form-field">
+                <label>Garantie</label>
+                <input type="text" id="editGuarantee" value="1an">
+              </div>
+            </div>
+            <div class="form-field">
+              <label>Montant en toutes lettres (Laisser vide pour calcul automatique)</label>
+              <input type="text" id="editAmountWords" placeholder="Ex: Six cent soixante mille huit cents francs CFA TTC">
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <div class="modal-footer-right">
+          <button type="button" class="btn-action btn-cancel" id="btnCancelEdit">Annuler</button>
+          <button type="button" class="btn-action btn-save" id="btnSaveEdit">✓ Enregistrer &amp; Actualiser</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/invoice/invoice-engine.js"></script>
+</body>
+</html>

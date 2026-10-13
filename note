@@ -1,0 +1,22 @@
+lsof -i :9000
+kill -9 41664
+
+En cours
+
+
+Client(referernce,nom, email, type, ville, totalAchats,soldeDu,DernierAchat,)
+
+Prompt : nous sommes en node js, express, vanilla js, drizzle
+voici mon client : Client(referernce,nom, email, type, ville, totalAchats,soldeDu,DernierAchat,)
+donne moi son schema,son controller, et sa route
+
+
+
+Produit(designation, numéro de série, idCategorie,code-barres,description, prixAchat, prixVente,photo,garantie)
+Categorie(label)
+Stock(idproduit, initial, seuil minimum, idFournisseur)
+Fournisseur(nom,tel,email,adresse)
+nous sommes en node js, express, vanilla js, drizzle
+donne moi les schema convenables, en tenant compte de leur relation
+de plus pour la photo, quel est l alternative la plus simple ?
+

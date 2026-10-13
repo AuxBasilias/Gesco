@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- dir="rtl"-->
+
+<head>
+    <!-- Required meta tags  -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta name="application-name" content="smartUIUX">
+    <meta name="apple-mobile-web-app-title" content="smartUIUX">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="white">
+    <link rel="apple-touch-icon" href="assets/img/logo-512.png">
+
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>GESCO — Ventes — Terminal de vente | SOLUTECH</title>
+    <meta name="description" content="Smart Home Gardening Reminder Vehicle IOT App HTML Templates | Bootstrap 5 | UI/UX | Mobile | Admin | Dashboard | Universal App | Build stunning smart IOT Automation apps with our premium templates.">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Poppins:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+
+
+    <style>
+        :root {
+            --adminuiux-content-font: "Open Sans", serif;
+            --adminuiux-content-font-weight: 400;
+            --adminuiux-title-font: "Poppins", serif;
+            --adminuiux-title-font-weight: 600;
+        }
+    </style>
+<script defer src="assets/js/app13a2.js?5242d2f600103545528d"></script><link href="assets/css/app13a2.css?5242d2f600103545528d" rel="stylesheet"><link href="assets/css/solutech-theme.css" rel="stylesheet"><script>
+// Filet de sécurité : si l'écran de chargement ne se masque pas naturellement
+// (ex: police externe lente/bloquée sur réseau mobile), on le force à disparaître
+// après 2.5s pour ne jamais bloquer l'interface.
+setTimeout(function () {
+    var loader = document.querySelector('.pageloader');
+    if (loader && loader.style.display !== 'none') { loader.style.display = 'none'; }
+}, 2500);
+</script>
+</head>
+
+    <body class="main-bg main-bg-opac main-bg-blur roundedui adminuiux-header-standard adminuiux-sidebar-standard adminuiux-mobile-footer-fill-theme adminuiux-header-transparent adminuiux-sidebar-fill-none scrollup" data-theme="light" data-sidebarfill="adminuiux-sidebar-fill-none" data-bs-spy="scroll" data-bs-target="#list-example" data-bs-smooth-scroll="true" tabindex="0" data-sidebarlayout="adminuiux-sidebar-standard"
+        data-headerlayout="adminuiux-header-standard" data-headerfill="adminuiux-header-transparent" data-bggradient="bg-r-gradient" style="">
+        <!-- Pageloader -->
+<div class="pageloader">
+    <div class="container h-100">
+        <div class="row justify-content-center align-items-center text-center h-100 pb-ios">
+            <div class="col-12 mb-auto pt-4"></div>
+            <div class="col-auto">
+                <img src="assets/img/logo.svg" alt="" class="height-80 mb-3">
+                <p class="h2 mb-0 text-theme-accent-1">SOLUTECH</p>
+                <p class="display-3 text-theme-1 fw-bold mb-4">GESCO</p>
+                <div class="loader12 mb-2 mx-auto"></div>
+            </div>
+            <div class="col-12 mt-auto pb-4">
+                <p class="small text-secondary">Veuillez patienter, préparation en cours...</p>
+            </div>
+        </div>
+    </div>
+</div>
+            <!-- standard header -->
+<header class="adminuiux-header">
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container-fluid">
+            <!-- main sidebar toggle -->
+            <button class="btn btn-link btn-square sidebar-toggler" type="button" onclick="initSidebar()">
+                <i class="sidebar-svg" data-feather="menu"></i>
+            </button>
+            <!-- logo -->
+            <a class="navbar-brand" href="gesco-dashboard.html">
+                <img data-bs-img="light" src="assets/img/logo-light.svg" alt="">
+                <img data-bs-img="dark" src="assets/img/logo.svg" alt="">
+                <div class="">
+                    <span class="h4">GESCO</span>
+                    <p class="company-tagline">SOLUTECH Innovation Group</p>
+                </div>
+            </a>
+
+            <!-- right icons button -->
+            <div class="ms-auto">
+<!-- search toggle -->
+                <button class="btn btn-link btn-square btn-icon btn-link-header" type="button" data-bs-toggle="modal" data-bs-target="#searchmodalfull">
+                    <i data-feather="search"></i>
+                </button>
+
+                <!-- dark mode -->
+                <button class="btn btn-link btn-square btnsunmoon btn-link-header" id="btn-layout-modes-dark-page">
+                    <i class="sun mx-auto" data-feather="sun"></i>
+                    <i class="moon mx-auto" data-feather="moon"></i>
+                </button>
+<!-- notification dropdown -->
+                <button class="btn btn-link btn-square btn-icon btn-link-header position-relative" data-bs-toggle="offcanvas" data-bs-target="#view-notification">
+                    <i data-feather="bell"></i>
+                    <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger p-1">
+                        <small>9+</small>
+                        <span class="visually-hidden">unread messages</span>
+                    </span>
+                </button>
+                <!-- profile dropdown -->
+                <div class="dropdown d-inline-block">
+                    <a class="dropdown-toggle btn btn-link btn-link-header style-none" id="userprofiledd" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        <div class="row gx-0 d-inline-flex">
+                            <div class="col-auto align-self-center">
+                                <div class="avatar avatar-28 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center fw-semibold" style="font-size:12px;">AK</div>
+                            </div>
+                            <div class="col align-self-center d-none d-xl-block px-2 lh-14 text-start">
+                                <span class="mb-0 small">Utilisateur <br><small class="opacity-75">Compte actif</small></span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end width-300 pt-0 px-0 sm-mi-45px" aria-labelledby="userprofiledd">
+                        <div class="rounded p-3 dropdown-dontclose">
+                            <div class="row gx-3 align-items-center">
+                                <div class="col-auto">
+                                    <div class="avatar avatar-60 rounded bg-theme-1 text-white d-flex align-items-center justify-content-center fw-bold fs-5">AK</div>
+                                </div>
+                                <div class="col">
+                                    <h5 class="mb-1">Utilisateur</h5>
+                                    <p class="small opacity-50">Compte GESCO</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-2">
+                            <div><a class="dropdown-item" href="gesco-profil.html"><i data-feather="user" class="avatar avatar-18 me-1"></i> Mon profil</a>
+                            </div>
+                            <div><a class="dropdown-item" href="gesco-dashboard.html"><i data-feather="layout" class="avatar avatar-18 me-1"></i> Tableau de bord</a></div>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <div><a class="dropdown-item active" data-value="EN">EN - English</a></div>
+                                    <div><a class="dropdown-item" data-value="FR">FR - French</a></div>
+                                    <div><a class="dropdown-item" data-value="CH">CH - Chinese</a></div>
+                                    <div><a class="dropdown-item" data-value="HI">HI - Hindi</a></div>
+                                </div>
+                            </div>
+                            <div>
+                                <a class="dropdown-item" href="gesco-profil.html">
+                                    <i data-feather="settings" class="avatar avatar-18 me-1"></i> Paramètres du compte
+                                </a>
+                            </div>
+                            <div>
+                                <a class="dropdown-item theme-red" href="index.html">
+                                    <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+</header>
+
+<!-- full-screen search modal -->
+<div class="modal fade" tabindex="-1" id="searchmodalfull" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-none border-0">
+            <div class="modal-body z-index-1">
+                <div class="input-group input-group-md w-100 rounded search-wrap mb-3 mb-lg-4">
+                    <span class="input-group-text border-0 bg-none">
+                        <i data-feather="search"></i>
+                    </span>
+                    <input class="form-control form-control-lg pe-0 border-0 bg-none" type="search" placeholder="Type something here..." id="searchglobal">
+                    <div class="dropdown input-group-text border-0 px-2">
+                        <button class="dropdown-toggle btn btn-link btn-square no-caret" type="button" id="searchfilter" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i data-feather="sliders"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-dontclose width-300" aria-labelledby="searchfilter">
+                            <ul class="nav adminuiux-nav" id="searchtab" role="tablist">
+                                <li class="nav-item" role="presentation"><button class="nav-link active" id="searchall-tab" data-bs-toggle="tab" data-bs-target="#searchall" type="button" role="tab" aria-controls="searchall" aria-selected="true">Tous</button></li>
+                                <li class="nav-item" role="presentation"><button class="nav-link" id="searchorders-tab" data-bs-toggle="tab" data-bs-target="#searchorders" type="button" role="tab" aria-controls="searchorders" aria-selected="false" tabindex="-1">Ventes</button></li>
+                                <li class="nav-item" role="presentation"><button class="nav-link" id="searchcontacts-tab" data-bs-toggle="tab" data-bs-target="#searchcontacts" type="button" role="tab" aria-controls="searchcontacts" aria-selected="false" tabindex="-1">Contacts</button></li>
+                            </ul>
+                            <div class="tab-content py-3" id="searchtabContent">
+                                <div class="tab-pane fade active show" id="searchall" role="tabpanel" aria-labelledby="searchall-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Rechercher</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch1"> <label class="form-check-label" for="isearchswitch1"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Inclure les pages</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch2" checked=""> <label class="form-check-label" for="isearchswitch2"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Ressource internet</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch3" checked=""> <label class="form-check-label" for="isearchswitch3"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Actualités</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch4"> <label class="form-check-label" for="isearchswitch4"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="searchorders" role="tabpanel" aria-labelledby="searchorders-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Afficher le n° de commande</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch5"> <label class="form-check-label" for="isearchswitch5"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Commande internationale</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch6" checked=""> <label class="form-check-label" for="isearchswitch6"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Produit taxable</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch7" checked=""> <label class="form-check-label" for="isearchswitch7"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Produit publié</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch8"> <label class="form-check-label" for="isearchswitch8"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="searchcontacts" role="tabpanel" aria-labelledby="searchcontacts-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Avec adresse email</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch9"> <label class="form-check-label" for="isearchswitch9"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Avec numéro de téléphone</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch10" checked=""> <label class="form-check-label" for="isearchswitch10"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Photo disponible</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch11" checked=""> <label class="form-check-label" for="isearchswitch11"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Parrainage</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch12"> <label class="form-check-label" for="isearchswitch12"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="">
+                                <div class="row">
+                                    <div class="col"><button class="btn btn-link">Réinitialiser</button></div>
+                                    <div class="col-auto"><button class="btn btn-theme">Appliquer</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- products -->
+                <div class="row gx-3 align-items-center mb-3">
+                    <div class="col">
+                        <h6 class="text-white">Results in Products (3)</h6>
+                    </div>
+                    <div class="col-auto">
+                        <a href="gesco-stock-produits.html" class="btn btn-sm btn-link text-white">Tout voir</a>
+                    </div>
+                </div>
+                <div class="row gx-3">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-5.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Souris sans fil Logitech M185</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></p>
+                                        <p class="small text-secondary">4.8 (15 reviews)</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h6 class="mb-0">65 FCFA</h6>
+                                        <p class="small text-secondary">10% OFF</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">6 Item in stock</p>
+                                        <p class="small text-secondary">In 36 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-6.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Clavier mécanique Redragon K552</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></p>
+                                        <p class="small text-secondary">4.5 (10 reviews)</p>
+                                    </div>
+                                    <div class="col-auto text-end">
+                                        <h6 class="mb-0">152 FCFA</h6>
+                                        <p class="small text-secondary">Bank Offer</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">3 Item in stock</p>
+                                        <p class="small text-secondary">In 2 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-7.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Tapis de souris XL</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></p>
+                                        <p class="small text-secondary">4.3 (12 reviews)</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h6 class="mb-0">8 FCFA</h6>
+                                        <p class="small text-secondary">10% OFF</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">25 Item in stock</p>
+                                        <p class="small text-secondary">In 21 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-link text-white" data-bs-dismiss="modal">Annuler la recherche</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                <div class="adminuiux-wrap">
+                    <!-- Standard sidebar -->
+                    <!-- Standard sidebar -->
+<div class="adminuiux-sidebar">
+    <div class="adminuiux-sidebar-inner">
+        <div class="px-3 not-iconic mt-3">
+            <h6 class="fw-medium small text-uppercase opacity-50">Menu</h6>
+        </div>
+        <ul class="nav flex-column menu-active-line mt-3">
+            <li class="nav-item">
+                <a href="gesco-dashboard.html" class="nav-link">
+                    <i class="menu-icon bi bi-columns-gap"></i>
+                    <span class="menu-name">Tableau de bord</span>
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-cash-coin"></i>
+                    <span class="menu-name">Ventes</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-ventes-terminal.html" class="nav-link">
+                            <i class="menu-icon bi bi-shop"></i>
+                            <span class="menu-name">Terminal de vente</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-ventes.html" class="nav-link">
+                            <i class="menu-icon bi bi-list-ul"></i>
+                            <span class="menu-name">Historique des ventes</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-ventes-retours.html" class="nav-link">
+                            <i class="menu-icon bi bi-arrow-counterclockwise"></i>
+                            <span class="menu-name">Retours &amp; annulations</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-ventes-sessions.html" class="nav-link">
+                            <i class="menu-icon bi bi-safe"></i>
+                            <span class="menu-name">Sessions de caisse</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-boxes"></i>
+                    <span class="menu-name">Stock</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-stock-produits.html" class="nav-link">
+                            <i class="menu-icon bi bi-list-ul"></i>
+                            <span class="menu-name">Produits</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-stock-mouvements.html" class="nav-link">
+                            <i class="menu-icon bi bi-arrow-left-right"></i>
+                            <span class="menu-name">Mouvements</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-stock-inventaires.html" class="nav-link">
+                            <i class="menu-icon bi bi-clipboard-check"></i>
+                            <span class="menu-name">Inventaires</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-truck"></i>
+                    <span class="menu-name">Approvisionnement</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-approvisionnement-fournisseurs.html" class="nav-link">
+                            <i class="menu-icon bi bi-people"></i>
+                            <span class="menu-name">Fournisseurs</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-approvisionnement-commandes.html" class="nav-link">
+                            <i class="menu-icon bi bi-cart-plus"></i>
+                            <span class="menu-name">Commandes</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-approvisionnement-receptions.html" class="nav-link">
+                            <i class="menu-icon bi bi-box-arrow-in-down"></i>
+                            <span class="menu-name">Réceptions</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-receipt"></i>
+                    <span class="menu-name">Facturation</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-facturation.html" class="nav-link">
+                            <i class="menu-icon bi bi-file-earmark-text"></i>
+                            <span class="menu-name">Factures</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-facturation-paiements.html" class="nav-link">
+                            <i class="menu-icon bi bi-credit-card"></i>
+                            <span class="menu-name">Paiements &amp; impayés</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a href="gesco-clients.html" class="nav-link">
+                    <i class="menu-icon bi bi-people"></i>
+                    <span class="menu-name">Clients</span>
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="menu-icon bi bi-gear-wide-connected"></i>
+                    <span class="menu-name">Administration</span>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="nav-item">
+                        <a href="gesco-administration.html" class="nav-link">
+                            <i class="menu-icon bi bi-sliders"></i>
+                            <span class="menu-name">Paramètres &amp; utilisateurs</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="gesco-administration-rapports.html" class="nav-link">
+                            <i class="menu-icon bi bi-graph-up"></i>
+                            <span class="menu-name">Rapports &amp; statistiques</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+        </ul>
+        <div class=" mt-auto "></div>
+        <div class="px-3 not-iconic pb-3">
+            <div class="card adminuiux-card shadow-sm border-0">
+                <div class="card-body p-2">
+                    <div class="row gx-2">
+                        <div class="col-12 d-flex justify-content-between">
+                            <a href="gesco-profil.html" class="btn btn-square btn-link" title="Profil">
+                                <i data-feather="user"></i>
+                            </a>
+                            <a href="gesco-ventes-terminal.html" class="btn btn-square btn-link" title="Terminal de vente">
+                                <i data-feather="shopping-cart"></i>
+                            </a>
+                            <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
+                                <i data-feather="settings"></i>
+                            </a>
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                                <i data-feather="log-out"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                        <main class="adminuiux-content has-sidebar">
+    <div class="container-fluid mt-3">
+        <div class="row gx-1 align-items-center mb-3">
+            <div class="col col-sm mb-3 mb-md-0">
+                <nav aria-label="breadcrumb" class="mb-1">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Caisse</li>
+                    </ol>
+                </nav>
+                <h4 class="mb-0">Terminal de vente</h4>
+            </div>
+            <div class="col-auto d-flex align-items-center gap-2">
+                <span class="badge badge-light text-bg-secondary px-3 py-2" id="caisse-status-badge">Chargement de la caisse…</span>
+                <button class="btn btn-outline-success d-none" type="button" id="caisse-open-btn">
+                    <i class="bi bi-unlock"></i> Ouvrir la caisse
+                </button>
+                <button class="btn btn-outline-danger d-none" type="button" id="caisse-close-btn" data-bs-toggle="modal" data-bs-target="#modalFermerCaisse">
+                    <i class="bi bi-lock"></i> Fermer la caisse
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Colonne gauche : recherche + catalogue -->
+            <div class="col-lg-8">
+                <div class="card adminuiux-card border-0 shadow-sm mb-3">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-7">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-none"><i class="bi bi-upc-scan"></i></span>
+                                    <input type="text" class="form-control" id="pos-search" placeholder="Scanner un code-barres ou rechercher un produit...">
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="d-flex flex-wrap gap-1" id="pos-categories">
+                                    <button class="btn btn-sm btn-theme category-pill active" data-cat="tous">Tous</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-danger d-none" id="pos-error" role="alert"></div>
+                <div class="alert alert-warning d-none" id="pos-session-required" role="status">
+                    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <span>Aucune session de caisse n'est ouverte. Ouvrez la caisse avant d'encaisser une vente.</span>
+                        <button class="btn btn-sm btn-outline-dark" type="button" id="pos-session-open-inline">Ouvrir la caisse</button>
+                    </div>
+                </div>
+
+                <div class="row g-3" id="pos-product-grid">
+                    <!-- généré en JS -->
+                </div>
+                <p class="text-secondary text-center py-4 d-none" id="pos-empty-catalog">Aucun produit ne correspond à votre recherche.</p>
+            </div>
+
+            <!-- Colonne droite : panier + paiement -->
+            <div class="col-lg-4">
+                <div class="card adminuiux-card border-0 shadow-sm pos-cart-card">
+                    <div class="card-body p-3 d-flex flex-column h-100">
+                        <div class="mb-3">
+                            <label class="form-label small text-secondary mb-1">Client</label>
+                            <select class="form-select" id="pos-client">
+                                <option value="" selected>Client comptoir</option>
+                            </select>
+                        </div>
+
+                        <h6 class="mb-2 d-flex align-items-center justify-content-between">
+                            Panier
+                            <span class="badge badge-light text-bg-theme-1" id="pos-cart-count">0</span>
+                        </h6>
+
+                        <div class="pos-cart-items flex-grow-1" id="pos-cart-items">
+                            <p class="text-secondary small text-center py-4" id="pos-cart-empty">
+                                <i class="bi bi-cart display-6 d-block mb-2 opacity-50"></i>
+                                Panier vide — sélectionnez un produit
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-secondary">Sous-total</span>
+                            <span id="pos-subtotal">0 FCFA</span>
+                        </div>
+                        <div class="d-flex justify-content-between small mb-1 align-items-center">
+                            <span class="text-secondary">Remise <small class="text-secondary" id="pos-discount-amount"></small></span>
+                            <div class="input-group input-group-sm" style="width:110px">
+                                <input type="number" class="form-control text-end" id="pos-discount" value="0" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between small mb-2">
+                            <span class="text-secondary" id="pos-tax-label">TVA (18%)</span>
+                            <span id="pos-tax">0 FCFA</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold">Total</span>
+                            <span class="fw-bold fs-4" id="pos-total">0 FCFA</span>
+                        </div>
+
+                        <div class="mb-2">
+                            <div class="btn-group w-100" role="group" id="pos-payment-methods">
+                                <input type="radio" class="btn-check" name="payment" id="pay-cash" checked>
+                                <label class="btn btn-outline-secondary btn-sm" for="pay-cash"><i class="bi bi-cash"></i> Espèces</label>
+
+                                <input type="radio" class="btn-check" name="payment" id="pay-momo">
+                                <label class="btn btn-outline-secondary btn-sm" for="pay-momo"><i class="bi bi-phone"></i> Mobile Money</label>
+
+                                <input type="radio" class="btn-check" name="payment" id="pay-card">
+                                <label class="btn btn-outline-secondary btn-sm" for="pay-card"><i class="bi bi-credit-card"></i> Carte</label>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3" id="pos-cash-row">
+                            <div class="col-6">
+                                <label class="form-label small text-secondary mb-1">Montant reçu</label>
+                                <input type="number" class="form-control" id="pos-received" placeholder="Montant reçu" min="0" step="1">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-secondary mb-1">Monnaie à rendre</label>
+                                <input type="text" class="form-control" id="pos-change" value="0 FCFA" disabled>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-theme btn-lg w-100" id="pos-checkout-btn" disabled>
+                            <i class="bi bi-check-circle"></i> Encaisser
+                        </button>
+                        <p class="small text-secondary text-center mt-2 mb-0" id="pos-checkout-help" aria-live="polite"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Ticket affiché uniquement après confirmation de l'API -->
+<div class="modal fade" id="modalTicket" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title"><i class="bi bi-check-circle-fill text-success"></i> Vente enregistrée</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <p class="text-secondary mb-0">Ticket</p>
+                    <h5 class="mb-0" id="ticket-number">—</h5>
+                    <p class="small text-secondary" id="ticket-date"></p>
+                </div>
+                <ul class="list-group list-group-flush mb-3" id="ticket-lines"></ul>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-secondary">Total</span>
+                    <span class="fw-bold" id="ticket-total">0 FCFA</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1 small">
+                    <span class="text-secondary">Mode de paiement</span>
+                    <span id="ticket-payment">Espèces</span>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span class="text-secondary">Client</span>
+                    <span id="ticket-client">Client de passage</span>
+                </div>
+                <p class="small text-end mt-2 mb-0 d-none" id="ticket-cash-detail"></p>
+                <hr>
+                <p class="small text-center mb-0" id="pos-tracking-note">—</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <a href="gesco-facturation-detail.html" class="btn btn-outline-secondary d-none" id="pos-view-invoice-btn">
+                    <i class="bi bi-file-earmark-text"></i> Voir la facture
+                </a>
+                <button class="btn btn-theme" type="button" data-bs-dismiss="modal" id="pos-new-sale-btn">Nouvelle vente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Fermeture de caisse -->
+<div class="modal fade" id="modalFermerCaisse" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title">Fermer la caisse ?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary">Cette opération clôturera les transactions de cette session et enregistrera l'écart éventuel entre le total théorique et le total réel compté.</p>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small text-secondary mb-1">Total théorique</label>
+                        <input type="text" class="form-control" id="pos-cash-expected" value="—" disabled>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-secondary mb-1">Total compté</label>
+                        <input type="number" class="form-control" id="pos-counted-cash" placeholder="Montant compté en caisse" min="0" step="1">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button class="btn btn-danger" type="button" id="pos-close-session-submit">Clôturer la caisse</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalOuvrirCaisse" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title">Ouvrir une session de caisse</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label" for="pos-opening-fund">Fond d'ouverture (FCFA)</label>
+                <input type="number" class="form-control" id="pos-opening-fund" min="0" step="1" value="0">
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Annuler</button>
+                <button class="btn btn-theme" type="button" id="pos-open-session-submit">Ouvrir la caisse</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+
+    <footer class="adminuiux-footer">
+        <div class="container-fluid">
+            <div class="row gx-3 align-items-center">
+                <div class="col-sm mb-2 mb-sm-0 text-center text-sm-start">
+                    <p class="mb-0 small text-secondary">Copyright &copy; 2026 GESCO — SOLUTECH Innovation Group</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+.pos-product-card { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+.pos-product-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -8px rgba(0,0,0,.15); }
+.pos-product-card.out-of-stock { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.pos-cart-card { min-height: 640px; }
+.pos-cart-items { max-height: 260px; overflow-y: auto; }
+.category-pill.active { color: #fff; }
+.pos-cart-line-name { max-width: 130px; }
+</style>
+
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/profile.js"></script>
+    </body>
+</html>

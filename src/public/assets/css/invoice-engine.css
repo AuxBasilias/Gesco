@@ -1,0 +1,1010 @@
+﻿/* ==========================================================================
+   FACTURE SOLUTECH INNOVATION GROUP — VERSION WEB OFFICIELLE MILLIMÉTRÉE A4
+   Fidélité au millimètre près pour écran, impression directe et export PDF
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* --- Paramètres A4 stricts pour l'impression --- */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+:root {
+  --primary-navy: #1c3b68;
+  --primary-blue: #275586;
+  --accent-red: #9e2a2b;
+  --line-black: #000000;
+  --line-dark: #222222;
+  --line-mid: #444444;
+  --line-light: #777777;
+  --bg-app: #e5e7eb;
+  --bg-sheet: #ffffff;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-condensed: 'Oswald', 'Trebuchet MS', 'Arial Black', sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-app);
+  font-family: var(--font-main);
+  color: #000000;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   BARRE D'OUTILS (ÉCRAN SEULEMENT)
+   ========================================================================== */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #1f2937;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-left, .toolbar-center, .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.08);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.mini-logo {
+  height: 26px;
+  width: auto;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #f3f4f6;
+}
+
+.brand-sub {
+  font-size: 9px;
+  color: #9ca3af;
+}
+
+.zoom-bar {
+  display: flex;
+  align-items: center;
+  background: #111827;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  padding: 2px 4px;
+}
+
+.tool-btn {
+  background: #374151;
+  color: #f9fafb;
+  border: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.tool-btn:hover {
+  background: #4b5563;
+}
+
+.tool-btn.icon-only {
+  padding: 4px 8px;
+  font-size: 14px;
+  background: transparent;
+  color: #9ca3af;
+}
+
+.tool-btn.icon-only:hover {
+  color: #ffffff;
+  background: rgba(255,255,255,0.1);
+}
+
+.zoom-indicator {
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 44px;
+  text-align: center;
+  color: #e5e7eb;
+}
+
+.btn-edit {
+  background: #4b5563;
+}
+
+.btn-edit:hover {
+  background: #6b7280;
+}
+
+.btn-print {
+  background: #059669;
+}
+
+.btn-print:hover {
+  background: #10b981;
+}
+
+/* ==========================================================================
+   CONTENEUR DES FEUILLES A4 (SUPPORT MULTI-PAGES)
+   ========================================================================== */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  padding: 24px 12px 60px;
+  overflow: auto;
+  min-height: calc(100vh - 60px);
+}
+
+.sheet {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  height: 297mm;
+  background: var(--bg-sheet);
+  margin: 0 auto;
+  padding: 12mm 17mm 10mm 17mm;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  font-size: 8.6pt;
+  line-height: 1.35;
+  color: #000000;
+  overflow: hidden;
+  transform-origin: top center;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Page intermédiaire sans bloc de totaux */
+.sheet.intermediate-page .table-section {
+  height: 168mm;
+}
+.sheet.intermediate-page .items-table {
+  height: 168mm;
+}
+.sheet.intermediate-page .items-table tbody td {
+  height: 159.5mm;
+}
+
+/* ==========================================================================
+   1. EN-TÊTE DU DOCUMENT
+   ========================================================================== */
+.doc-header {
+  display: grid;
+  grid-template-columns: 28mm 1fr;
+  column-gap: 3.5mm;
+  align-items: center;
+  margin-bottom: 5mm;
+}
+
+.logo-box {
+  width: 28mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-logo {
+  width: 27mm;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.header-content {
+  text-align: center;
+  padding-top: 1mm;
+}
+
+.slogan {
+  font-family: var(--font-condensed);
+  font-size: 15.5pt;
+  font-weight: 800;
+  color: var(--primary-navy);
+  letter-spacing: 0.6px;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.activities {
+  font-family: var(--font-main);
+  font-size: 6.9pt;
+  font-weight: 700;
+  color: var(--primary-blue);
+  letter-spacing: 0.5px;
+  margin-top: 2.2mm;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.header-rule {
+  height: 1.3px;
+  background-color: var(--accent-red);
+  margin-top: 2.2mm;
+  width: 100%;
+}
+
+/* ==========================================================================
+   2. SECTION MÉTA (CLIENT / FACTURE / DATE & SUIVI)
+   ========================================================================== */
+.meta-section {
+  display: grid;
+  grid-template-columns: 63mm 48mm 63mm;
+  column-gap: 1mm;
+  align-items: stretch;
+  margin-bottom: 4mm;
+  min-height: 27mm;
+}
+
+/* --- Boîte Client (Gauche) : Titre 'Client' centré en haut + border-radius 4px --- */
+.client-card {
+  position: relative;
+  border: 1.2px solid var(--line-black);
+  border-radius: 4px;
+  padding: 2mm 3.5mm 2.5mm 3.5mm;
+  font-size: 8.5pt;
+  line-height: 1.45;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.client-header-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 8.8pt;
+  color: #000000;
+  margin-bottom: 1.2mm;
+}
+
+.client-content-body {
+  line-height: 1.42;
+}
+
+.c-label {
+  font-weight: 700;
+}
+
+.c-name {
+  font-weight: 800;
+}
+
+.client-row {
+  font-size: 8.4pt;
+}
+
+.client-location u {
+  text-decoration: underline;
+}
+
+/* --- Identification Centrale (FACTURE + Numéro) --- */
+.invoice-number-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2mm 0;
+}
+
+.inv-title {
+  font-size: 12.2pt;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #000000;
+  margin-bottom: 1mm;
+}
+
+.inv-code {
+  font-size: 11.8pt;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #000000;
+}
+
+/* --- Boîte Date & Suivi (Droite) : Deux lignes fines (0.8px) identiques, second trait descendu --- */
+.tracking-card {
+  position: relative;
+  border: 1.2px solid var(--line-black);
+  border-radius: 4px;
+  padding: 2.2mm 3.5mm 2.2mm 3.5mm;
+  font-size: 8.5pt;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  background: #ffffff;
+}
+
+.tracking-top-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.date-lbl {
+  font-weight: 500;
+  font-size: 8.6pt;
+}
+
+.date-underline-val {
+  border-bottom: 0.8px solid var(--line-black);
+  padding: 0 2px 0.5px;
+  font-weight: 700;
+  font-size: 8.6pt;
+  text-align: center;
+  width: 28mm;
+  display: inline-block;
+}
+
+.tracking-subline-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5.2mm;
+  margin-bottom: 0.8mm;
+}
+
+.tracking-subline {
+  width: 28mm;
+  height: 0.8px;
+  background-color: var(--line-black);
+}
+
+.tracking-mid-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 1.2mm;
+  font-size: 8.5pt;
+}
+
+.follow-lbl {
+  font-weight: 700;
+}
+
+.follow-name {
+  font-weight: 800;
+}
+
+.tracking-bot-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  white-space: nowrap;
+  margin-top: auto;
+}
+
+.phone-val {
+  font-size: 9.8pt;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.email-val {
+  font-size: 7.4pt;
+  font-weight: 600;
+  color: #000000;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   3. TABLEAU DES ARTICLES (CORPS DE FACTURE COMMERCIAL)
+   ========================================================================== */
+.table-section {
+  height: 128mm;
+  position: relative;
+}
+
+.items-table {
+  width: 100%;
+  height: 128mm;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1.2px solid var(--line-black);
+}
+
+.col-ref   { width: 11%; }
+.col-qty   { width: 8%; }
+.col-desc  { width: 48%; }
+.col-pu    { width: 14%; }
+.col-rate  { width: 6%; }
+.col-amount{ width: 13%; }
+
+.items-table thead th {
+  border: 1.2px solid var(--line-black);
+  font-size: 8.6pt;
+  font-weight: 700;
+  text-align: center;
+  padding: 2.2mm 1mm;
+  height: 8.5mm;
+  background-color: #ffffff;
+}
+
+.items-table tbody td {
+  border-left: 1.2px solid var(--line-black);
+  border-right: 1.2px solid var(--line-black);
+  border-bottom: 1.2px solid var(--line-black);
+  vertical-align: top;
+  font-size: 8.6pt;
+  padding: 0;
+  /* La hauteur réelle de chaque ligne est calculée dynamiquement en JS
+     (128mm répartis entre le nombre d'articles de la page) et appliquée
+     en style inline sur chaque <tr> — cette valeur n'est qu'un repli. */
+  height: 119.5mm;
+}
+
+.order-banner-row {
+  text-align: center;
+  font-weight: 700;
+  font-size: 8.8pt;
+  padding: 1.8mm 1mm;
+  margin-bottom: 3.5mm;
+  background: #ffffff;
+}
+
+.product-item-wrap {
+  padding-left: 4mm;
+  padding-top: 5mm;
+  font-size: 8.6pt;
+  line-height: 1.42;
+  font-weight: 700;
+}
+
+.cell-pad-center {
+  text-align: center;
+  font-weight: 700;
+  font-size: 8.8pt;
+  padding-top: 9mm;
+}
+
+.cell-pad-amount {
+  text-align: center;
+  font-weight: 700;
+  font-size: 8.8pt;
+  padding-top: 9mm;
+}
+
+/* ==========================================================================
+   4. SECTION CONDITIONS & TOTAUX (PROLONGEMENT STRICT DES COLONNES)
+   ========================================================================== */
+.settlement-section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+  margin-bottom: 4mm;
+}
+
+.settlement-grid {
+  display: grid;
+  grid-template-columns: 67% 20% 13%;
+  gap: 0;
+  align-items: start;
+}
+
+/* --- Colonne Gauche (67%) : Conditions Générales --- */
+.conditions-col {
+  padding-left: 4mm;
+  padding-top: 1.5mm;
+  font-size: 7.9pt;
+  line-height: 1.58;
+}
+
+.cond-title {
+  font-weight: 700;
+  margin-bottom: 2mm;
+  font-size: 8.2pt;
+}
+
+.cond-guarantee {
+  padding-left: 14mm;
+}
+
+.cond-words-line {
+  margin-top: 1mm;
+  white-space: nowrap;
+}
+
+.words-strong {
+  font-weight: 700;
+}
+
+/* --- Colonne Milieu (20% : Prix Unitaire + R%) : Labels Totaux --- */
+.totals-labels-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.tot-lbl-item {
+  height: 6.8mm;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 3.5mm;
+  font-size: 8.4pt;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* --- Colonne Droite (13% : Montant) : Prolongement avec bordure plus épaisse --- */
+.totals-values-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.tot-val-box {
+  height: 6.8mm;
+  border: 1.8px solid var(--line-black);
+  border-top: 1.8px solid var(--line-black);
+  margin-top: -1.8px;
+  padding: 1mm 2.2mm;
+  text-align: right;
+  font-size: 8.6pt;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: #ffffff;
+}
+
+.totals-values-col .tot-val-box:first-child {
+  margin-top: 0;
+}
+
+.ttc-box {
+  font-weight: 800;
+}
+
+/* --- Ligne des Signatures sur toute la largeur (Pour Acquit à GAUCHE, Le Service Commercial à DROITE) --- */
+.signatures-full-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 3.5mm;
+  padding-left: 4mm;
+  padding-right: 1mm;
+}
+
+.acquit-tag {
+  font-weight: 700;
+  font-style: italic;
+  font-size: 8.4pt;
+  color: #000000;
+  text-align: left;
+}
+
+.commercial-service-tag {
+  font-weight: 700;
+  font-style: italic;
+  font-size: 8.4pt;
+  color: #000000;
+  text-align: right;
+}
+
+/* ==========================================================================
+   5. PIED DE PAGE SOLUTECH & BANDEAU PARTENAIRES
+   ========================================================================== */
+.doc-footer {
+  position: absolute;
+  bottom: 8.5mm;
+  left: 17mm;
+  width: 176mm;
+  text-align: center;
+}
+
+.footer-rules .rule-solid-heavy {
+  height: 2.5px;
+  background-color: var(--line-black);
+}
+
+.footer-rules .rule-light {
+  height: 0.6px;
+  background-color: var(--line-light);
+  margin-top: 0.5px;
+  margin-bottom: 0.4mm;
+}
+
+.partners-row {
+  height: 7.2mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+.partners-strip-img {
+  width: 100%;
+  height: auto;
+  max-height: 7mm;
+  display: block;
+  object-fit: contain;
+}
+
+.footer-rule-bottom {
+  height: 1px;
+  background-color: var(--line-black);
+  margin-top: 0.4mm;
+  margin-bottom: 1.2mm;
+}
+
+.legal-block {
+  font-size: 6.7pt;
+  line-height: 1.35;
+  font-style: italic;
+  color: #000000;
+  text-align: center;
+}
+
+.legal-row {
+  white-space: nowrap;
+}
+
+.bank-row {
+  font-weight: 600;
+  margin-bottom: 0.3mm;
+}
+
+.comp-row {
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   MODAL D'ÉDITION INTERACTIVE
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-window {
+  background: #ffffff;
+  width: 100%;
+  max-width: 820px;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalIn 0.2s ease-out;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  padding: 16px 20px;
+  background: #1e293b;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title-group h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.modal-title-group p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.btn-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+
+.btn-modal-close:hover {
+  color: #ffffff;
+}
+
+.modal-content {
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.form-field input, .form-field textarea, .form-field select {
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-field input:focus, .form-field textarea:focus, .form-field select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+}
+
+.form-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.section-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #1e3b68;
+  margin-bottom: 10px;
+}
+
+.section-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.btn-add-line {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-add-line:hover {
+  background: #dbeafe;
+}
+
+.items-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-editor-row {
+  display: grid;
+  grid-template-columns: 80px 70px 1fr 100px 60px 32px;
+  gap: 8px;
+  align-items: center;
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.item-editor-row textarea {
+  resize: vertical;
+  min-height: 48px;
+}
+
+.btn-delete-row {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-delete-row:hover {
+  background: #fecaca;
+}
+
+.modal-footer {
+  padding: 12px 20px;
+  background: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-footer-right {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-action {
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-ghost {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.btn-ghost:hover {
+  background: #cbd5e1;
+}
+
+.btn-cancel {
+  background: #ffffff;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-cancel:hover {
+  background: #f8fafc;
+}
+
+.btn-save {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.btn-save:hover {
+  background: #1d4ed8;
+}
+
+/* ==========================================================================
+   STYLE IMPRESSION ET EXPORT PDF PUR (ZERO MARGE, EXACT A4 MULTI-PAGES)
+   ========================================================================== */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    width: 210mm !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .page-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    gap: 0 !important;
+  }
+
+  .sheet {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    padding: 12mm 17mm 10mm 17mm !important;
+    transform: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+  }
+
+  .sheet:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .items-table {
+    width: 100% !important;
+    border: 1.2px solid #000000 !important;
+  }
+
+  .items-table thead th {
+    border: 1.2px solid #000000 !important;
+    background-color: #ffffff !important;
+  }
+
+  .items-table tbody td {
+    border-left: 1.2px solid #000000 !important;
+    border-right: 1.2px solid #000000 !important;
+    border-bottom: 1.2px solid #000000 !important;
+  }
+
+  .tot-val-box {
+    border: 1.8px solid #000000 !important;
+  }
+
+  .footer-rules .rule-solid-heavy {
+    height: 2.5px !important;
+    background-color: #000000 !important;
+  }
+}
