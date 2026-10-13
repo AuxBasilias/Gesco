@@ -32,6 +32,8 @@ build/Release
 .npm
 .eslintcache
 
+src/public/assets/img
+
 # Environment Variables (CRITICAL for security)
 .env*
 
