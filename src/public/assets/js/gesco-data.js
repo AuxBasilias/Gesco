@@ -181,6 +181,8 @@
         const result = await api.getVente(id);
         const invoiceLink = document.querySelector('a[href="gesco-facturation-detail.html"]');
         if (invoiceLink) invoiceLink.href = `gesco-facturation-detail.html?venteId=${encodeURIComponent(result.id)}`;
+        const deliveryLink = document.querySelector('a[href="gesco-livraison-detail.html"]');
+        if (deliveryLink) deliveryLink.href = `gesco-livraison-detail.html?venteId=${encodeURIComponent(result.id)}`;
         return result.lignes ?? [];
       }, columns: [["Produit", "designation"], ["Quantité", "quantite"], ["Prix unitaire", "prixUnitaire", "money"], ["Montant", "montantTotal", "money"]] }],
     },
@@ -1616,6 +1618,11 @@
         if (invoiceButton) {
           invoiceButton.href = `gesco-facturation-detail.html?venteId=${encodeURIComponent(sale.id)}`;
           invoiceButton.classList.remove("d-none");
+        }
+        const deliveryButton = document.getElementById("pos-view-delivery-btn");
+        if (deliveryButton) {
+          deliveryButton.href = `gesco-livraison-detail.html?venteId=${encodeURIComponent(sale.id)}`;
+          deliveryButton.classList.remove("d-none");
         }
         if (modePaiement === "especes") {
           cashSession = {

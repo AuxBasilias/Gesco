@@ -314,6 +314,9 @@ function renderInvoice() {
   const vatRate = Number(currentInvoice.vatRate) || 0;
   const globalTotalVAT = Math.round((globalTotalHT * vatRate) / 100);
   const globalTotalTTC = globalTotalHT + globalTotalVAT;
+  const hasVat = vatRate > 0 && globalTotalVAT > 0;
+  const vatLabelHtml = hasVat ? `<div class="tot-lbl-item">TVA&nbsp;&nbsp; <span>${vatRate}</span>%</div>` : '';
+  const vatValueHtml = hasVat ? `<div class="tot-val-box">${formatMoney(globalTotalVAT)}</div>` : '';
   
   let amountInWords = currentInvoice.conditions.amountWords;
   if (!amountInWords || amountInWords.trim() === '') {
@@ -521,14 +524,14 @@ function renderInvoice() {
             <!-- Colonne Milieu (20% : Prix Unitaire + R%) : Labels Totaux -->
             <div class="totals-labels-col">
               <div class="tot-lbl-item">Total H.T.</div>
-              <div class="tot-lbl-item">TVA&nbsp;&nbsp; <span>${vatRate}</span>%</div>
+              ${vatLabelHtml}
               <div class="tot-lbl-item">Total TTC</div>
             </div>
 
             <!-- Colonne Droite (13% : Montant) : Prolongement avec bordure plus épaisse -->
             <div class="totals-values-col">
               <div class="tot-val-box">${formatMoney(globalTotalHT)}</div>
-              <div class="tot-val-box">${formatMoney(globalTotalVAT)}</div>
+              ${vatValueHtml}
               <div class="tot-val-box ttc-box">${formatMoney(globalTotalTTC)}</div>
             </div>
           </div>
