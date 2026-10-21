@@ -74,6 +74,17 @@
   border-bottom: none;
 }
 
+/* ...y compris sur le papier : le bloc @media print de invoice-engine.css
+   réimpose `border-bottom: 1.2px solid #000000 !important` sur toutes les
+   cellules du tableau, ce qui faisait réapparaître ce trait à l'impression
+   uniquement. On le neutralise ici pour que l'aperçu écran et le document
+   imprimé soient identiques. */
+@media print {
+  .delivery-table.single-row tbody tr:not(.delivery-filler-row) td {
+    border-bottom: none !important;
+  }
+}
+
 .delivery-table tbody td {
   vertical-align: top;
 }

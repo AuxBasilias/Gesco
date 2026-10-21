@@ -1021,6 +1021,14 @@ html, body {
     border-bottom: 1.2px solid #000000 !important;
   }
 
+  /* Une seule ligne : le trait de séparation sous la ligne est déjà supprimé
+     à l'écran (cf. .items-table.single-row). Sans cette neutralisation, le
+     `border-bottom: ... !important` ci-dessus le réimprimait et une ligne
+     apparaissait sur le papier mais pas dans l'aperçu. */
+  .items-table.single-row tbody tr:first-child td {
+    border-bottom: none !important;
+  }
+
   .tot-val-box {
     border: 1.8px solid #000000 !important;
   }

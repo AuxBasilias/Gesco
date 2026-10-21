@@ -7,6 +7,8 @@
     const refreshButton = document.getElementById("dashboard-refresh");
     const api = window.AA;
     let loading = false;
+    const DAILY_LIMIT = 7;
+    const BUCKET_SIZE = 7;
 
     if (!root || !api || typeof api.getDashboard !== "function") {
       console.error("Le tableau de bord GESCO ne peut pas démarrer : API ou conteneur absent.");
@@ -62,7 +64,7 @@
                   <div><h2 class="h5 mb-1" id="dashboard-sales-title">Évolution du chiffre d'affaires</h2><p class="small text-secondary mb-0" data-period-label></p></div>
                   <span class="badge text-bg-light">Ventes encaissées</span>
                 </div>
-                <div class="dashboard-chart d-flex align-items-end gap-2" role="img" aria-label="Chiffre d'affaires journalier sur la période"></div>
+                <div class="dashboard-chart d-flex align-items-end gap-2" role="img" aria-label="Évolution du chiffre d'affaires sur la période"></div>
               </div>
             </section>
           </div>
@@ -160,6 +162,30 @@
       }
     }
 
+    function buildBuckets(rows, days) {
+      const daily = rows.map((row) => ({
+        label: row.label,
+        chiffreAffaires: Number(row.chiffreAffaires) || 0,
+        ventes: Number(row.ventes) || 0,
+      }));
+      if (!daily.length || days <= DAILY_LIMIT) {
+        return daily.map((row) => ({ ...row, rangeLabel: row.label }));
+      }
+      const buckets = [];
+      for (let index = 0; index < daily.length; index += BUCKET_SIZE) {
+        const slice = daily.slice(index, index + BUCKET_SIZE);
+        const first = slice[0];
+        const last = slice[slice.length - 1];
+        buckets.push({
+          label: first.label,
+          rangeLabel: first.label === last.label ? first.label : `${first.label} – ${last.label}`,
+          chiffreAffaires: slice.reduce((sum, row) => sum + row.chiffreAffaires, 0),
+          ventes: slice.reduce((sum, row) => sum + row.ventes, 0),
+        });
+      }
+      return buckets;
+    }
+
     function renderChart(rows) {
       const chart = root.querySelector(".dashboard-chart");
       if (!chart) return;
@@ -174,20 +200,61 @@
 
       chart.classList.add("align-items-end");
       chart.classList.remove("align-items-center", "justify-content-center");
+      const columns = [];
       rows.forEach((row) => {
         const column = document.createElement("div");
-        column.className = "flex-fill text-center";
+        column.className = "dashboard-chart__column text-center";
         const amount = Number(row.chiffreAffaires) || 0;
         const bar = document.createElement("div");
         bar.className = `mx-auto rounded-top ${amount > 0 ? "bg-theme-1" : "bg-secondary-subtle"}`;
         bar.style.height = `${amount > 0 ? Math.max(4, Math.round((amount / max) * 140)) : 2}px`;
         bar.style.width = "min(100%, 32px)";
-        bar.title = `${row.label} : ${money(amount)}`;
+        bar.title = `${row.rangeLabel} : ${money(amount)}${row.ventes ? ` · ${number(row.ventes)} vente(s)` : ""}`;
         const label = document.createElement("span");
         label.className = "d-block small text-secondary text-truncate mt-2";
         label.textContent = row.label;
         column.append(bar, label);
         chart.append(column);
+        columns.push(column);
+      });
+      fitLabels(columns);
+    }
+
+    function fitLabels(columns) {
+      const labels = columns.map((column) => column.querySelector("span"));
+      if (!labels.length) return;
+      const range = document.createRange();
+      const natural = labels.reduce((max, label) => {
+        if (!label) return max;
+        range.selectNodeContents(label);
+        return Math.max(max, Math.round(range.getBoundingClientRect().width));
+      }, 0);
+      const columnWidth = columns[0].getBoundingClientRect().width;
+      if (!natural || !columnWidth) return;
+      const gap = parseFloat(getComputedStyle(columns[0].parentElement).gap) || 0;
+      const step = Math.min(labels.length, Math.max(1, Math.ceil((natural + gap) / (columnWidth + gap))));
+      if (step <= 1) return;
+      const groupWidth = step * columnWidth + (step - 1) * gap;
+      const offset = (step - 1) * (columnWidth + gap) / 2;
+      const visibleIndexes = labels.map((label, index) => (label && index % step === 0 ? index : -1)).filter((index) => index >= 0);
+      const firstIndex = visibleIndexes[0];
+      const lastIndex = visibleIndexes[visibleIndexes.length - 1];
+      labels.forEach((label, index) => {
+        if (!label) return;
+        const visible = index % step === 0;
+        label.classList.toggle("d-none", !visible);
+        if (!visible) return;
+        label.style.width = `${groupWidth}px`;
+        if (index === firstIndex) {
+          label.style.marginLeft = "0px";
+          label.style.textAlign = "left";
+        } else if (index === lastIndex) {
+          label.style.marginLeft = `${columnWidth - groupWidth}px`;
+          label.style.textAlign = "right";
+        } else {
+          label.style.marginLeft = `${-offset}px`;
+          label.style.textAlign = "center";
+        }
       });
     }
 
@@ -228,20 +295,15 @@
           ? "Pas d'historique de comparaison disponible"
           : `${variation > 0 ? "+" : ""}${number(variation)} % par rapport à la période précédente`,
       );
-      setText("[data-period-label]", `Sur les ${number(data.periodeJours)} derniers jours`);
+      const periodeJours = Number(data.periodeJours) || 0;
+      const weekly = periodeJours > DAILY_LIMIT;
+      setText(
+        "[data-period-label]",
+        `Sur les ${number(periodeJours)} derniers jours${weekly ? " (total par semaine)" : ""}`,
+      );
 
       const dailySales = Array.isArray(data.ventesParJour) ? data.ventesParJour : [];
-      const chartSales = Number(data.periodeJours) > 30
-        ? Array.from({ length: Math.ceil(dailySales.length / 7) }, (_, index) => {
-          const week = dailySales.slice(index * 7, (index + 1) * 7);
-          return {
-            label: week.length > 1 ? `${week[0].label} – ${week[week.length - 1].label}` : week[0]?.label ?? "",
-            chiffreAffaires: week.reduce((sum, row) => sum + Number(row.chiffreAffaires || 0), 0),
-            ventes: week.reduce((sum, row) => sum + Number(row.ventes || 0), 0),
-          };
-        })
-        : dailySales;
-      renderChart(chartSales);
+      renderChart(buildBuckets(dailySales, periodeJours));
       renderList(".dashboard-best-products", Array.isArray(data.meilleuresVentes) ? data.meilleuresVentes : [], "Aucune vente de produit sur cette période.", (product) => {
         const row = document.createElement("div");
         row.className = "d-flex justify-content-between gap-3 border-bottom py-2";

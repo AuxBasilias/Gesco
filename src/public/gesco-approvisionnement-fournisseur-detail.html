@@ -577,18 +577,20 @@ setTimeout(function () {
 </div>
                         <main class="adminuiux-content has-sidebar" onclick="contentClick()">
     <div class="container-fluid mt-3">
+        <div class="alert alert-danger d-none" id="fournisseurDetailError" role="alert"></div>
         <div class="row gx-1 align-items-center mb-3">
             <div class="col">
                 <nav aria-label="breadcrumb" class="mb-1">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
-                        <li class="breadcrumb-item"><a href="gesco-approvisionnement-fournisseurs.html">Approvisionnement</a></li><li class="breadcrumb-item active" aria-current="page">TechImport SARL</li>
+                        <li class="breadcrumb-item"><a href="gesco-approvisionnement-fournisseurs.html">Fournisseurs</a></li><li class="breadcrumb-item active" aria-current="page" id="breadcrumbFournisseur">Chargement…</li>
                     </ol>
                 </nav>
-                <h4 class="mb-0">TechImport SARL</h4>
+                <h4 class="mb-0" id="fournisseurTitre">Chargement…</h4>
             </div>
             <div class="col-auto d-flex gap-2">
-                <button class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</button>
+                <button class="btn btn-outline-secondary" id="btnEditFournisseur" type="button" disabled><i class="bi bi-pencil"></i> Modifier</button>
+                <button class="btn btn-outline-danger" id="btnDeleteFournisseur" type="button" disabled><i class="bi bi-trash"></i> Supprimer</button>
                 <a href="gesco-approvisionnement-commandes.html" class="btn btn-theme"><i class="bi bi-cart-plus"></i> Nouvelle commande</a>
             </div>
         </div>
@@ -597,16 +599,16 @@ setTimeout(function () {
             <div class="col-lg-4">
                 <div class="card adminuiux-card border-0 shadow-sm mb-4">
                     <div class="card-body text-center p-4">
-                        <span class="avatar avatar-70 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center mx-auto mb-3"><i class="bi bi-truck fs-3"></i></span>
-                        <h5 class="mb-0">TechImport SARL</h5>
-                        <p class="small text-secondary mb-2">Fournisseur depuis janvier 2024</p>
-                        <span class="badge badge-light text-bg-success">Actif</span>
+                        <span class="avatar avatar-70 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center mx-auto mb-3" id="fournisseurAvatar"><i class="bi bi-truck fs-3"></i></span>
+                        <h5 class="mb-0" id="fournisseurCardNom">—</h5>
+                        <p class="small text-secondary mb-2" id="fournisseurDepuis">—</p>
+                        <span class="badge badge-light text-bg-success" id="fournisseurStatut">Actif</span>
                     </div>
                     <div class="card-body border-top">
-                        <p class="text-secondary mb-1"><i class="bi bi-envelope me-2"></i> commercial@techimport.tg</p>
-                        <p class="text-secondary mb-1"><i class="bi bi-telephone me-2"></i> 22 41 55 80</p>
-                        <p class="text-secondary mb-1"><i class="bi bi-geo-alt me-2"></i> Zone industrielle, Lomé - Togo</p>
-                        <p class="text-secondary mb-0"><i class="bi bi-tag me-2"></i> Ordinateurs, composants</p>
+                        <p class="text-secondary mb-1" id="fournisseurEmailRow"><i class="bi bi-envelope me-2"></i> <span id="fournisseurEmail">—</span></p>
+                        <p class="text-secondary mb-1" id="fournisseurTelRow"><i class="bi bi-telephone me-2"></i> <span id="fournisseurTel">—</span></p>
+                        <p class="text-secondary mb-1" id="fournisseurAdresseRow"><i class="bi bi-geo-alt me-2"></i> <span id="fournisseurAdresse">—</span></p>
+                        <p class="text-secondary mb-0" id="fournisseurNifRow"><i class="bi bi-tag me-2"></i> <span id="fournisseurNif">—</span></p>
                     </div>
                 </div>
                 <div class="card adminuiux-card border-0 shadow-sm">
@@ -621,13 +623,13 @@ setTimeout(function () {
             <div class="col-lg-8">
                 <div class="row g-3 mb-4">
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">Commandes</p><h4 class="mb-0">18</h4></div></div></div>
+                        <p class="small text-secondary mb-1">Commandes</p><h4 class="mb-0" id="statCommandes">—</h4></div></div></div>
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">Total achats</p><h4 class="mb-0">12,48M</h4></div></div></div>
+                        <p class="small text-secondary mb-1">Total achats</p><h4 class="mb-0" id="statAchats">—</h4></div></div></div>
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">En cours</p><h4 class="mb-0">2</h4></div></div></div>
+                        <p class="small text-secondary mb-1">En cours</p><h4 class="mb-0" id="statEnCours">—</h4></div></div></div>
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">Dernière commande</p><h4 class="mb-0 fs-6 pt-2">16/09/2026</h4></div></div></div>
+                        <p class="small text-secondary mb-1">Dernière commande</p><h4 class="mb-0 fs-6 pt-2" id="statDerniere">—</h4></div></div></div>
                 </div>
 
                 <div class="card adminuiux-card border-0 shadow-sm mb-4">
@@ -635,10 +637,8 @@ setTimeout(function () {
                         <h6 class="mb-3">Historique des commandes</h6>
                         <div class="table-responsive"><table class="table adminuiux-table align-middle mb-0">
                             <thead><tr><th>N° commande</th><th>Date</th><th class="text-end">Montant</th><th>Statut</th></tr></thead>
-                            <tbody>
-                                <tr><td><a href="gesco-approvisionnement-commandes.html">CF-2026-0092</a></td><td class="small">16/09/2026</td><td class="text-end fw-medium">1 540 000 FCFA</td><td><span class="badge badge-light text-bg-theme-1">Envoyée</span></td></tr>
-                                <tr><td><a href="gesco-approvisionnement-commandes.html">CF-2026-0091</a></td><td class="small">14/09/2026</td><td class="text-end fw-medium">4 180 000 FCFA</td><td><span class="badge badge-light text-bg-warning">Partiellement reçue</span></td></tr>
-                                <tr><td><a href="gesco-approvisionnement-commandes.html">CF-2026-0078</a></td><td class="small">02/08/2026</td><td class="text-end fw-medium">2 960 000 FCFA</td><td><span class="badge badge-light text-bg-success">Reçue</span></td></tr>
+                            <tbody id="commandesFournisseur-tbody">
+                                <tr><td colspan="4" class="text-center text-secondary py-4">Chargement…</td></tr>
                             </tbody>
                         </table></div>
                     </div>
@@ -648,11 +648,9 @@ setTimeout(function () {
                     <div class="card-body">
                         <h6 class="mb-3">Produits fournis</h6>
                         <div class="table-responsive"><table class="table adminuiux-table align-middle mb-0">
-                            <thead><tr><th>Produit</th><th class="text-end">Dernier prix d'achat</th></tr></thead>
-                            <tbody>
-                                <tr><td class="small">Ordinateur portable HP 250 G9</td><td class="text-end small">385 000 FCFA</td></tr>
-                                <tr><td class="small">SSD Kingston A400 480 Go</td><td class="text-end small">29 000 FCFA</td></tr>
-                                <tr><td class="small">Onduleur 650VA Infosec</td><td class="text-end small">49 000 FCFA</td></tr>
+                            <thead><tr><th>Produit</th><th class="text-center">Quantité commandée</th><th class="text-end">Dernier prix d'achat</th></tr></thead>
+                            <tbody id="produitsFournisseur-tbody">
+                                <tr><td colspan="3" class="text-center text-secondary py-4">Chargement…</td></tr>
                             </tbody>
                         </table></div>
                     </div>
@@ -1046,12 +1044,76 @@ setTimeout(function () {
         </div>
     </div>
 </footer>
+<!-- Modale de modification du fournisseur -->
+<div class="modal fade" id="modalFournisseur" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="formFournisseur" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title">Modifier le fournisseur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="fournisseurFormError" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="fournisseur-nom">Nom <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="fournisseur-nom" maxlength="150" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="fournisseur-tel">Téléphone</label>
+                            <input type="tel" class="form-control" id="fournisseur-tel" maxlength="30">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="fournisseur-email">E-mail</label>
+                            <input type="email" class="form-control" id="fournisseur-email" maxlength="150">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="fournisseur-adresse">Adresse</label>
+                            <textarea class="form-control" id="fournisseur-adresse" rows="2"></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="fournisseur-nif">NIF</label>
+                            <input type="text" class="form-control" id="fournisseur-nif" maxlength="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-theme" id="btnSaveFournisseur">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation de suppression -->
+<div class="modal fade" id="modalConfirmDeleteFournisseur" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Supprimer le fournisseur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="modalDeleteFournisseurText">Êtes-vous sûr de vouloir supprimer ce fournisseur ?</p>
+                <p class="small text-danger mb-0 mt-2" id="modalDeleteFournisseurWarning">Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDeleteFournisseur">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Page Level js -->
 
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
         <script src="assets/js/role-guard.js"></script>
         <script src="assets/js/auth-guard.js"></script>
+    <script src="assets/js/gesco-fournisseur-detail.js"></script>
 </body>
 
 

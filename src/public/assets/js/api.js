@@ -394,6 +394,14 @@ async function getFactures(status) {
     return request('/fournisseurs');
   }
 
+  async function getFournisseur(id) {
+    return request(`/fournisseurs/${id}`);
+  }
+
+  async function getFournisseurStats(id) {
+    return request(`/fournisseurs/${id}/stats`);
+  }
+
   async function createFournisseur(data) {
     return request('/fournisseurs', { method: 'POST', body: JSON.stringify(data) });
   }
@@ -601,6 +609,8 @@ async function getFactures(status) {
     closeInventory,
     deleteInventory,
     getFournisseurs,
+    getFournisseur,
+    getFournisseurStats,
     createFournisseur,
     updateFournisseur,
     deleteFournisseur,

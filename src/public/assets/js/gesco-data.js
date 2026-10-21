@@ -213,24 +213,16 @@
       tables: [],
     },
     "gesco-approvisionnement-fournisseurs.html": {
-      tables: [{ load: api.getFournisseurs, columns: [["Fournisseur", "nom"], ["Téléphone", "tel"], ["E-mail", "email"], ["Adresse", "adresse"], ["NIF", "nif"]] }],
+      // La liste est rendue par gesco-fournisseurs.js, qui ajoute les
+      // boutons Consulter / Modifier / Supprimer dans la colonne Actions.
+      tables: [],
       create: "fournisseur",
     },
     "gesco-approvisionnement-fournisseur-detail.html": {
-      tables: [
-        { load: async () => {
-          const id = findId();
-          if (!id) return [];
-          const supplierId = Number(id);
-          return list(await api.getCommandes()).filter((row) => row.idFournisseur === supplierId);
-        }, columns: [["N° commande", "reference"], ["Date", "dateCommande", "date"], ["Montant", "montantTotal", "money"], ["Statut", "statut"]] },
-        { load: async () => {
-          const id = findId();
-          if (!id) return [];
-          const supplierId = Number(id);
-          return list(await api.getStocks()).filter((row) => row.idFournisseur === supplierId);
-        }, columns: [["Produit", "designation"], ["Prix d'achat", "prixAchat", "money"], ["Stock", "stock"]] },
-      ],
+      // La fiche fournisseur est rendue par son propre script
+      // (gesco-fournisseur-detail.js) : il affiche les commandes du fournisseur
+      // avec leurs statuts et les produits commandés via /api/fournisseurs/:id/stats.
+      tables: [],
     },
     "gesco-stock-produit-detail.html": {
       tables: [

@@ -1236,6 +1236,69 @@ setTimeout(function () {
         </div>
     </div>
 </footer>
+<!-- Modification d'un fournisseur -->
+<div class="modal fade" id="modalFournisseur" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="formFournisseur" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title">Modifier le fournisseur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="fournisseurFormError" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="fournisseur-nom">Nom <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="fournisseur-nom" maxlength="150" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="fournisseur-tel">Téléphone</label>
+                            <input type="tel" class="form-control" id="fournisseur-tel" maxlength="30">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="fournisseur-email">E-mail</label>
+                            <input type="email" class="form-control" id="fournisseur-email" maxlength="150">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="fournisseur-adresse">Adresse</label>
+                            <textarea class="form-control" id="fournisseur-adresse" rows="2"></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="fournisseur-nif">NIF</label>
+                            <input type="text" class="form-control" id="fournisseur-nif" maxlength="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-theme" id="btnSaveFournisseur">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation de suppression -->
+<div class="modal fade" id="modalConfirmDeleteFournisseur" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Supprimer le fournisseur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="modalDeleteFournisseurText">Êtes-vous sûr de vouloir supprimer ce fournisseur ?</p>
+                <p class="small text-danger mb-0 mt-2">Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDeleteFournisseur">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Page Level js -->
 
     <script src="assets/js/api.js"></script>
