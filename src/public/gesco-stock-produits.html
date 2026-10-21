@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -601,10 +595,10 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-boxes"></i></span>
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-boxes"></i></span>
                             <div>
                                 <h6 class="mb-0">Articles</h6>
-                                <p class="small text-secondary mb-0">Références actives</p>
+                                <p class="small text-secondary mb-0">Produits actifs</p>
                             </div>
                         </div>
                         <h3 class="mb-0">3 214</h3>
@@ -615,7 +609,7 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-cash-stack"></i></span>
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-cash-stack"></i></span>
                             <div>
                                 <h6 class="mb-0">Valeur du stock</h6>
                                 <p class="small text-secondary mb-0">Prix d'achat</p>
@@ -671,7 +665,7 @@ setTimeout(function () {
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
-                        <thead><tr><th>Référence</th><th>Désignation</th><th>Catégorie</th><th class="text-end">Prix de vente</th><th class="text-center">Stock</th><th class="text-center">Seuil</th><th>État</th><th class="text-end">Actions</th></tr></thead>
+                        <thead><tr><th>Désignation</th><th>Catégorie</th><th class="text-end">Prix de vente</th><th class="text-center">Stock</th><th class="text-center">Seuil</th><th>État</th><th class="text-end">Actions</th></tr></thead>
                         <tbody>
                             <tr>
                                 <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-1042</a></td>
@@ -1163,7 +1157,9 @@ setTimeout(function () {
 
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

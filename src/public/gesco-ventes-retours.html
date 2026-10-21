@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -593,7 +587,10 @@ setTimeout(function () {
                 </nav>
                 <h4 class="mb-0">Retours & annulations</h4>
             </div>
-            <div class="col-auto"><button class="btn btn-theme"><i class="bi bi-plus-lg"></i> Enregistrer un retour</button></div>
+            <div class="col-auto d-flex gap-2">
+                <button class="btn btn-outline-danger" id="cancel-sale-btn"><i class="bi bi-x-circle"></i> Annuler une vente</button>
+                <button class="btn btn-theme"><i class="bi bi-plus-lg"></i> Enregistrer un retour</button>
+            </div>
         </div>
 
         <div class="row g-3 mb-4">
@@ -601,13 +598,13 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-arrow-counterclockwise"></i></span>
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-arrow-counterclockwise"></i></span>
                             <div>
                                 <h6 class="mb-0">Retours</h6>
                                 <p class="small text-secondary mb-0">Ce mois</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">18</h3>
+                        <h3 class="mb-0">0</h3>
                     </div>
                 </div>
             </div>
@@ -621,7 +618,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Ce mois</p>
                             </div>
                         </div>
-                        <h3 class="mb-0 text-warning">342 000</h3>
+                        <h3 class="mb-0 text-warning">0 FCFA</h3>
                     </div>
                 </div>
             </div>
@@ -635,7 +632,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Ce mois</p>
                             </div>
                         </div>
-                        <h3 class="mb-0 text-danger">6</h3>
+                        <h3 class="mb-0 text-danger">0</h3>
                     </div>
                 </div>
             </div>
@@ -649,7 +646,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">À traiter</p>
                             </div>
                         </div>
-                        <h3 class="mb-0 text-warning">1</h3>
+                        <h3 class="mb-0 text-warning">0</h3>
                     </div>
                 </div>
             </div>
@@ -665,70 +662,18 @@ setTimeout(function () {
                     <div class="col-auto">
                         <div class="input-group">
                             <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" placeholder="N° de retour, vente, client...">
+                            <input type="search" class="form-control" id="returns-search" placeholder="N° retour, vente, motif...">
                         </div>
-                    </div><div class="col-auto"><select class="form-select"><option selected>Tous les statuts</option><option>En attente</option><option>Remboursé</option><option>Échangé</option><option>Traité</option></select></div>
+                    </div><div class="col-auto"><select class="form-select" id="returns-status-filter"><option value="" selected>Tous les statuts</option><option value="en_attente">En attente</option><option value="rembourse">Remboursé</option><option value="echange">Échangé</option><option value="refuse">Refusé</option><option value="annulee">Annulée</option></select></div>
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
-                        <thead><tr><th>Référence</th><th>Date</th><th>Vente</th><th>Client</th><th>Produit</th><th class="text-center">Qté</th><th class="text-end">Montant</th><th>Motif</th><th>Statut</th></tr></thead>
-                        <tbody>
-                            <tr>
-                                <td class="fw-medium">RT-2026-0044</td>
-                                <td class="small">15/09/2026</td>
-                                <td class="small"><a href="gesco-ventes-detail.html">V-3388</a></td>
-                                <td class="small">Amévi Togbé</td>
-                                <td class="small">Onduleur 650VA Infosec</td>
-                                <td class="text-center small">1</td>
-                                <td class="text-end fw-medium">49 000 FCFA</td>
-                                <td class="small text-secondary">Annulation</td>
-                                <td><span class="badge badge-light text-bg-danger">Traité</span></td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">RT-2026-0043</td>
-                                <td class="small">14/09/2026</td>
-                                <td class="small"><a href="gesco-ventes-detail.html">V-3380</a></td>
-                                <td class="small">Client de passage</td>
-                                <td class="small">Rallonge USB 3.0 5m</td>
-                                <td class="text-center small">1</td>
-                                <td class="text-end fw-medium">6 500 FCFA</td>
-                                <td class="small text-secondary">Retour produit</td>
-                                <td><span class="badge badge-light text-bg-success">Remboursé</span></td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">RT-2026-0042</td>
-                                <td class="small">11/09/2026</td>
-                                <td class="small"><a href="gesco-ventes-detail.html">V-3361</a></td>
-                                <td class="small">Bureau Moderne SARL</td>
-                                <td class="small">Clavier mécanique Redragon K552</td>
-                                <td class="text-center small">2</td>
-                                <td class="text-end fw-medium">57 000 FCFA</td>
-                                <td class="small text-secondary">Produit défectueux</td>
-                                <td><span class="badge badge-light text-bg-success">Échangé</span></td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">RT-2026-0041</td>
-                                <td class="small">08/09/2026</td>
-                                <td class="small"><a href="gesco-ventes-detail.html">V-3340</a></td>
-                                <td class="small">Client de passage</td>
-                                <td class="small">Chargeur USB-C 65W</td>
-                                <td class="text-center small">1</td>
-                                <td class="text-end fw-medium">9 500 FCFA</td>
-                                <td class="small text-secondary">Retour produit</td>
-                                <td><span class="badge badge-light text-bg-warning">En attente</span></td>
-                            </tr></tbody>
+                        <thead><tr><th>Type</th><th>Référence</th><th>Date</th><th>Vente</th><th>Motif</th><th class="text-end">Montant</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+                        <tbody></tbody>
                     </table>
                 </div>
                 <div class="row gx-3 align-items-center mt-3">
-                    <div class="col"><p class="small text-secondary mb-0">Affichage de 1 à 4 sur 18 retours</p></div>
-                    <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
-                        </ul></nav>
-                    </div>
+                    <div class="col"><p class="small text-secondary mb-0" id="returns-result-count">Chargement…</p></div>
                 </div>
             </div>
         </div>
@@ -1013,7 +958,9 @@ setTimeout(function () {
 
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

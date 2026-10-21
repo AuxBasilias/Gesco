@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <!-- Required meta tags  -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>GESCO — Accès refusé | SOLUTECH</title>
+    <meta name="description" content="Gesco. Logiciel de gestion de boutique">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Poppins:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --adminuiux-content-font: "Open Sans", serif;
+            --adminuiux-content-font-weight: 400;
+            --adminuiux-title-font: "Poppins", serif;
+            --adminuiux-title-font-weight: 600;
+        }
+    </style>
+<script defer src="assets/js/app13a2.js?5242d2f600103545528d"></script><link href="assets/css/app13a2.css?5242d2f600103545528d" rel="stylesheet"><link href="assets/css/solutech-theme.css" rel="stylesheet"><script>
+setTimeout(function () {
+    var loader = document.querySelector('.pageloader');
+    if (loader && loader.style.display !== 'none') { loader.style.display = 'none'; }
+}, 2500);
+</script>
+</head>
+
+    <body class="main-bg main-bg-opac main-bg-blur roundedui adminuiux-header-standard adminuiux-sidebar-standard adminuiux-mobile-footer-fill-theme adminuiux-header-transparent theme-pista bg-r-gradient adminuiux-sidebar-fill-none scrollup" data-theme="theme-pista" data-sidebarfill="adminuiux-sidebar-fill-none" data-bs-spy="scroll" data-bs-target="#list-example" data-bs-smooth-scroll="true" tabindex="0" data-sidebarlayout="adminuiux-sidebar-standard"
+        data-headerlayout="adminuiux-header-standard" data-headerfill="adminuiux-header-transparent" data-bggradient="bg-r-gradient">
+        <!-- Pageloader -->
+<div class="pageloader">
+    <div class="container h-100">
+        <div class="row justify-content-center align-items-center text-center h-100 pb-ios">
+            <div class="col-12 mb-auto pt-4"></div>
+            <div class="col-auto">
+                <img src="assets/img/logo.svg" alt="" class="height-80 mb-3">
+                <p class="h2 mb-0 text-theme-accent-1">SOLUTECH</p>
+                <p class="display-3 text-theme-1 fw-bold mb-4">GESCO</p>
+                <div class="loader12 mb-2 mx-auto"></div>
+            </div>
+            <div class="col-12 mt-auto pb-4">
+                <p class="small text-secondary">Veuillez patienter, préparation en cours...</p>
+            </div>
+        </div>
+    </div>
+</div> <!-- main content -->
+                <div class="adminuiux-wrap z-index-0 position-relative">
+                    <main class="adminuiux-content">
+                        <div class="container mt-2" id="main-content">
+                            <div class="card adminuiux-card position-relative overflow-hidden mb-3" style="background:#070506;">
+                                <div class="position-absolute top-0 start-0 w-100 h-100">
+                                    <video muted autoplay loop playsinline class="h-100 w-100" style="object-fit:cover;">
+                                        <source src="assets/img/ecommerce/video-5.mp4" type="video/mp4">
+                                    </video>
+                                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background:linear-gradient(160deg, rgba(1,54,136,.82) 0%, rgba(7,5,6,.72) 55%, rgba(193,1,8,.55) 100%);"></div>
+                                </div>
+
+                                <div class="card-body z-index-1 position-relative d-flex align-items-center justify-content-center height-dynamic" style="--h-dynamic: calc(100vh - 100px)">
+                                    <div class="w-100 py-5" style="max-width:440px;">
+                                        <div class="bg-white rounded-4 shadow-lg p-4 p-md-5 text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-2 mb-4">
+                                                <img src="assets/img/logo.svg" alt="Solutech" style="width:38px;height:38px;">
+                                                <div class="text-start">
+                                                    <span class="h5 mb-0 d-block">GESCO</span>
+                                                    <p class="small text-secondary mb-0">SOLUTECH Innovation Group</p>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <span class="display-6 text-theme-1"><i class="bi bi-shield-lock"></i></span>
+                                            </div>
+                                            <h1 class="fw-bold mb-2 text-dark">Accès refusé</h1>
+                                            <p class="text-secondary mb-1" id="error-reason">Vous n'êtes pas connecté ou votre session a expiré.</p>
+                                            <p class="text-secondary small mb-4">Veuillez vous identifier pour accéder à l'application GESCO.</p>
+                                            <a href="index.html" class="btn btn-lg btn-theme w-100 mb-3">Se connecter <i class="bi bi-arrow-right"></i></a>
+                                            <p class="text-secondary text-center small mb-0">Accès réservé au personnel SOLUTECH.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+
+                <!-- Option JS -->
+                <script src="assets/js/app.js"></script>
+                <script>
+                (function () {
+                    var reason = document.getElementById("error-reason");
+                    try {
+                        if (sessionStorage.getItem("gesco_login_required") === "1") {
+                            sessionStorage.removeItem("gesco_login_required");
+                            if (reason) reason.textContent = "Vous n'êtes pas connecté ou votre session a expiré.";
+                        } else if (reason) {
+                            reason.textContent = "Cette page est réservée aux utilisateurs connectés.";
+                        }
+                    } catch (e) {}
+                    // Si l'utilisateur a un token valide, retour au tableau de bord
+                    var token = null;
+                    try {
+                        token = sessionStorage.getItem("tt_token") || localStorage.getItem("token");
+                    } catch (e) {}
+                    if (token) {
+                        try {
+                            var parts = token.split(".");
+                            var payload = parts.length === 3 ? JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) : null;
+                            if (payload && (!payload.exp || payload.exp * 1000 > Date.now())) {
+                                window.location.replace("gesco-dashboard.html");
+                            }
+                        } catch (e) {}
+                    }
+                })();
+                </script>
+</body>
+
+</html>

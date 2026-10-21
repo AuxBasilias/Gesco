@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -593,7 +587,9 @@ setTimeout(function () {
                 </nav>
                 <h4 class="mb-0">Paiements & impayés</h4>
             </div>
-            <div class="col-auto"><button class="btn btn-theme"><i class="bi bi-plus-lg"></i> Enregistrer un paiement</button></div>
+            <div class="col-auto">
+                <button class="btn btn-theme" type="button" id="btn-nouveau-paiement"><i class="bi bi-plus-lg"></i> Enregistrer un paiement</button>
+            </div>
         </div>
 
         <div class="row g-3 mb-4">
@@ -601,13 +597,13 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-cash-coin"></i></span>
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-cash-coin"></i></span>
                             <div>
                                 <h6 class="mb-0">Encaissé</h6>
-                                <p class="small text-secondary mb-0">Ce mois</p>
+                                <p class="small text-secondary mb-0" id="stat-periode">Ce mois</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">7,26M</h3>
+                        <h3 class="mb-0" id="stat-encaisse">—</h3>
                     </div>
                 </div>
             </div>
@@ -615,13 +611,13 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-credit-card"></i></span>
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-credit-card"></i></span>
                             <div>
                                 <h6 class="mb-0">Paiements</h6>
-                                <p class="small text-secondary mb-0">Ce mois</p>
+                                <p class="small text-secondary mb-0" id="stat-paiements-detail">Ce mois</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">128</h3>
+                        <h3 class="mb-0" id="stat-paiements">—</h3>
                     </div>
                 </div>
             </div>
@@ -632,10 +628,10 @@ setTimeout(function () {
                             <span class="avatar avatar-40 rounded text-danger d-flex align-items-center justify-content-center" style="background:color-mix(in oklab, var(--bs-danger) 12%, transparent);"><i class="bi bi-exclamation-triangle"></i></span>
                             <div>
                                 <h6 class="mb-0">Total impayé</h6>
-                                <p class="small text-secondary mb-0">3 factures</p>
+                                <p class="small text-secondary mb-0" id="stat-impayes-detail">—</p>
                             </div>
                         </div>
-                        <h3 class="mb-0 text-danger">745 000</h3>
+                        <h3 class="mb-0 text-danger" id="stat-impayes">—</h3>
                     </div>
                 </div>
             </div>
@@ -646,10 +642,10 @@ setTimeout(function () {
                             <span class="avatar avatar-40 rounded text-danger d-flex align-items-center justify-content-center" style="background:color-mix(in oklab, var(--bs-danger) 12%, transparent);"><i class="bi bi-clock-history"></i></span>
                             <div>
                                 <h6 class="mb-0">En retard</h6>
-                                <p class="small text-secondary mb-0">Échéance dépassée</p>
+                                <p class="small text-secondary mb-0" id="stat-retard-detail">Échéance dépassée</p>
                             </div>
                         </div>
-                        <h3 class="mb-0 text-danger">240 000</h3>
+                        <h3 class="mb-0 text-danger" id="stat-retard">—</h3>
                     </div>
                 </div>
             </div>
@@ -665,111 +661,164 @@ setTimeout(function () {
                     <div class="col-auto">
                         <div class="input-group">
                             <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" placeholder="N° facture, client...">
+                            <input type="search" id="paiements-recherche" class="form-control" placeholder="N° paiement, facture, client..." aria-label="Rechercher un paiement">
                         </div>
-                    </div><div class="col-auto"><select class="form-select"><option selected>Tous les modes</option><option>Espèces</option><option>Mobile Money</option><option>Carte</option><option>Virement</option><option>Chèque</option></select></div>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="paiements-mode" aria-label="Filtrer par mode de paiement">
+                            <option value="">Tous les modes</option>
+                            <option value="especes">Espèces</option>
+                            <option value="mobile_money">Mobile Money</option>
+                            <option value="carte">Carte</option>
+                            <option value="virement">Virement</option>
+                            <option value="cheque">Chèque</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
-                        <thead><tr><th>Référence</th><th>Date</th><th>Facture</th><th>Client</th><th class="text-end">Montant</th><th>Mode</th><th>Enregistré par</th></tr></thead>
-                        <tbody>
+                        <thead><tr><th>Référence</th><th>Date</th><th>Facture</th><th>Client</th><th class="text-end">Montant</th><th>Mode</th><th>Enregistré par</th><th class="text-end">Action</th></tr></thead>
+                        <tbody id="paiements-corps">
                             <tr>
-                                <td class="fw-medium">PM-2026-0312</td>
-                                <td class="small">16/09/2026</td>
-                                <td class="small"><a href="gesco-facturation-detail.html">FA-2026/0159</a></td>
-                                <td class="small">Ets Kponou</td>
-                                <td class="text-end fw-medium text-success">+77 500 FCFA</td>
-                                <td class="small">Espèces</td>
-                                <td class="small text-secondary">Aïcha Koffi</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">PM-2026-0311</td>
-                                <td class="small">15/09/2026</td>
-                                <td class="small"><a href="gesco-facturation-detail.html">FA-2026/0157</a></td>
-                                <td class="small">Bureau Moderne SARL</td>
-                                <td class="text-end fw-medium text-success">+312 000 FCFA</td>
-                                <td class="small">Carte</td>
-                                <td class="small text-secondary">Kodjo Amegan</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">PM-2026-0310</td>
-                                <td class="small">12/09/2026</td>
-                                <td class="small"><a href="gesco-facturation-detail.html">FA-2026/0155</a></td>
-                                <td class="small">Pharmacie du Lac</td>
-                                <td class="text-end fw-medium text-success">+742 000 FCFA</td>
-                                <td class="small">Virement</td>
-                                <td class="small text-secondary">Yao Mensah</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">PM-2026-0309</td>
-                                <td class="small">10/09/2026</td>
-                                <td class="small"><a href="gesco-facturation-detail.html">FA-2026/0158</a></td>
-                                <td class="small">Ets Kponou</td>
-                                <td class="text-end fw-medium text-success">+1 042 900 FCFA</td>
-                                <td class="small">Virement</td>
-                                <td class="small text-secondary">Yao Mensah</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">PM-2026-0308</td>
-                                <td class="small">08/09/2026</td>
-                                <td class="small"><a href="gesco-facturation-detail.html">FA-2026/0154</a></td>
-                                <td class="small">Cabinet Sogbossi</td>
-                                <td class="text-end fw-medium text-success">+96 000 FCFA</td>
-                                <td class="small">Mobile Money</td>
-                                <td class="small text-secondary">Aïcha Koffi</td>
-                            </tr></tbody>
-                    </table>
-                </div>
-                <h6 class="mb-1 mt-4">Impayés à relancer</h6>
-                <p class="small text-secondary mb-3">Factures échues ou partiellement réglées</p>
-                <div class="table-responsive">
-                    <table class="table adminuiux-table align-middle">
-                        <thead><tr>
-                            <th>Facture</th><th>Client</th><th class="text-end">Solde dû</th><th>Échéance</th><th>Retard</th><th class="text-end">Action</th>
-                        </tr></thead>
-                        <tbody>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0158</a></td>
-                                <td class="small">Ets Kponou</td>
-                                <td class="text-end fw-medium text-danger">320 000 FCFA</td>
-                                <td class="small">25/09/2026</td>
-                                <td><span class="badge badge-light text-bg-warning">À échoir</span></td>
-                                <td class="text-end"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-send"></i> Relancer</button></td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0156</a></td>
-                                <td class="small">Cabinet Sogbossi</td>
-                                <td class="text-end fw-medium text-danger">185 000 FCFA</td>
-                                <td class="small">30/09/2026</td>
-                                <td><span class="badge badge-light text-bg-warning">À échoir</span></td>
-                                <td class="text-end"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-send"></i> Relancer</button></td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0141</a></td>
-                                <td class="small">Ets Amouzou</td>
-                                <td class="text-end fw-medium text-danger">240 000 FCFA</td>
-                                <td class="small">31/08/2026</td>
-                                <td><span class="badge badge-light text-bg-danger">16 jours</span></td>
-                                <td class="text-end"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-send"></i> Relancer</button></td>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement des paiements...</span></div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="row gx-3 align-items-center mt-3">
-                    <div class="col"><p class="small text-secondary mb-0">Affichage de 1 à 5 sur 128 paiements</p></div>
-                    <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
-                        </ul></nav>
-                    </div>
+                    <div class="col"><p class="small text-secondary mb-0" id="paiements-compteur"></p></div>
+                </div>
+
+                <h6 class="mb-1 mt-4">Impayés à relancer</h6>
+                <p class="small text-secondary mb-3">Factures émises dont le solde n'est pas encore soldé</p>
+                <div class="table-responsive">
+                    <table class="table adminuiux-table align-middle">
+                        <thead><tr>
+                            <th>Facture</th><th>Client</th><th class="text-end">Solde dû</th><th>Échéance</th><th>Retard</th><th class="text-end">Action</th>
+                        </tr></thead>
+                        <tbody id="impayes-corps">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement des impayés...</span></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="row gx-3 align-items-center mt-3">
+                    <div class="col"><p class="small text-secondary mb-0" id="impayes-compteur"></p></div>
                 </div>
             </div>
         </div>
     </div>
 </main>
+
+<!-- Modal d'encaissement -->
+<div class="modal fade" id="paiementModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title mb-0">Enregistrer un paiement</h5>
+                    <p class="small text-secondary mb-0" id="paiement-sous-titre">Sélectionnez la facture concernée</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="paiement-alerte" role="alert"></div>
+                <div class="mb-3">
+                    <label class="form-label" for="paiement-facture">Facture concernée <span class="text-danger">*</span></label>
+                    <select class="form-select" id="paiement-facture" required>
+                        <option value="">Chargement des factures...</option>
+                    </select>
+                    <p class="small text-secondary mb-0 mt-1 d-none" id="paiement-solde-aide"></p>
+                </div>
+                <div class="row gx-3">
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label" for="paiement-montant">Montant <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" min="0" step="0.01" class="form-control" id="paiement-montant" placeholder="0">
+                            <span class="input-group-text">FCFA</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label" for="paiement-mode">Mode de paiement <span class="text-danger">*</span></label>
+                        <select class="form-select" id="paiement-mode">
+                            <option value="especes">Espèces</option>
+                            <option value="mobile_money">Mobile Money</option>
+                            <option value="carte">Carte bancaire</option>
+                            <option value="virement">Virement</option>
+                            <option value="cheque">Chèque</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="small text-secondary d-none" id="paiement-caisse-info"></p>
+                <div class="mb-0">
+                    <label class="form-label" for="paiement-notes">Note</label>
+                    <input type="text" class="form-control" id="paiement-notes" placeholder="Référence du chèque, commentaire...">
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-theme" id="paiement-enregistrer">Enregistrer le paiement</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'annulation (contrepassation) -->
+<div class="modal fade" id="annulationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title mb-0">Annuler un paiement</h5>
+                    <p class="small text-secondary mb-0" id="annulation-sous-titre"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="annulation-alerte" role="alert"></div>
+                <div class="alert alert-warning small" role="alert">
+                    <i class="bi bi-info-circle"></i> Le paiement n'est pas supprimé : une contre-écriture négative sera enregistrée pour préserver l'historique comptable.
+                </div>
+                <label class="form-label" for="annulation-motif">Motif de l'annulation <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="annulation-motif" rows="3" placeholder="Ex. encaissement erroné, chèque impayé..."></textarea>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="annulation-confirmer">Confirmer l'annulation</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de relance -->
+<div class="modal fade" id="relanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title mb-0">Relancer un client</h5>
+                    <p class="small text-secondary mb-0" id="relance-sous-titre"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="relance-alerte" role="alert"></div>
+                <p class="small text-secondary">Un e-mail de rappel sera envoyé à l'adresse du client avec le solde restant dû.</p>
+                <label class="form-label" for="relance-message">Message complémentaire (facultatif)</label>
+                <textarea class="form-control" id="relance-message" rows="3" placeholder="Ex. Nous vous remercions de régulariser sous 8 jours..."></textarea>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-theme" id="relance-envoyer"><i class="bi bi-send"></i> Envoyer la relance</button>
+            </div>
+        </div>
+    </div>
+</div>
 
                 </div>
                 <!-- View Order details -->
@@ -1163,8 +1212,11 @@ setTimeout(function () {
 <!-- Page Level js -->
 
     <script src="assets/js/api.js"></script>
+    <script src="assets/js/paiements.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

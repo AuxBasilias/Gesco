@@ -144,7 +144,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -522,12 +522,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -548,12 +548,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -572,7 +566,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -611,7 +605,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Fiches enregistrées</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">248</h3>
+                        <h3 class="mb-0" id="stat-clients">0</h3>
                     </div>
                 </div>
             </div>
@@ -625,7 +619,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Facturation NIF</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">37</h3>
+                        <h3 class="mb-0" id="stat-entreprises">0</h3>
                     </div>
                 </div>
             </div>
@@ -639,7 +633,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Au moins un achat</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">64</h3>
+                        <h3 class="mb-0" id="stat-actifs">0</h3>
                     </div>
                 </div>
             </div>
@@ -650,10 +644,10 @@ setTimeout(function () {
                             <span class="avatar avatar-40 rounded text-danger d-flex align-items-center justify-content-center" style="background:color-mix(in oklab, var(--bs-danger) 12%, transparent);"><i class="bi bi-exclamation-triangle"></i></span>
                             <div>
                                 <h6 class="mb-0">Soldes dus</h6>
-                                <p class="small text-secondary mb-0">4 clients concernés</p>
+                                <p class="small text-secondary mb-0" id="stat-soldes-detail">Aucun client concerné</p>
                             </div>
                         </div>
-                        <h3 class="mb-0 text-danger">845 000 <span class="h6">FCFA</span></h3>
+                        <h3 class="mb-0 text-danger"><span id="stat-soldes">0</span> <span class="h6">FCFA</span></h3>
                     </div>
                 </div>
             </div>
@@ -665,20 +659,20 @@ setTimeout(function () {
                 <div class="row gx-3 align-items-center mb-3">
                     <div class="col">
                         <h6 class="mb-0">Tous les clients</h6>
-                        <p class="small text-secondary mb-0">248 fiches — 4 avec un solde à régler</p>
+                        <p class="small text-secondary mb-0" id="clients-subtitle">Chargement…</p>
                     </div>
                     <div class="col-auto">
                         <div class="input-group">
                             <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" placeholder="Rechercher un client...">
+                            <input type="search" class="form-control" id="clients-search" placeholder="Rechercher un client...">
                         </div>
                     </div>
                     <div class="col-auto">
-                        <select class="form-select">
-                            <option selected>Tous</option>
-                            <option>Entreprises</option>
-                            <option>Particuliers</option>
-                            <option>Avec solde dû</option>
+                        <select class="form-select" id="clients-type-filter">
+                            <option value="" selected>Tous</option>
+                            <option value="entreprise">Entreprises</option>
+                            <option value="particulier">Particuliers</option>
+                            <option value="solde">Avec solde dû</option>
                         </select>
                     </div>
                 </div>
@@ -696,30 +690,13 @@ setTimeout(function () {
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="clients-container">
-                            <div ></div>
-                            <tr >
-                                
-                            </tr>
-                            
-                        </tbody>
+                        <tbody id="clients-container"></tbody>
                     </table>
                 </div>
 
                 <div class="row gx-3 align-items-center mt-3">
                     <div class="col">
-                        <p class="small text-secondary mb-0">Affichage de 1 à 6 sur 248 clients</p>
-                    </div>
-                    <div class="col-auto">
-                        <nav>
-                            <ul class="pagination mb-0">
-                                <li class="page-item disabled"><a class="page-link" href="#">«</a></li>
-                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                <li class="page-item"><a class="page-link" href="#">»</a></li>
-                            </ul>
-                        </nav>
+                        <p class="small text-secondary mb-0" id="clients-count"></p>
                     </div>
                 </div>
             </div>
@@ -1309,7 +1286,29 @@ setTimeout(function () {
         <script src="assets/js/clients/clients.js"></script>      
 
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+
+<div class="modal fade" id="modalConfirmDeleteClient" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer le client</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0" id="modalDeleteClientText">Êtes-vous sûr de vouloir supprimer ce client ?</p>
+        <p class="small text-danger mb-0 mt-2">Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmDeleteClient">Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
 
 
 </html>

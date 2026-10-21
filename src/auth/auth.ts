@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { Request, RequestHandler, Response } from "express";
 import bcrypt from "bcrypt";
 import { utilisateursTable } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db/db";
 
 const SECRET: string = process.env.JWT_SECRET ?? "";
@@ -42,7 +42,8 @@ export async function login(
     const token = jwt.sign(
       {
         id: utilisateur.id,
-        role: utilisateur.role
+        role: utilisateur.role,
+        tv: utilisateur.tokenVersion ?? 0
       },
       SECRET,
       {
@@ -71,7 +72,19 @@ export async function login(
   }
 }
 
-export function logout() {
+export async function logout(idUtilisateur?: number) {
+  // Révoque tous les tokens émis pour cet utilisateur en incrémentant sa version.
+  if (idUtilisateur && Number.isSafeInteger(idUtilisateur) && idUtilisateur > 0) {
+    try {
+      await db
+        .update(utilisateursTable)
+        .set({ tokenVersion: sql`${utilisateursTable.tokenVersion} + 1`, updatedAt: new Date() })
+        .where(eq(utilisateursTable.id, idUtilisateur));
+    } catch (error) {
+      console.error("Erreur lors de la révocation de session :", error);
+      throw error;
+    }
+  }
   return {
     success: true,
     message: "Logout successful",
@@ -110,9 +123,15 @@ export const authMiddleware: RequestHandler = async (req, res, next) => {
       id: utilisateursTable.id,
       role: utilisateursTable.role,
       actif: utilisateursTable.actif,
+      tokenVersion: utilisateursTable.tokenVersion,
     }).from(utilisateursTable).where(eq(utilisateursTable.id, Number(decoded.id))).limit(1);
     if (!user || !user.actif) {
       res.status(401).json({ message: "Compte introuvable ou désactivé." });
+      return;
+    }
+    const tokenVersion = Number((decoded as jwt.JwtPayload).tv ?? 0);
+    if (tokenVersion !== (user.tokenVersion ?? 0)) {
+      res.status(401).json({ message: "Session expirée. Reconnectez-vous." });
       return;
     }
     (req as Request & { user?: { id: number; role: string } }).user = {

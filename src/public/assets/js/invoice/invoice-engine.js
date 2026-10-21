@@ -45,12 +45,13 @@ function documentDataFromInvoice(invoice, client, settings, products) {
   return {
     invoiceNumber: invoice.reference || '',
     invoiceDate: invoiceDate(invoice.dateFacture),
-    followedBy: document.followedBy || 'Frédéric BANQUE',
-    phone: document.phone || settings?.telephone || '',
-    email: document.email || settings?.email || '',
+    followedBy: document.followedBy || 'M. BANQUE',
+    phone: document.phone || '90 45 51 05',
+    email: document.email || 'fredbank@solutechtic.com',
     client: {
       id: client?.id ?? invoice.idClient ?? '',
       name: client?.nom || document.clientName || (invoice.idClient ? `Client ${invoice.idClient}` : 'Client comptoir'),
+      email: document.clientEmail ?? client?.email ?? '',
       line1: document.clientLine1 ?? client?.adresse ?? '',
       line2: document.clientLine2 || '',
       line3: document.clientLine3 ?? client?.ville ?? ''
@@ -67,7 +68,6 @@ function documentDataFromInvoice(invoice, client, settings, products) {
         : 0;
       return {
         idProduit: line.idProduit,
-        reference: product?.numeroSerie || product?.codeBarres || '',
         qty: Number(line.quantite),
         description: [line.designation],
         unitPrice: Number(line.prixUnitaire),
@@ -77,7 +77,7 @@ function documentDataFromInvoice(invoice, client, settings, products) {
     conditions: {
       validity: document.validity || '',
       deliveryTime: document.deliveryTime || '',
-      paymentCondition: document.paymentCondition || '',
+      paymentCondition: document.paymentCondition || "60% à l'accordai et 40% à la livraison",
       guarantee: document.guarantee || '',
       amountWords: document.amountWords || ''
     }
@@ -362,6 +362,7 @@ function renderInvoice() {
             <div class="client-row">
               <span class="c-label">Client:</span>&nbsp;<span class="c-name">${escapeHtml(currentInvoice.client.name)}</span>
             </div>
+            <div class="client-row client-email">${currentInvoice.client.email ? '<a href="mailto:' + escapeHtml(currentInvoice.client.email) + '" class="client-email-val">' + escapeHtml(currentInvoice.client.email) + '</a>' : ''}</div>
             <div class="client-row">${escapeHtml(currentInvoice.client.line1 || '')}</div>
             <div class="client-row">${escapeHtml(currentInvoice.client.line2 || '')}</div>
             <div class="client-row client-location">${currentInvoice.client.line3 ? '<u>' + escapeHtml(currentInvoice.client.line3) + '</u>' : ''}</div>
@@ -432,7 +433,7 @@ function renderInvoice() {
       
       tableRowsHtml += `
         <tr>
-          <td style="height:${rowHeightMm}mm"><div class="cell-pad-center">${escapeHtml(item.reference || '')}</div></td>
+          <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"></div></td>
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"><b>${qty > 0 ? qty : ''}</b></div></td>
           <td style="height:${rowHeightMm}mm">
             ${(itemIdx === 0 && isFirstPage) ? bannerHtml : ''}
@@ -457,7 +458,8 @@ function renderInvoice() {
       const fh = fillerMm.toFixed(2);
       tableRowsHtml += `
         <tr>
-          <td style="height:${fh}mm"></td><td style="height:${fh}mm"></td>
+          <td style="height:${fh}mm"></td>
+          <td style="height:${fh}mm"></td>
           <td style="height:${fh}mm">${(pageItems.length === 0) ? bannerHtml : ''}</td>
           <td style="height:${fh}mm"></td><td style="height:${fh}mm"></td><td style="height:${fh}mm"></td>
         </tr>
@@ -467,7 +469,8 @@ function renderInvoice() {
     if (pageItems.length === 0) {
       tableRowsHtml = `
         <tr>
-          <td></td><td></td>
+          <td></td>
+          <td></td>
           <td>${bannerHtml}</td>
           <td></td><td></td><td></td>
         </tr>
@@ -476,7 +479,7 @@ function renderInvoice() {
     
     const tableHtml = `
       <section class="table-section">
-        <table class="items-table">
+        <table class="items-table${pageItems.length === 1 ? " single-row" : ""}">
           <colgroup>
             <col class="col-ref">
             <col class="col-qty">

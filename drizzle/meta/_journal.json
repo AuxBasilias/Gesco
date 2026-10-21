@@ -71,6 +71,69 @@
       "when": 1791561000000,
       "tag": "0009_optional_tva",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791562000000,
+      "tag": "0010_return_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791563000000,
+      "tag": "0011_product_archive",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791564000000,
+      "tag": "0012_user_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791565000000,
+      "tag": "0013_inventaire_responsable",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792468605614,
+      "tag": "0014_paiements_relances",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792555200000,
+      "tag": "0015_remove_product_identifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792558800000,
+      "tag": "0016_user_token_version",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792645200000,
+      "tag": "0017_sale_document_data_and_drop_product_warranty",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792731600000,
+      "tag": "0018_delivery_serials",
+      "breakpoints": true
     }
   ]
 }

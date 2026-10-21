@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <!-- dir="rtl"-->
 
 <head>
@@ -16,7 +16,7 @@
 
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>GESCO — Stock — Inventaires | SOLUTECH</title>
-    <meta name="description" content="Smart Home Gardening Reminder Vehicle IOT App HTML Templates | Bootstrap 5 | UI/UX | Mobile | Admin | Dashboard | Universal App | Build stunning smart IOT Automation apps with our premium templates.">
+    <meta name="description" content="Suivez les inventaires de stock, les comptages physiques et les écarts de produits dans GESCO.">
     <link rel="icon" type="image/png" href="assets/img/favicon.png">
 
     <!-- Fonts -->
@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -593,7 +587,7 @@ setTimeout(function () {
                 </nav>
                 <h4 class="mb-0">Inventaires</h4>
             </div>
-            <div class="col-auto"><button class="btn btn-theme"><i class="bi bi-plus-lg"></i> Nouvel inventaire</button></div>
+            <div class="col-auto"><button class="btn btn-theme" type="button"><i class="bi bi-plus-lg"></i> Nouvel inventaire</button></div>
         </div>
 
         <div class="row g-3 mb-4">
@@ -601,13 +595,13 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-clipboard-check"></i></span>
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-clipboard-check"></i></span>
                             <div>
                                 <h6 class="mb-0">Inventaires</h6>
                                 <p class="small text-secondary mb-0">Cette année</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">5</h3>
+                        <h3 class="mb-0">0</h3>
                     </div>
                 </div>
             </div>
@@ -621,7 +615,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">À terminer</p>
                             </div>
                         </div>
-                        <h3 class="mb-0 text-warning">1</h3>
+                        <h3 class="mb-0 text-warning">0</h3>
                     </div>
                 </div>
             </div>
@@ -629,13 +623,13 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-check2-circle"></i></span>
+                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-check2-circle"></i></span>
                             <div>
-                                <h6 class="mb-0">Dernier validé</h6>
-                                <p class="small text-secondary mb-0">01/09/2026</p>
+                                <h6 class="mb-0">Validés</h6>
+                                <p class="small text-secondary mb-0">Depuis le début</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">12 écarts</h3>
+                        <h3 class="mb-0">0</h3>
                     </div>
                 </div>
             </div>
@@ -643,13 +637,13 @@ setTimeout(function () {
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-calendar-event"></i></span>
+                            <span class="avatar avatar-40 rounded text-danger d-flex align-items-center justify-content-center" style="background:color-mix(in oklab, var(--bs-danger) 14%, transparent);"><i class="bi bi-exclamation-triangle"></i></span>
                             <div>
-                                <h6 class="mb-0">Prochain prévu</h6>
-                                <p class="small text-secondary mb-0">Inventaire général</p>
+                                <h6 class="mb-0">Écarts détectés</h6>
+                                <p class="small text-secondary mb-0">Articles en écart</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">01/10/2026</h3>
+                        <h3 class="mb-0 text-danger">0</h3>
                     </div>
                 </div>
             </div>
@@ -657,94 +651,70 @@ setTimeout(function () {
 
         <div class="card adminuiux-card border-0 shadow-sm">
             <div class="card-body">
-                <div class="row gx-3 align-items-center mb-3">
+                <div class="row gx-3 gy-2 align-items-center mb-3">
                     <div class="col">
                         <h6 class="mb-0">Historique des inventaires</h6>
                         <p class="small text-secondary mb-0">Comptage physique, comparaison au stock théorique, ajustements</p>
                     </div>
-                    <div class="col-auto"><select class="form-select"><option selected>Tous les statuts</option><option>En cours</option><option>Validé</option><option>Annulé</option></select></div>
+                    <div class="col-12 col-md-auto">
+                        <input id="inventaires-recherche" type="search" class="form-control" placeholder="Rechercher un titre..." aria-label="Rechercher un inventaire">
+                    </div>
+                    <div class="col-6 col-md-auto">
+                        <select id="inventaires-statut" class="form-select" aria-label="Filtrer par statut">
+                            <option value="" selected>Tous les statuts</option>
+                            <option value="en_cours">En cours</option>
+                            <option value="termine">Validé</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
-                        <thead><tr><th>Référence</th><th>Date</th><th>Type</th><th>Responsable</th><th class="text-center">Articles comptés</th><th class="text-center">Écarts</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
-                        <tbody>
-                            <tr>
-                                <td class="fw-medium">INV-2026-005</td>
-                                <td class="small">16/09/2026</td>
-                                <td class="small">Inventaire général</td>
-                                <td class="small">Aïcha Koffi</td>
-                                <td class="text-center small">—</td>
-                                <td class="text-center small text-secondary">—</td>
-                                <td><span class="badge badge-light text-bg-warning">En cours</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">INV-2026-004</td>
-                                <td class="small">01/09/2026</td>
-                                <td class="small">Inventaire général</td>
-                                <td class="small">Yao Mensah</td>
-                                <td class="text-center small">3 214</td>
-                                <td class="text-center small text-danger fw-medium">12</td>
-                                <td><span class="badge badge-light text-bg-success">Validé</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">INV-2026-003</td>
-                                <td class="small">01/08/2026</td>
-                                <td class="small">Partiel — Accessoires</td>
-                                <td class="small">Kodjo Amegan</td>
-                                <td class="text-center small">842</td>
-                                <td class="text-center small text-danger fw-medium">5</td>
-                                <td><span class="badge badge-light text-bg-success">Validé</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">INV-2026-002</td>
-                                <td class="small">01/07/2026</td>
-                                <td class="small">Inventaire général</td>
-                                <td class="small">Yao Mensah</td>
-                                <td class="text-center small">3 180</td>
-                                <td class="text-center small text-danger fw-medium">21</td>
-                                <td><span class="badge badge-light text-bg-success">Validé</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="fw-medium">INV-2026-001</td>
-                                <td class="small">05/06/2026</td>
-                                <td class="small">Partiel — Réseau</td>
-                                <td class="small">Aïcha Koffi</td>
-                                <td class="text-center small">410</td>
-                                <td class="text-center small text-secondary">0</td>
-                                <td><span class="badge badge-light text-bg-success">Validé</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></button>
-                                </td>
-                            </tr></tbody>
+                        <thead><tr><th>Référence</th><th>Date</th><th>Responsable</th><th class="text-center">Comptage</th><th class="text-center">Écarts</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+                        <tbody></tbody>
                     </table>
                 </div>
                 <div class="row gx-3 align-items-center mt-3">
-                    <div class="col"><p class="small text-secondary mb-0">5 inventaires enregistrés</p></div>
-                    <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
-                        </ul></nav>
-                    </div>
+                    <div class="col"><p class="small text-secondary mb-0">Chargement…</p></div>
                 </div>
             </div>
         </div>
     </div>
 </main>
+
+<div class="modal fade" id="inventaireComptage" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div>
+                    <h5 class="modal-title mb-0" id="inventaire-comptage-titre">Comptage d'inventaire</h5>
+                    <p class="small text-secondary mb-0" id="inventaire-comptage-sous-titre"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="inventaire-comptage-alerte" role="alert"></div>
+                <p class="small text-secondary">Saisissez les quantités comptées pour chaque produit, puis enregistrez le comptage ou clôturez l'inventaire pour appliquer les ajustements de stock.</p>
+                <div class="mb-3">
+                    <input id="inventaire-comptage-recherche" type="search" class="form-control" placeholder="Rechercher un produit..." aria-label="Rechercher un produit à compter">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>Produit</th><th class="text-center">Théorique</th><th class="text-center" style="width:130px;">Compté</th><th class="text-center">Écart</th></tr>
+                        </thead>
+                        <tbody id="inventaire-comptage-corps"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-link text-secondary" type="button" data-bs-dismiss="modal">Fermer</button>
+                <p class="small text-secondary mb-0 me-auto" id="inventaire-comptage-aide-cloture"></p>
+                <button class="btn btn-outline-primary" type="button" id="inventaire-comptage-enregistrer">Enregistrer le comptage</button>
+                <button class="btn btn-theme" type="button" id="inventaire-comptage-cloturer">Clôturer l'inventaire</button>
+            </div>
+        </div>
+    </div>
+</div>
 
                 </div>
                 <!-- View Order details -->
@@ -1329,7 +1299,9 @@ setTimeout(function () {
 
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../db/db";
 import { fournisseurs } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 
 export async function getAllFournisseurs(
@@ -11,7 +11,8 @@ export async function getAllFournisseurs(
     try {
         const result = await db
             .select()
-            .from(fournisseurs);
+            .from(fournisseurs)
+            .orderBy(desc(fournisseurs.createdAt), desc(fournisseurs.id));
 
         return res.status(200).json({
             success: true,

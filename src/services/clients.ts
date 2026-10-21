@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/db";
 import { clientsTable } from "../db/schema";
@@ -74,7 +74,7 @@ function erreurClient(res: Response, error: unknown, operation: string) {
 
 export async function getAllClients(_req: Request, res: Response) {
   try {
-    res.status(200).json(await db.select().from(clientsTable));
+    res.status(200).json(await db.select().from(clientsTable).orderBy(desc(clientsTable.createdAt), desc(clientsTable.id)));
   } catch (error) {
     console.error("Erreur récupération clients :", error);
     res.status(500).json({ success: false, message: "Erreur lors de la récupération des clients." });

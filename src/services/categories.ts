@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../db/db";
 import { categories } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 
 export async function getAllCategories(
@@ -11,7 +11,8 @@ export async function getAllCategories(
     try {
         const result = await db
             .select()
-            .from(categories);
+            .from(categories)
+            .orderBy(desc(categories.createdAt), desc(categories.id));
 
         return res.status(200).json({
             success: true,

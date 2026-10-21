@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -593,11 +587,10 @@ setTimeout(function () {
                 </nav>
                 <h4 class="mb-0">Vente V-3392</h4>
             </div>
-            <div class="col-auto d-flex gap-2">
-                <button class="btn btn-outline-secondary"><i class="bi bi-printer"></i> Imprimer le ticket</button>
-                <a href="gesco-facturation-detail.html" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text"></i> Voir la facture</a>
-                <a href="gesco-livraison-detail.html" class="btn btn-outline-secondary"><i class="bi bi-truck"></i> Bon de livraison</a>
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#annulerVente"><i class="bi bi-x-circle"></i> Annuler la vente</button>
+            <div class="col-auto d-flex gap-2 flex-wrap">
+                <a href="gesco-facturation-detail.html" class="btn btn-outline-secondary" id="btn-voir-facture"><i class="bi bi-file-earmark-text"></i> Voir la facture</a>
+                <button type="button" class="btn btn-outline-secondary" id="btn-generer-livraison"><i class="bi bi-truck"></i> Générer son bon de livraison</button>
+                <button class="btn btn-outline-danger" id="btn-annuler-vente"><i class="bi bi-x-circle"></i> Annuler la vente</button>
             </div>
         </div>
 
@@ -608,7 +601,7 @@ setTimeout(function () {
                         <div class="d-flex justify-content-between align-items-start mb-4">
                             <div>
                                 <h6 class="mb-1">Articles vendus</h6>
-                                <p class="small text-secondary mb-0">16/09/2026 à 09:12 &middot; Caisse n&deg;1 &middot; Aïcha Koffi</p>
+                                <p class="small text-secondary mb-0">—</p>
                             </div>
                             <span class="badge badge-light text-bg-success">Validée</span>
                         </div>
@@ -616,18 +609,16 @@ setTimeout(function () {
                             <table class="table adminuiux-table align-middle mb-0">
                                 <thead><tr><th>Produit</th><th class="text-center">Qté</th><th class="text-end">Prix unitaire</th><th class="text-end">Montant</th></tr></thead>
                                 <tbody>
-                                    <tr><td class="small">Clavier mécanique Redragon K552</td><td class="text-center">1</td><td class="text-end small">28 500 FCFA</td><td class="text-end fw-medium">28 500 FCFA</td></tr>
-                                    <tr><td class="small">Onduleur 650VA Infosec</td><td class="text-center">1</td><td class="text-end small">49 000 FCFA</td><td class="text-end fw-medium">49 000 FCFA</td></tr>
                                 </tbody>
                             </table>
                         </div>
                         <hr>
-                        <div class="d-flex justify-content-between small mb-1"><span class="text-secondary">Sous-total</span><span>77 500 FCFA</span></div>
-                        <div class="d-flex justify-content-between small mb-1"><span class="text-secondary">Remise</span><span>0%</span></div>
-                        <div class="d-flex justify-content-between small mb-2"><span class="text-secondary">TVA (18%)</span><span>13 950 FCFA</span></div>
+                        <div class="d-flex justify-content-between small mb-1"><span class="text-secondary">Sous-total</span><span>—</span></div>
+                        <div class="d-flex justify-content-between small mb-1"><span class="text-secondary">Remise</span><span>—</span></div>
+                        <div class="d-flex justify-content-between small mb-2"><span class="text-secondary">TVA</span><span>—</span></div>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="fw-bold">Total</span>
-                            <span class="fw-bold fs-4">91 450 FCFA</span>
+                            <span class="fw-bold fs-4">—</span>
                         </div>
                     </div>
                 </div>
@@ -638,24 +629,24 @@ setTimeout(function () {
                     <div class="card-body">
                         <h6 class="mb-3">Client</h6>
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-36 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center" style="font-size:12px;">EK</span>
+                            <span class="avatar avatar-36 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center" style="font-size:12px;">CC</span>
                             <div>
-                                <p class="mb-0 fw-medium small">Ets Kponou</p>
-                                <p class="small text-secondary mb-0">Entreprise</p>
+                                <p class="mb-0 fw-medium small">Client comptoir</p>
+                                <p class="small text-secondary mb-0">Comptoir</p>
                             </div>
                         </div>
-                        <a href="gesco-clients-detail.html" class="btn btn-sm btn-outline-secondary w-100 mt-2">Voir la fiche client</a>
+                        <a href="gesco-clients-detail.html" class="btn btn-sm btn-outline-secondary w-100 mt-2 disabled" aria-disabled="true" style="pointer-events:none;opacity:0.6;">Voir la fiche client</a>
                     </div>
                 </div>
                 <div class="card adminuiux-card border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="mb-3">Paiement</h6>
                         <p class="small text-secondary mb-1">Mode</p>
-                        <p class="fw-medium mb-3">Espèces</p>
+                        <p class="fw-medium mb-3">—</p>
                         <p class="small text-secondary mb-1">Montant reçu</p>
-                        <p class="fw-medium mb-3">100 000 FCFA</p>
+                        <p class="fw-medium mb-3">—</p>
                         <p class="small text-secondary mb-1">Monnaie rendue</p>
-                        <p class="fw-medium mb-0">8 550 FCFA</p>
+                        <p class="fw-medium mb-0">—</p>
                     </div>
                 </div>
             </div>
@@ -664,21 +655,6 @@ setTimeout(function () {
 </main>
 
 <div class="modal fade" id="annulerVente" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title">Annuler cette vente ?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-secondary">Les articles seront remis en stock automatiquement et un mouvement de type "Retour" sera enregistré. Cette action est tracée dans le journal d'audit.</p>
-            </div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-link text-secondary" data-bs-dismiss="modal">Retour</button>
-                <button class="btn btn-danger">Confirmer l'annulation</button>
-            </div>
-        </div>
-    </div>
 </div>
 
                 </div>
@@ -893,6 +869,47 @@ setTimeout(function () {
     </div>
 </div>
 
+<!-- Modal : Génération du bon de livraison -->
+<div class="modal fade" id="modalLivraison" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-truck"></i> Générer le bon de livraison</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-secondary">Cette vente sera-t-elle livrée en totalité ou partiellement ?</p>
+                <div class="d-flex gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" data-livraison-type="complete">
+                        <i class="bi bi-check2-circle"></i> Livraison complète
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary flex-fill" data-livraison-type="partielle">
+                        <i class="bi bi-box-seam"></i> Livraison partielle
+                    </button>
+                </div>
+
+                <div id="livraison-partielle-block" class="d-none">
+                    <hr>
+                    <h6 class="mb-2">Quantités à livrer</h6>
+                    <div class="table-responsive">
+                        <table class="table adminuiux-table align-middle mb-0">
+                            <thead>
+                                <tr><th>Produit</th><th class="text-center">Commandé</th><th class="text-center">À livrer</th></tr>
+                            </thead>
+                            <tbody id="livraison-lignes-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-danger mt-3 mb-0 d-none" id="livraison-error"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Retour</button>
+                <button type="button" class="btn btn-theme" id="btn-livraison-valider" disabled>Générer le bon de livraison</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Offcanvas Interactive Javascript -->
 <script src="assets/js/ecommerce/ecommerce-ai-chat.js"></script>
 
@@ -917,8 +934,11 @@ setTimeout(function () {
 <!-- Page Level js -->
 
     <script src="assets/js/api.js"></script>
+    <script src="assets/js/vente-detail.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

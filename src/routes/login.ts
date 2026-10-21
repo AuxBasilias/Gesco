@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, logout } from "../auth/auth";
+import { login, logout, authMiddleware } from "../auth/auth";
 
 const router = Router();
 
@@ -37,9 +37,10 @@ router.post("/", async (req, res) => {
 /**
  * LOGOUT
  */
-router.post("/logout", async (_req, res) => {
+router.post("/logout", authMiddleware, async (req, res) => {
   try {
-    const resultat = logout();
+    const userId = (req as any).user?.id as number | undefined;
+    const resultat = await logout(userId);
 
     return res.status(200).json(resultat);
   } catch (error: any) {

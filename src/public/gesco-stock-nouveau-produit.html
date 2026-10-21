@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -588,10 +582,10 @@ setTimeout(function () {
                 <nav aria-label="breadcrumb" class="mb-1">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
-                        <li class="breadcrumb-item"><a href="gesco-stock-produits.html">Stock</a></li><li class="breadcrumb-item active" aria-current="page">Nouveau produit</li>
+                        <li class="breadcrumb-item"><a href="gesco-stock-produits.html">Stock</a></li><li class="breadcrumb-item active" aria-current="page"><span id="product-breadcrumb">Nouveau produit</span></li>
                     </ol>
                 </nav>
-                <h4 class="mb-0">Nouveau produit</h4>
+                <h4 class="mb-0" id="product-page-title">Nouveau produit</h4>
             </div>
         </div>
 
@@ -606,18 +600,15 @@ setTimeout(function () {
                                 <input id="product-designation" type="text" class="form-control" placeholder="Ex : Ordinateur portable HP 250 G9" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small text-secondary mb-1">Référence</label>
-                                <input id="product-reference" type="text" class="form-control" placeholder="Auto-générée si vide">
-                            </div>
-                            <div class="col-md-6">
                                 <label class="form-label small text-secondary mb-1">Catégorie</label>
-                                <select id="product-category" class="form-select" required>
-                                    <option value="">Chargement des catégories...</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small text-secondary mb-1">Code-barres</label>
-                                <input id="product-barcode" type="text" class="form-control" placeholder="Scanner ou saisir">
+                                <div class="input-group">
+                                    <select id="product-category" class="form-select" required>
+                                        <option value="">Chargement des catégories...</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" id="add-category-btn" title="Ajouter une nouvelle catégorie" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small text-secondary mb-1">Description</label>
@@ -654,18 +645,10 @@ setTimeout(function () {
                                 </select>
                             </div>
                         </div>
-
-                        <h6 class="mb-3">Identification &amp; garantie</h6>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label small text-secondary mb-1">Garantie</label>
-                                <input id="product-warranty" type="text" class="form-control" placeholder="Ex : 1 an">
-                            </div>
-                        </div>
                     </div>
                     <div class="card-footer bg-none d-flex justify-content-end gap-2 px-4 pb-4">
                         <a href="gesco-stock-produits.html" class="btn btn-link text-secondary">Annuler</a>
-                        <button class="btn btn-theme" type="submit">Créer le produit</button>
+                        <button id="product-submit" class="btn btn-theme" type="submit">Créer le produit</button>
                     </div>
                 </form>
                 </div>
@@ -897,6 +880,29 @@ setTimeout(function () {
 <!-- Offcanvas Interactive Javascript -->
 <script src="assets/js/ecommerce/ecommerce-ai-chat.js"></script>
 
+<!-- Modal : ajout d'une catégorie -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel"><i class="bi bi-tags me-2"></i>Nouvelle catégorie</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form id="add-category-form">
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="add-category-alert" role="alert"></div>
+                    <label class="form-label small text-secondary mb-1" for="new-category-label">Nom de la catégorie</label>
+                    <input type="text" class="form-control" id="new-category-label" placeholder="Ex : Ordinateurs portables" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-theme" id="add-category-submit">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
                         <!-- footer -->
                         <!-- standard footer -->
 <footer class="adminuiux-footer has-adminuiux-sidebar mt-auto">
@@ -918,7 +924,9 @@ setTimeout(function () {
 <!-- Page Level js -->
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

@@ -7,8 +7,17 @@ import {
   updateUtilisateur,
 } from "../services/utilisateurs";
 
+import { roleEnum } from "../db/schema";
+
 const router = express.Router();
-const validRoles = new Set(["admin", "user"]);
+type Role = (typeof roleEnum.enumValues)[number];
+const validRoles = new Set<Role>(["admin", "user", "caissiere", "comptable"]);
+const roleLabels: Record<Role, string> = {
+  admin: "administrateur",
+  user: "utilisateur standard",
+  caissiere: "caissière",
+  comptable: "comptable",
+};
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function actorId(req: Request): number | undefined {
@@ -73,8 +82,11 @@ router.post("/", adminMiddleware, async (req, res) => {
     res.status(400).json({ success: false, message: "Le mot de passe doit contenir au moins 8 caractères." });
     return;
   }
-  if (typeof role !== "string" || !validRoles.has(role)) {
-    res.status(400).json({ success: false, message: "Le rôle doit être administrateur ou utilisateur standard." });
+  if (typeof role !== "string" || !validRoles.has(role as Role)) {
+    res.status(400).json({
+      success: false,
+      message: `Le rôle doit être l'un des suivants : ${Object.values(roleLabels).join(", ")}.`,
+    });
     return;
   }
   try {
@@ -82,7 +94,7 @@ router.post("/", adminMiddleware, async (req, res) => {
       nomUtilisateur: nomUtilisateur.trim(),
       email: email.trim().toLocaleLowerCase("en"),
       motDePasse,
-      role: role as "admin" | "user",
+      role: role as Role,
       telephone: typeof telephone === "string" && telephone.trim() ? telephone.trim() : null,
       actif: true,
     });
@@ -108,7 +120,7 @@ router.put("/:id", adminMiddleware, async (req, res) => {
     nomUtilisateur?: string;
     email?: string;
     motDePasse?: string;
-    role?: "admin" | "user";
+    role?: Role;
     telephone?: string | null;
     actif?: boolean;
   } = {};
@@ -134,11 +146,14 @@ router.put("/:id", adminMiddleware, async (req, res) => {
     updates.motDePasse = motDePasse;
   }
   if (role !== undefined) {
-    if (typeof role !== "string" || !validRoles.has(role)) {
-      res.status(400).json({ success: false, message: "Le rôle doit être administrateur ou utilisateur standard." });
+    if (typeof role !== "string" || !validRoles.has(role as Role)) {
+      res.status(400).json({
+        success: false,
+        message: `Le rôle doit être l'un des suivants : ${Object.values(roleLabels).join(", ")}.`,
+      });
       return;
     }
-    updates.role = role as "admin" | "user";
+    updates.role = role as Role;
   }
   if (telephone !== undefined) {
     if (telephone !== null && typeof telephone !== "string") {

@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="assets/img/logo-512.png">
 
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>GESCO — Administration — Rapports & statistiques | SOLUTECH</title>
+    <title>GESCO — Modifier client | SOLUTECH</title>
     <meta name="description" content="Smart Home Gardening Reminder Vehicle IOT App HTML Templates | Bootstrap 5 | UI/UX | Mobile | Admin | Dashboard | Universal App | Build stunning smart IOT Automation apps with our premium templates.">
     <link rel="icon" type="image/png" href="assets/img/favicon.png">
 
@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -155,6 +155,7 @@ setTimeout(function () {
     </nav>
 
 </header>
+
 <!-- full-screen search modal -->
 <div class="modal fade" tabindex="-1" id="searchmodalfull" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -520,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -546,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -570,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -587,347 +582,85 @@ setTimeout(function () {
                 <nav aria-label="breadcrumb" class="mb-1">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
-                        <li class="breadcrumb-item">Administration</li>
-                        <li class="breadcrumb-item active" aria-current="page">Rapports &amp; statistiques</li>
+                        <li class="breadcrumb-item"><a href="gesco-clients.html">Clients</a></li><li class="breadcrumb-item active" aria-current="page">Modifier client</li>
                     </ol>
                 </nav>
-                <h4 class="mb-0">Rapports &amp; statistiques</h4>
-            </div>
-            <div class="col-auto d-flex gap-2">
-                <select class="form-select">
-                    <option>Ce mois</option>
-                    <option>Ce trimestre</option>
-                    <option selected>Cette année</option>
-                    <option>Période personnalisée</option>
-                </select>
-                <button class="btn btn-outline-secondary"><i class="bi bi-file-earmark-excel"></i> Excel</button>
-                <button class="btn btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
-            </div>
-        </div>
-
-        <p class="text-secondary small mb-4">
-            Ces rapports sont générés automatiquement à partir des ventes, du stock, des encaissements et des achats enregistrés dans GESCO.
-        </p>
-
-        <div class="row g-4 mb-4">
-            <div class="col-lg-8">
-                <div class="card adminuiux-card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h6 class="mb-1">Évolution du chiffre d'affaires</h6>
-                        <p class="small text-secondary mb-3">Comparaison mensuelle sur l'année en cours</p>
-                        <div style="height:260px"><canvas id="rapportCA"></canvas></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card adminuiux-card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h6 class="mb-1">Répartition par catégorie</h6>
-                        <p class="small text-secondary mb-3">Part du chiffre d'affaires</p>
-                        <div style="height:220px"><canvas id="rapportCat"></canvas></div>
-                        <ul class="list-unstyled small mt-3 mb-0">
-                            <li class="d-flex justify-content-between"><span><span class="d-inline-block rounded-circle me-2" style="width:9px;height:9px;background:#013688"></span>Ordinateurs</span><span class="fw-medium">35%</span></li>
-                            <li class="d-flex justify-content-between"><span><span class="d-inline-block rounded-circle me-2" style="width:9px;height:9px;background:#c10108"></span>Accessoires</span><span class="fw-medium">24%</span></li>
-                            <li class="d-flex justify-content-between"><span><span class="d-inline-block rounded-circle me-2" style="width:9px;height:9px;background:#4d81c9"></span>Réseau</span><span class="fw-medium">18%</span></li>
-                            <li class="d-flex justify-content-between"><span><span class="d-inline-block rounded-circle me-2" style="width:9px;height:9px;background:#979a9e"></span>Consommables</span><span class="fw-medium">14%</span></li>
-                            <li class="d-flex justify-content-between"><span><span class="d-inline-block rounded-circle me-2" style="width:9px;height:9px;background:#1c1e24"></span>Prestations</span><span class="fw-medium">9%</span></li>
-                        </ul>
-                    </div>
-                </div>
+                <h4 class="mb-0">Modifier le client</h4>
             </div>
         </div>
 
         <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card adminuiux-card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h6 class="mb-1">Produits les plus vendus</h6>
-                        <p class="small text-secondary mb-3">Sur la période sélectionnée</p>
-                        <div class="table-responsive">
-                            <table class="table adminuiux-table align-middle mb-0">
-                                <thead><tr><th>Produit</th><th class="text-center">Qté vendue</th><th class="text-end">CA généré</th><th class="text-end">Marge</th></tr></thead>
-                                <tbody>
-                                    <tr><td class="small">Onduleur 650VA Infosec</td><td class="text-center">39</td><td class="text-end fw-medium">1 911 000 FCFA</td><td class="text-end small text-success">+22%</td></tr>
-                                    <tr><td class="small">SSD Kingston A400 480 Go</td><td class="text-center">51</td><td class="text-end fw-medium">1 479 000 FCFA</td><td class="text-end small text-success">+18%</td></tr>
-                                    <tr><td class="small">Souris sans fil Logitech M185</td><td class="text-center">74</td><td class="text-end fw-medium">962 000 FCFA</td><td class="text-end small text-success">+31%</td></tr>
-                                    <tr><td class="small">Routeur WiFi TP-Link AC1200</td><td class="text-center">22</td><td class="text-end fw-medium">704 000 FCFA</td><td class="text-end small text-success">+15%</td></tr>
-                                    <tr><td class="small">Câble réseau Cat6 20m</td><td class="text-center">86</td><td class="text-end fw-medium">258 000 FCFA</td><td class="text-end small text-success">+40%</td></tr>
-                                </tbody>
-                            </table>
+            <div class="col-lg-8">
+                <div class="card adminuiux-card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="mb-3">Type de client</h6>
+                        <div class="btn-group w-100 mb-4" role="group">
+                            <input type="radio" class="btn-check" name="typeclient" id="tc1" checked>
+                            <label class="btn btn-outline-secondary" for="tc1"><i class="bi bi-person me-1"></i> Particulier</label>
+                            <input type="radio" class="btn-check" name="typeclient" id="tc2">
+                            <label class="btn btn-outline-secondary" for="tc2"><i class="bi bi-building me-1"></i> Entreprise</label>
                         </div>
+
+                        <h6 class="mb-3">Identité</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1">Nom complet / Raison sociale</label>
+                                <input type="text" class="form-control" id="nom" placeholder="Ex : Ets Kponou">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1">NIF (si entreprise)</label>
+                                <input type="text" class="form-control" placeholder="Optionnel" id="nif">
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3">Coordonnées</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1">Téléphone</label>
+                                <input type="text" class="form-control" id="telephone" placeholder="90 00 00 00">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1">Email</label>
+                                <input type="email" class="form-control" id="email" placeholder="client@email.tg">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small text-secondary mb-1">Adresse</label>
+                                <input type="text" class="form-control" id="adresse" placeholder="Quartier, rue...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1">Ville</label>
+                                <input type="text" class="form-control" id="ville" placeholder="Lomé">
+                            </div>
+                        </div>
+
+                       
+                    </div>
+                    <div class="card-footer bg-none d-flex justify-content-end gap-2 px-4 pb-4">
+                        <a href="gesco-clients.html" class="btn btn-link text-secondary" >Annuler</a>
+                        <button class="btn btn-theme" id="btnModifierClient">Enregistrer les modifications</button>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6">
-                <div class="card adminuiux-card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h6 class="mb-1">Meilleurs clients</h6>
-                        <p class="small text-secondary mb-3">Par volume d'achats</p>
-                        <div class="table-responsive">
-                            <table class="table adminuiux-table align-middle mb-0">
-                                <thead><tr><th>Client</th><th class="text-center">Achats</th><th class="text-end">Total</th><th class="text-end">Solde dû</th></tr></thead>
-                                <tbody>
-                                    <tr><td class="small">Ets Kponou</td><td class="text-center">34</td><td class="text-end fw-medium">4 820 000 FCFA</td><td class="text-end small text-danger">320 000</td></tr>
-                                    <tr><td class="small">Bureau Moderne SARL</td><td class="text-center">28</td><td class="text-end fw-medium">3 145 000 FCFA</td><td class="text-end small text-secondary">—</td></tr>
-                                    <tr><td class="small">Cabinet Sogbossi</td><td class="text-center">19</td><td class="text-end fw-medium">1 970 000 FCFA</td><td class="text-end small text-danger">185 000</td></tr>
-                                    <tr><td class="small">Pharmacie du Lac</td><td class="text-center">12</td><td class="text-end fw-medium">742 000 FCFA</td><td class="text-end small text-secondary">—</td></tr>
-                                    <tr><td class="small">Amévi Togbé</td><td class="text-center">9</td><td class="text-end fw-medium">386 000 FCFA</td><td class="text-end small text-secondary">—</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </main>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    if (typeof Chart === 'undefined') return;
-    var ca = document.getElementById('rapportCA');
-    if (ca) {
-        var ctx = ca.getContext('2d');
-        var grad = ctx.createLinearGradient(0, 0, 0, 240);
-        grad.addColorStop(0, 'rgba(1, 54, 136, 0.45)');
-        grad.addColorStop(1, 'rgba(1, 54, 136, 0.02)');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep'],
-                datasets: [
-                    { label: 'CA 2026', data: [6.2,5.8,7.1,6.9,8.4,7.6,9.1,8.2,8.4], borderColor: 'rgba(1, 54, 136, 1)', backgroundColor: grad, borderWidth: 2, fill: true, tension: .35, radius: 3 },
-                    { label: 'CA 2025', data: [5.1,5.4,5.9,6.2,6.8,6.4,7.2,7.0,6.9], borderColor: 'rgba(193, 1, 8, 0.7)', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5,4], fill: false, tension: .35, radius: 0 }
-                ]
-            },
-            options: {
-                maintainAspectRatio: false,
-                plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-                    tooltip: { callbacks: { label: function (c) { return c.dataset.label + ' : ' + c.parsed.y + 'M FCFA'; } } } },
-                scales: { y: { beginAtZero: true, ticks: { callback: function (v) { return v + 'M'; }, font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } }
-            }
-        });
-    }
-    var cat = document.getElementById('rapportCat');
-    if (cat) {
-        new Chart(cat.getContext('2d'), {
-            type: 'doughnut',
-            data: { labels: ['Ordinateurs','Accessoires','Réseau','Consommables','Prestations'],
-                datasets: [{ data: [35,24,18,14,9], backgroundColor: ['#013688','#c10108','#4d81c9','#979a9e','#1c1e24'], borderWidth: 0 }] },
-            options: { maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false } } }
-        });
-    }
-});
-</script>
-
                 </div>
-                <!-- View Order details -->
-                <div class="offcanvas offcanvas-end shadow border-0 w-100 maxwidth-dynamic" tabindex="-1" id="view-customer" data-bs-scroll="true" data-bs-backdrop="false" style="--mw-dynamic:450px;">
-                    <div class="offcanvas-header border-bottom">
-                        <div class="flex-grow-1">
-                            <button class="btn btn-link"><i class="bi bi-pencil"></i>Modifier</button>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
-                    </div>
-                    <div class="small text-center px-2 py-1 bg-theme-1-subtle text-theme-1 theme-green">Active Client</div>
-                    <div class="offcanvas-body">
-                        <!-- customer -->
-                        <div class="row align-items-center mb-3">
-                            <div class="col-12 text-center">
-                                <figure class="avatar avatar-100 coverimg rounded-circle mx-auto mb-3">
-                                    <img src="assets/img/modern-ai-image/user-1.jpg" alt="">
-                                </figure>
-                            </div>
-                            <div class="col-12">
-                                <a href="gesco-clients-detail.html" class="style-none">
-                                    <h5 class="text-center">John Doe <i class="bi bi-box-arrow-in-up-right fs-14"></i></h5>
-                                </a>
-                                <p class="text-theme-1 theme-yellow text-center mb-3"><i class="bi bi-star-fill"></i> Prime VIP</p>
-                                <div class="row gx-3 gx-lg-4">
-                                    <div class="col-12 col-md-6">
-                                        <p class="text-secondary mb-2"><i class="bi bi-cake"></i> 28 Jan 2001, 24 years</p>
-                                        <p class="text-secondary mb-2"><i class="bi bi-gender-male"></i> Male</p>
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <p class="text-secondary mb-2"><i class="bi bi-envelope"></i> selom.agbeko@email.tg</p>
-                                        <p class="text-secondary mb-2"><i class="bi bi-whatsapp"></i> +820 58023O554A1</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- order items-->
-                        <h6 class="mb-3">Orders (2 Items)</h6>
-                        <div class="list-group mb-3 mb-lg-4">
-                            <a href="gesco-ventes-detail.html" class="list-group-item list-group-action px-2">
-                                <!-- order status -->
-                                <div class="row gx-3 align-items-center mb-3">
-                                    <div class="col">
-                                        <span class="badge badge-light text-bg-theme-1 theme-green">Acceptée</span>
-                                    </div>
-                                    <div class="col-auto">
-                                        <div class="btn btn-sm btn-square btn-link"><i class="bi bi-arrow-right"></i></div>
-                                    </div>
-                                </div>
-                                <ul class="progress-stepbar mb-3 mb-lg-4">
-                                    <li class="completed"><span>Ordered</span></li>
-                                    <li class="stop"><span>Acceptée</span></li>
-                                    <li class=""><span>Ready</span></li>
-                                    <li class=" "><span>Shipped</span></li>
-                                    <li><span>Livrée</span></li>
-                                </ul>
+                <!-- chat panel -->
+                <div class="position-fixed bottom-0 end-0 mx-5 z-index-9">
+                    <div class="maxwidth-300 collapse me-4" id="chatexample">
+                        <div class="card adminuiux-card shadow overflow-hidden mb-3">
+                            <div class="card-header py-2">
                                 <div class="row gx-3 align-items-center">
                                     <div class="col">
-                                        <h6 class="mb-0">265 FCFA</h6>
-                                        <p class="small text-secondary">#OR55213453</p>
-                                    </div>
-                                    <div class="col">
-                                        <p class="mb-0">26 Jan 2025</p>
-                                        <p class="small text-secondary">5 Items</p>
-                                    </div>
-                                    <div class="col-auto avatar-group">
-                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="Bracelet women Platinum">
-                                            <img src="assets/img/ecommerce/image-5.jpg" alt="">
-                                        </figure>
-                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="Sendal women Platinum">
-                                            <img src="assets/img/ecommerce/image-10.jpg" alt="">
-                                        </figure>
-                                        <div class="avatar avatar-40 bg-theme-accent-1 rounded" data-bs-toggle="tooltip" data-bs-html="true" title="Lightbulb WiFi connect<br>Lipsticks<br>Bag Vincent Toil">
-                                            <p>+3</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                            <a href="gesco-ventes-retours.html" class="list-group-item px-2">
-                                <div class="row gx-3 align-items-center mb-3">
-                                    <div class="col">
-                                        <span class="badge badge-light text-bg-theme-1 theme-grey">Terminée</span>
+                                        <h6>Chat with Joh Doe</h6>
                                     </div>
                                     <div class="col-auto">
-                                        <div class="btn btn-sm btn-square btn-link"><i class="bi bi-arrow-right"></i></div>
-                                    </div>
-                                </div>
-                                <div class="row gx-3 align-items-center">
-                                    <div class="col">
-                                        <h6 class="mb-0">134 FCFA</h6>
-                                        <p class="small text-secondary">#OR55213453</p>
-                                    </div>
-                                    <div class="col">
-                                        <p class="mb-0">30 Feb 2025</p>
-                                        <p class="small text-secondary">2 Items</p>
-                                    </div>
-                                    <div class="col-auto avatar-group">
-                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="Sofa Single Coco">
-                                            <img src="assets/img/ecommerce/image-6.jpg" alt="">
-                                        </figure>
-                                        <figure class="avatar avatar-40 coverimg rounded" data-bs-toggle="tooltip" title="High Heels Footwear">
-                                            <img src="assets/img/ecommerce/image-9.jpg" alt="">
-                                        </figure>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- address -->
-                        <h6 class="mb-3">Client Address</h6>
-                        <div class="row gx-3 gx-lg-4">
-                            <div class="col">
-                                <div class="card bg-none mb-3 mb-lg-4">
-                                    <div class="card-body">
-                                        <p class="mb-3 fw-medium"><i class="bi bi-house-door me-1"></i> Home</p>
-                                        <p class="small text-secondary">Test data 103909 Witamer CR, Niagara Falls, NY 14305,<br>Lomé</p>
-                                        <button class="btn btn-sm btn-link">Locate <i class="bi bi-arrow-right"></i></button>
+                                        <button class="btn btn-sm btn-square btn-link theme-grey" data-bs-toggle="collapse" data-bs-target="#chatexample" aria-expanded="false" aria-controls="chatexample"><i class="bi bi-x-lg"></i></button>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col">
-                                <div class="card bg-none mb-3 mb-lg-4">
-                                    <div class="card-body">
-                                        <p class="mb-3 fw-medium"><i class="bi bi-buildings me-1"></i> Office</p>
-                                        <p class="small text-secondary">Test data 103909 Witamer CR, Niagara Falls, NY 14305,<br>Lomé</p>
-                                        <button class="btn btn-sm btn-link">Locate <i class="bi bi-arrow-right"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- payment -->
-                        <h6 class="mb-3">Payment Method</h6>
-                        <div class="row gx-3 gx-lg-4">
-                            <div class="col-12 col-md-6 mb-3 mb-lg-4">
-                                <div class="card bg-none mb-2">
-                                    <div class="card-body">
-                                        <p class="mb-3 fw-medium"><i class="bi bi-globe me-1"></i> Net Banking</p>
-                                        <p class="small text-secondary mb-1">AmericaSpice Bank</p>
-                                        <p class="small text-secondary mb-1">A/C: 200525XXXXXX5524</p>
-                                        <p class="small text-secondary">16 Transactions</p>
-                                    </div>
-                                </div>
-                                <p class="small text-secondary text-truncated text-center">Last: 265 FCFA <i class="bi bi-check-all text-theme-1 theme-green"></i></p>
-                            </div>
-                            <div class="col-12 col-md-6 mb-3 mb-lg-4">
-                                <div class="swiper swipernav">
-                                    <div class="swiper-wrapper">
-                                        <div class="swiper-slide maxwidth-200">
-                                            <div class="card adminuiux-card bg-theme-1 overflow-hidden w-100 mb-2">
-                                                <div class="card-body p-3 z-index-1">
-                                                    <div class="row align-items-center mb-3">
-                                                        <div class="col-auto align-self-center"><i class="bi bi-credit-card fs-5"></i></div>
-                                                        <div class="col text-end">
-                                                            <p class="lh-14"><span class="fs-12 opacity-50">City Bank</span><br><small>Carte bancaire</small></p>
-                                                        </div>
-                                                    </div>
-                                                    <p class="h6 small my-3">000 0000 0001 54659</p>
-                                                    <div class="row">
-                                                        <div class="col-auto">
-                                                            <p class="lh-14"><span class="fs-12 opacity-50">Expiration</span><br><small>09/023</small></p>
-                                                        </div>
-                                                        <div class="col text-end">
-                                                            <p class="lh-14"><span class="fs-12 opacity-50">Titulaire de la carte</span><br><small>adminuiux</small></p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p class="small text-secondary text-truncated text-center">Last: 36 FCFA <i class="bi bi-check-all text-theme-1 theme-green"></i></p>
-                                        </div>
-                                        <div class="swiper-slide maxwidth-200">
-                                            <div class="card adminuiux-card bg-theme-1 theme-blue overflow-hidden w-100 mb-2">
-                                                <div class="card-body p-3 z-index-1">
-                                                    <div class="row align-items-center mb-3">
-                                                        <div class="col-auto align-self-center"><i class="bi bi-credit-card fs-5"></i></div>
-                                                        <div class="col text-end">
-                                                            <p class="lh-14"><span class="fs-12 opacity-50">City Bank</span><br><small>Carte bancaire</small></p>
-                                                        </div>
-                                                    </div>
-                                                    <p class="h6 small my-3">000 0000 0001 546598</p>
-                                                    <div class="row">
-                                                        <div class="col-auto">
-                                                            <p class="lh-14"><span class="fs-12 opacity-50">Expiration</span><br><small>09/023</small></p>
-                                                        </div>
-                                                        <div class="col text-end">
-                                                            <p class="lh-14"><span class="fs-12 opacity-50">Titulaire de la carte</span><br><small>adminuiux</small></p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p class="small text-secondary text-truncated text-center">Last: 54 FCFA <i class="bi bi-check-all text-theme-1 theme-green"></i></p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <!-- chat -->
-                        <div class="row gx-3 align-items-center mb-3">
-                            <div class="col-auto">
-                                <h6>Chat</h6>
-                            </div>
-                            <div class="col-auto">
-                                <span class="badge badge-sm small text-bg-theme-1 theme-red">2 New</span>
-                            </div>
-                        </div>
-
-                        <div class="card bg-none overflow-hidden">
                             <div class="card-body overflow-auto height-dynamic" style="--h-dynamic: 400px">
                                 <div class="chat-list small">
                                     <div class="collapse" id="searchchat">
@@ -972,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <div class="chat-block">
                                                 <div class="row gx-3">
                                                     <div class="col">
-                                                        <p class="small mb-2"><a href="#" class="style-none">Mr. Edem Lawson</a></p>Adminuiux is amazing and we thank you. How can we buy?
+                                                        <p class="small mb-2"><a href="#" class="style-none">John Doe</a></p>Adminuiux is amazing and we thank you. How can we buy?
                                                     </div>
                                                 </div>
                                             </div>
@@ -1062,6 +795,61 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <input class="form-control rounded mx-2" placeholder="Type your message... " value="">
                                     <button class="btn btn-square btn-link rounded-circle" type="button"><i class="bi bi-send"></i></button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- add new card -->
+                <div class="modal adminuiux-modal fade" id="addcreditcard" tabindex="-1" aria-labelledby="addcreditcardLabel" style="display: none;" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header" id="addcreditcardLabel">
+                                <p class="h6">Add Credit Card</p>
+                            </div>
+                            <div class="modal-body pb-0">
+                                <div class="input-group mb-3"><span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <div class="form-floating"><input placeholder="Card Holder Name" value="Max Johnson" required="" class="form-control"> <label>Card Holder Name</label></div>
+                                </div>
+                                <div class="input-group mb-3"><span class="input-group-text"><i class="bi bi-credit-card"></i></span>
+                                    <div class="form-floating"><input placeholder="Card Number" value="" required="" class="form-control"> <label>Card Number</label></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="input-group mb-3"><span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                                            <div class="form-floating"><select class="form-select">
+                                                    <option>01</option>
+                                                    <option selected="selected">02</option>
+                                                    <option>03</option>
+                                                    <option>04</option>
+                                                </select> <label>Expiry Month</label></div>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="input-group mb-3"><span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                                            <div class="form-floating"><select class="form-select">
+                                                    <option>21</option>
+                                                    <option>22</option>
+                                                    <option>23</option>
+                                                    <option selected="selected">24</option>
+                                                    <option>25</option>
+                                                    <option>26</option>
+                                                    <option>27</option>
+                                                    <option>28</option>
+                                                    <option>29</option>
+                                                </select> <label>Expiry Year</label></div>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="input-group mb-3"><span class="input-group-text"><i class="bi bi-asterisk"></i></span>
+                                            <div class="form-floating"><input type="number" placeholder="CVV" value="" required="" class="form-control"> <label>CVV</label></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="col"><button class="btn btn-theme">Add Card</button></div>
+                                <div class="col-auto"><button class="btn btn-link" data-bs-dismiss="modal">Annuler</button></div>
                             </div>
                         </div>
                     </div>
@@ -1299,11 +1087,13 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </footer>
 <!-- Page Level js -->
-                                <script src="assets/js/api.js"></script>
-                                <script src="assets/js/profile.js"></script>
-                                
+ <script src="assets/js/api.js"></script>
+ <script src="assets/js/clients/modifier_client.js"></script>
 
-    </body>
+    <script src="assets/js/profile.js"></script>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

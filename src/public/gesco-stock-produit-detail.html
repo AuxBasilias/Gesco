@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -522,12 +522,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -548,12 +548,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -572,7 +566,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -589,14 +583,15 @@ setTimeout(function () {
                 <nav aria-label="breadcrumb" class="mb-1">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
-                        <li class="breadcrumb-item"><a href="gesco-stock-produits.html">Stock</a></li><li class="breadcrumb-item active" aria-current="page">Ordinateur portable HP 250 G9</li>
+                        <li class="breadcrumb-item"><a href="gesco-stock-produits.html">Stock</a></li><li class="breadcrumb-item active" aria-current="page"><span id="pd-breadcrumb">—</span></li>
                     </ol>
                 </nav>
-                <h4 class="mb-0">Ordinateur portable HP 250 G9</h4>
+                <h4 class="mb-0 d-flex align-items-center gap-2"><span id="pd-title">—</span><span id="pd-archived" class="badge text-bg-secondary d-none">Archivé</span></h4>
             </div>
             <div class="col-auto d-flex gap-2">
-                <button class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</button>
-                <a href="gesco-ventes-terminal.html" class="btn btn-theme"><i class="bi bi-cart-plus"></i> Vendre ce produit</a>
+                <a id="pd-edit" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>
+                <a id="pd-sell" href="gesco-ventes-terminal.html" class="btn btn-theme"><i class="bi bi-cart-plus"></i> Vendre ce produit</a>
+                <button id="pd-delete" type="button" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Supprimer</button>
             </div>
         </div>
 
@@ -607,16 +602,14 @@ setTimeout(function () {
                         <span class="avatar avatar-90 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center mx-auto"><i class="bi bi-laptop fs-1"></i></span>
                     </div>
                     <div class="card-body border-top">
-                        <p class="text-secondary mb-1"><i class="bi bi-upc me-2"></i> Réf. P-1042</p>
-                        <p class="text-secondary mb-1"><i class="bi bi-tag me-2"></i> Ordinateurs</p>
-                        <p class="text-secondary mb-1"><i class="bi bi-truck me-2"></i> TechImport SARL</p>
-                        <p class="text-secondary mb-0"><i class="bi bi-shield-check me-2"></i> Garantie 1 an</p>
+                        <p class="text-secondary mb-1"><i class="bi bi-tag me-2"></i> <span id="pd-category">—</span></p>
+                        <p class="text-secondary mb-0"><i class="bi bi-truck me-2"></i> <span id="pd-supplier">—</span></p>
                     </div>
                 </div>
-                <div class="card adminuiux-card border-0 shadow-sm bg-warning-subtle">
+                <div id="pd-alert-card" class="card adminuiux-card border-0 shadow-sm bg-warning-subtle d-none">
                     <div class="card-body">
                         <h6 class="mb-1"><i class="bi bi-exclamation-triangle text-warning me-1"></i> Seuil d'alerte</h6>
-                        <p class="small text-secondary mb-0">Réapprovisionner sous 3 unités en stock. Actuellement : <strong>12</strong>.</p>
+                        <p class="small text-secondary mb-0" id="pd-threshold-message">—</p>
                     </div>
                 </div>
             </div>
@@ -624,13 +617,13 @@ setTimeout(function () {
             <div class="col-lg-8">
                 <div class="row g-3 mb-4">
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">Stock actuel</p><h4 class="mb-0">12</h4></div></div></div>
+                        <p class="small text-secondary mb-1">Stock actuel</p><h4 class="mb-0" id="pd-stock">—</h4></div></div></div>
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">Prix d'achat</p><h4 class="mb-0 fs-6 pt-2">310 000</h4></div></div></div>
+                        <p class="small text-secondary mb-1">Prix d'achat</p><h4 class="mb-0 fs-6 pt-2" id="pd-price-buy">—</h4></div></div></div>
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">Prix de vente</p><h4 class="mb-0 fs-6 pt-2">385 000</h4></div></div></div>
+                        <p class="small text-secondary mb-1">Prix de vente</p><h4 class="mb-0 fs-6 pt-2" id="pd-price-sell">—</h4></div></div></div>
                     <div class="col-6 col-lg-3"><div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                        <p class="small text-secondary mb-1">Vendus (30j)</p><h4 class="mb-0">9</h4></div></div></div>
+                        <p class="small text-secondary mb-1">Vendus (30j)</p><h4 class="mb-0" id="pd-sold30">—</h4></div></div></div>
                 </div>
 
                 <ul class="nav nav-pills adminuiux-nav mb-3">
@@ -641,23 +634,16 @@ setTimeout(function () {
                     <div class="tab-pane fade show active" id="pd-mvts">
                         <div class="card adminuiux-card border-0 shadow-sm">
                             <div class="table-responsive"><table class="table adminuiux-table align-middle mb-0">
-                                <thead><tr><th>Date</th><th>Type</th><th class="text-center">Qté</th><th>Utilisateur</th></tr></thead>
-                                <tbody>
-                                    <tr><td class="small">14/09/2026</td><td><span class="badge badge-light text-bg-success">Vente</span></td><td class="text-center text-danger">−1</td><td class="small">Aïcha Koffi</td></tr>
-                                    <tr><td class="small">05/09/2026</td><td><span class="badge badge-light text-bg-theme-1">Réception</span></td><td class="text-center text-success">+10</td><td class="small">Kodjo Amegan</td></tr>
-                                    <tr><td class="small">28/08/2026</td><td><span class="badge badge-light text-bg-success">Vente</span></td><td class="text-center text-danger">−2</td><td class="small">Aïcha Koffi</td></tr>
-                                </tbody>
+                                <thead><tr><th>Date</th><th>Type</th><th>Référence</th><th class="text-center">Qté</th><th>Motif</th></tr></thead>
+                                <tbody></tbody>
                             </table></div>
                         </div>
                     </div>
                     <div class="tab-pane fade" id="pd-ventes">
                         <div class="card adminuiux-card border-0 shadow-sm">
                             <div class="table-responsive"><table class="table adminuiux-table align-middle mb-0">
-                                <thead><tr><th>Vente</th><th>Client</th><th>Date</th><th class="text-end">Prix</th></tr></thead>
-                                <tbody>
-                                    <tr><td><a href="gesco-ventes-detail.html">V-3389</a></td><td class="small">Bureau Moderne SARL</td><td class="small">15/09/2026</td><td class="text-end small">385 000 FCFA</td></tr>
-                                    <tr><td><a href="gesco-ventes-detail.html">V-3301</a></td><td class="small">Ets Kponou</td><td class="small">02/09/2026</td><td class="text-end small">385 000 FCFA</td></tr>
-                                </tbody>
+                                <thead><tr><th>Vente</th><th>Client</th><th>Date</th><th class="text-center">Qté</th><th class="text-end">Montant</th></tr></thead>
+                                <tbody></tbody>
                             </table></div>
                         </div>
                     </div>
@@ -666,6 +652,27 @@ setTimeout(function () {
         </div>
     </div>
 </main>
+
+<div class="modal fade" id="pd-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Supprimer le produit</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="pd-delete-error" role="alert"></div>
+                <p class="small text-secondary mb-3">Le produit sera archivé et n'apparaîtra plus dans les listes ni dans le point de vente. Son historique de ventes et de mouvements est conservé.</p>
+                <label class="form-label" for="pd-delete-motif">Motif de suppression <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="pd-delete-motif" rows="3" placeholder="Ex : produit obsolète, référencé par erreur..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="pd-delete-confirm">Confirmer la suppression</button>
+            </div>
+        </div>
+    </div>
+</div>
 
                 </div>
 
@@ -915,7 +922,9 @@ setTimeout(function () {
 
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

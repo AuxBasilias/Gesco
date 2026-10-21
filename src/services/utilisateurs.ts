@@ -1,7 +1,7 @@
 import { hacherMotDePasse } from '../auth/password';
 import { db } from '../db/db';
 import { utilisateursTable } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 type UtilisateurPublic = Omit<typeof utilisateursTable.$inferSelect, 'motDePasse'>;
 
@@ -40,7 +40,7 @@ export async function createUtilisateur(
 
 export async function getAllUtilisateurs() {
   try {
-    const utilisateurs = await db.select().from(utilisateursTable);
+    const utilisateurs = await db.select().from(utilisateursTable).orderBy(desc(utilisateursTable.createdAt), desc(utilisateursTable.id));
     console.log('✅ Retrieved all utilisateurs');
     return utilisateurs.map(sansMotDePasse);
   } catch (error) {

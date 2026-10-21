@@ -14,9 +14,48 @@ window.AA = (function () {
   // 🔹 HELPERS
   // =========================
 
+  // Clés d'authentification stockées dans localStorage (partagé entre tous les
+  // onglets) afin qu'une déconnexion soit visible partout.
+  var AUTH_KEYS = ["token", "tt_token", "tt_auth", "tt_user_id", "tt_user_email"];
+  var LOGOUT_SIGNAL = "gesco_logout_signal";
+  var LOGIN_PAGE = "index.html";
+
+  function getToken() {
+    try {
+      return localStorage.getItem("tt_token") || localStorage.getItem("token")
+        || sessionStorage.getItem("tt_token");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getAuthItem(key) {
+    try {
+      return localStorage.getItem(key) || sessionStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setAuthSession(data) {
+    var token = data.token || data.accessToken;
+    var user = data.utilisateur || {};
+    // localStorage = source partagée entre onglets
+    localStorage.setItem("token", token);
+    localStorage.setItem("tt_token", token);
+    localStorage.setItem("tt_user_id", user.id ?? "");
+    localStorage.setItem("tt_user_email", user.email || "");
+    localStorage.setItem("tt_auth", JSON.stringify(user));
+    // miroir sessionStorage pour le code existant qui le lit encore
+    sessionStorage.setItem("tt_token", token);
+    sessionStorage.setItem("tt_user_id", user.id ?? "");
+    sessionStorage.setItem("tt_user_email", user.email || "");
+    sessionStorage.setItem("tt_auth", JSON.stringify(user));
+  }
+
   async function request(url, options = {}) {
     const isFormData = options.body instanceof FormData;
-    const token = sessionStorage.getItem("tt_token") || localStorage.getItem("token");
+    const token = getToken();
     const { headers: requestHeaders, ...requestOptions } = options;
     const res = await fetch(BASE_URL + url, {
       ...requestOptions,
@@ -31,12 +70,11 @@ window.AA = (function () {
     if (!res.ok) {
       data = await res.json().catch(() => ({}));
       if (res.status === 401) {
-        if (url !== "/login") {
-          sessionStorage.removeItem("tt_token");
-          sessionStorage.removeItem("tt_auth");
-          sessionStorage.removeItem("tt_user_id");
-          sessionStorage.removeItem("tt_user_email");
-          localStorage.removeItem("token");
+        if (url.indexOf("/login") !== 0) {
+          clearAuthStorage();
+          if (!/index\.html?$/.test(location.pathname) && location.pathname !== "/") {
+            location.replace("gesco-acces-refuse.html");
+          }
         }
         throw new Error(data.message || "Connexion requise. Connectez-vous puis réessayez.");
       }
@@ -55,7 +93,7 @@ window.AA = (function () {
 
   function getProfile() {
 
-    const email = sessionStorage.getItem('tt_user_email') || 'admin@togotech.com';
+    const email = getAuthItem('tt_user_email') || 'admin@togotech.com';
 
     return {
       email,
@@ -79,6 +117,49 @@ function login(data){
       body: JSON.stringify(data)
     });
 }
+
+  function clearAuthStorage() {
+    AUTH_KEYS.forEach(function (key) {
+      try { localStorage.removeItem(key); } catch (e) {}
+      try { sessionStorage.removeItem(key); } catch (e) {}
+    });
+  }
+
+  function isAuthenticated() {
+    var token = getToken();
+    if (!token) return false;
+    try {
+      var parts = token.split(".");
+      if (parts.length !== 3) return false;
+      var payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      if (payload.exp && payload.exp * 1000 <= Date.now()) {
+        clearAuthStorage();
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Diffuse un signal de déconnexion aux autres onglets (via localStorage :
+  // l'événement "storage" ne se déclenche que dans les AUTRES onglets).
+  function broadcastLogout() {
+    try {
+      localStorage.setItem(LOGOUT_SIGNAL, String(Date.now()));
+      localStorage.removeItem(LOGOUT_SIGNAL);
+    } catch (e) {}
+  }
+
+  async function logout(options) {
+    try {
+      await request('/login/logout', { method: 'POST' });
+    } catch (e) { /* on ignore : on nettoie quand même */ }
+    clearAuthStorage();
+    broadcastLogout();
+    if (options && options.silent) return;
+    window.location.replace(LOGIN_PAGE);
+  }
  
   
 
@@ -266,8 +347,11 @@ async function getFactures(status) {
     });
   }
 
-  async function deleteProduit(id) {
-    return request(`/produits/${id}`, { method: 'DELETE' });
+  async function deleteProduit(id, data) {
+    return request(`/produits/${id}`, {
+      method: 'DELETE',
+      body: data ? (data instanceof FormData ? data : JSON.stringify(data)) : undefined
+    });
   }
 
   async function getStocks() {
@@ -286,6 +370,10 @@ async function getFactures(status) {
     return request('/inventaires');
   }
 
+  async function getInventory(id) {
+    return request(`/inventaires/${id}`);
+  }
+
   async function createInventory(data = {}) {
     return request('/inventaires', { method: 'POST', body: JSON.stringify(data) });
   }
@@ -296,6 +384,10 @@ async function getFactures(status) {
 
   async function closeInventory(id, data) {
     return request(`/inventaires/${id}/cloture`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async function deleteInventory(id) {
+    return request(`/inventaires/${id}`, { method: 'DELETE' });
   }
 
   async function getFournisseurs() {
@@ -342,6 +434,18 @@ async function getFactures(status) {
     return request(`/ventes/${id}`);
   }
 
+  async function getVenteSerials(id) {
+    return request(`/ventes/${id}/serials`);
+  }
+
+  async function updateVenteSerials(id, serials) {
+    return request(`/ventes/${id}/serials`, { method: 'PUT', body: JSON.stringify({ serials }) });
+  }
+
+  async function getVenteRetournable(id) {
+    return request(`/ventes/${id}/lignes-retournables`);
+  }
+
   async function createFactureFromVente(id) {
     return request(`/ventes/${id}/facture`, { method: 'POST' });
   }
@@ -362,6 +466,10 @@ async function getFactures(status) {
     return request('/ventes-retours', { method: 'POST', body: JSON.stringify(data) });
   }
 
+  async function setRetourStatut(id, statut) {
+    return request(`/ventes-retours/${id}/statut`, { method: 'POST', body: JSON.stringify({ statut }) });
+  }
+
   async function getSessionsCaisse() {
     return request('/caisse/sessions');
   }
@@ -374,12 +482,32 @@ async function getFactures(status) {
     return request(`/caisse/sessions/${id}/cloture`, { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async function getPaiements() {
-    return request('/paiements');
+  async function getPaiements(filters = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && String(value) !== '') params.set(key, value);
+    });
+    return request(`/paiements${params.size ? `?${params}` : ''}`);
+  }
+
+  async function getFacturesImpayees(filters = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && String(value) !== '') params.set(key, value);
+    });
+    return request(`/factures/impayees${params.size ? `?${params}` : ''}`);
   }
 
   async function createPaiement(idFacture, data) {
     return request(`/factures/${idFacture}/paiements`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async function annulerPaiement(id, data) {
+    return request(`/paiements/${id}/annulation`, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async function relancerFacture(id, data) {
+    return request(`/factures/${id}/relance`, { method: 'POST', body: JSON.stringify(data || {}) });
   }
 
   async function getDashboard(filters = {}) {
@@ -408,12 +536,27 @@ async function getFactures(status) {
     return request('/categories');
   }
 
+  async function createCategorie(data) {
+    return request('/categories', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
   // =========================
   // 🔹 EXPORT PUBLIC
   // =========================
 
   return {
     login,
+    logout,
+    isAuthenticated,
+    clearAuthStorage,
+    setAuthSession,
+    getToken,
+    getAuthItem,
+    AUTH_KEYS,
+    LOGOUT_SIGNAL,
     getProfile,
 
     getClients,
@@ -452,9 +595,11 @@ async function getFactures(status) {
     getStockMovements,
     createStockMovement,
     getInventories,
+    getInventory,
     createInventory,
     countInventory,
     closeInventory,
+    deleteInventory,
     getFournisseurs,
     createFournisseur,
     updateFournisseur,
@@ -466,11 +611,15 @@ async function getFactures(status) {
     getReceptions,
     getVentes,
     getVente,
+    getVenteSerials,
+    updateVenteSerials,
+    getVenteRetournable,
     createFactureFromVente,
     createVente,
     cancelVente,
     getRetours,
     createRetour,
+    setRetourStatut,
     getSessionsCaisse,
     openSessionCaisse,
     closeSessionCaisse,
@@ -481,7 +630,8 @@ async function getFactures(status) {
     getParametres,
     saveParametres,
     getJournalActivite,
-    getCategories
+    getCategories,
+    createCategorie
   };
 
 })()

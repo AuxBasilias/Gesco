@@ -1,9 +1,14 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/db";
-import { categories, fournisseurs, mouvementsStock, produits, stocks } from "../db/schema";
+import { categories, fournisseurs, journalActivite, mouvementsStock, produits, stocks } from "../db/schema";
 
 class InputError extends Error {}
+
+function requestUserId(req: Request): number | undefined {
+  const userId = Number((req as Request & { user?: { id?: number } }).user?.id);
+  return Number.isSafeInteger(userId) && userId > 0 ? userId : undefined;
+}
 
 function entierPositifOuZero(value: unknown, label: string): number | null {
   if (value === undefined || value === null || value === "") return null;
@@ -30,7 +35,7 @@ function repondreErreur(res: Response, erreur: unknown, message: string) {
   }
   const code = (erreur as { code?: string })?.code;
   if (code === "23505") {
-    return res.status(409).json({ success: false, message: "Une référence, un code-barres ou un numéro de série existe déjà." });
+    return res.status(409).json({ success: false, message: "Ce produit existe déjà." });
   }
   if (code === "23503") {
     return res.status(400).json({ success: false, message: "La catégorie ou le fournisseur sélectionné n'existe pas." });
@@ -43,13 +48,10 @@ export async function getAllProduits(_req: Request, res: Response) {
     const rows = await db.select({
       id: produits.id,
       designation: produits.designation,
-      numeroSerie: produits.numeroSerie,
       idCategorie: produits.idCategorie,
-      codeBarres: produits.codeBarres,
       description: produits.description,
       prixAchat: produits.prixAchat,
       prixVente: produits.prixVente,
-      garantie: produits.garantie,
       createdAt: produits.createdAt,
       updatedAt: produits.updatedAt,
       quantite: stocks.quantite,
@@ -57,19 +59,18 @@ export async function getAllProduits(_req: Request, res: Response) {
       idFournisseur: stocks.idFournisseur,
     })
       .from(produits)
-      .leftJoin(stocks, eq(stocks.idProduit, produits.id));
+      .leftJoin(stocks, eq(stocks.idProduit, produits.id))
+      .where(eq(produits.archive, false))
+      .orderBy(desc(produits.createdAt), desc(produits.id));
     res.status(200).json({
       success: true,
       data: rows.map((row) => ({
         id: row.id,
         designation: row.designation,
-        numeroSerie: row.numeroSerie,
         idCategorie: row.idCategorie,
-        codeBarres: row.codeBarres,
         description: row.description,
         prixAchat: row.prixAchat,
         prixVente: row.prixVente,
-        garantie: row.garantie,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         stock: row.quantite ?? 0,
@@ -136,13 +137,10 @@ export async function createProduit(req: Request, res: Response) {
     const product = await db.transaction(async (tx) => {
       const [created] = await tx.insert(produits).values({
         designation,
-        numeroSerie: chaine(body.numeroSerie),
         idCategorie,
-        codeBarres: chaine(body.codeBarres),
         description: chaine(body.description),
         prixAchat,
         prixVente,
-        garantie: chaine(body.garantie),
       }).returning();
       await tx.insert(stocks).values({
         idProduit: created.id,
@@ -180,13 +178,11 @@ export async function updateProduit(req: Request, res: Response) {
       if (!designation) return res.status(400).json({ success: false, message: "La désignation est obligatoire." });
       updates.designation = designation;
     }
-    if (body.numeroSerie !== undefined) updates.numeroSerie = chaine(body.numeroSerie);
     if (body.idCategorie !== undefined) {
       const idCategorie = entierPositifOuZero(body.idCategorie, "La catégorie");
       if (!idCategorie) return res.status(400).json({ success: false, message: "La catégorie est obligatoire." });
       updates.idCategorie = idCategorie;
     }
-    if (body.codeBarres !== undefined) updates.codeBarres = chaine(body.codeBarres);
     if (body.description !== undefined) updates.description = chaine(body.description);
     if (body.prixAchat !== undefined) updates.prixAchat = prixValide(body.prixAchat, "Le prix d'achat") ?? "0.00";
     if (body.prixVente !== undefined) {
@@ -194,7 +190,6 @@ export async function updateProduit(req: Request, res: Response) {
       if (price === null) return res.status(400).json({ success: false, message: "Le prix de vente est obligatoire." });
       updates.prixVente = price;
     }
-    if (body.garantie !== undefined) updates.garantie = chaine(body.garantie);
     const result = await db.transaction(async (tx) => {
       const [updated] = await tx.update(produits).set(updates).where(eq(produits.id, id)).returning();
       if (!updated) return null;
@@ -252,9 +247,27 @@ export async function deleteProduit(req: Request, res: Response) {
     if (!Number.isSafeInteger(id) || id <= 0) {
       return res.status(400).json({ success: false, message: "ID de produit invalide." });
     }
-    const [deleted] = await db.delete(produits).where(eq(produits.id, id)).returning();
-    if (!deleted) return res.status(404).json({ success: false, message: "Produit introuvable." });
-    return res.status(200).json({ success: true, message: "Produit supprimé avec succès.", data: deleted });
+    const motif = chaine((req.body as Record<string, unknown> | undefined)?.motif);
+    if (!motif) {
+      return res.status(400).json({ success: false, message: "Le motif de suppression est obligatoire." });
+    }
+    const archived = await db.transaction(async (tx) => {
+      const [result] = await tx.update(produits)
+        .set({ archive: true, updatedAt: new Date() })
+        .where(and(eq(produits.id, id), eq(produits.archive, false)))
+        .returning();
+      if (!result) return null;
+      await tx.insert(journalActivite).values({
+        idUtilisateur: requestUserId(req) ?? null,
+        action: "produit.archive",
+        details: { id, designation: result.designation, motif },
+      });
+      return result;
+    });
+    if (!archived) {
+      return res.status(404).json({ success: false, message: "Produit introuvable ou déjà supprimé." });
+    }
+    return res.status(200).json({ success: true, message: "Produit supprimé avec succès.", data: archived });
   } catch (error) {
     return repondreErreur(res, error, "Erreur deleteProduit :");
   }

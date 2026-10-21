@@ -1,3 +1,4 @@
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   decimal,
@@ -13,7 +14,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-export const roleEnum = pgEnum("role", ["admin", "user"]);
+export const roleEnum = pgEnum("role", ["admin", "user", "caissiere", "comptable"]);
 
 const money = (name: string) => decimal(name, { precision: 14, scale: 2 });
 const createdAt = () => timestamp("created_at").defaultNow().notNull();
@@ -26,6 +27,7 @@ export const utilisateursTable = pgTable("utilisateurs", {
   role: roleEnum().notNull(),
   actif: boolean("actif").notNull().default(true),
   telephone: varchar("telephone", { length: 50 }),
+  tokenVersion: integer("token_version").notNull().default(0),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -68,15 +70,13 @@ export const fournisseurs = pgTable("fournisseurs", {
 export const produits = pgTable("produits", {
   id: serial("id").primaryKey(),
   designation: varchar("designation", { length: 200 }).notNull(),
-  numeroSerie: varchar("numero_serie", { length: 100 }).unique(),
   idCategorie: integer("id_categorie")
     .notNull()
     .references(() => categories.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  codeBarres: varchar("code_barres", { length: 100 }).unique(),
   description: text("description"),
   prixAchat: money("prix_achat").notNull().default("0"),
   prixVente: money("prix_vente").notNull(),
-  garantie: text("garantie"),
+  archive: boolean("archive").notNull().default(false),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -194,6 +194,7 @@ export const ventes = pgTable(
     montantPaye: money("montant_paye").notNull().default("0"),
     modePaiement: varchar("mode_paiement", { length: 30 }),
     notes: text("notes"),
+    donneesDocument: jsonb("donnees_document").$type<Record<string, unknown>>().notNull().default({}),
     idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
       onDelete: "set null",
     }),
@@ -217,6 +218,22 @@ export const lignesVente = pgTable("lignes_vente", {
   montantTotal: money("montant_total").notNull(),
 });
 
+export const numerosSerieLivraison = pgTable("numeros_serie_livraison", {
+  id: serial("id").primaryKey(),
+  idVente: integer("id_vente")
+    .notNull()
+    .references(() => ventes.id, { onDelete: "cascade" }),
+  idLigneVente: integer("id_ligne_vente")
+    .notNull()
+    .references(() => lignesVente.id, { onDelete: "cascade" }),
+  numeroSerie: varchar("numero_serie", { length: 200 }).notNull(),
+  observation: text("observation"),
+  idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
+    onDelete: "set null",
+  }),
+  createdAt: createdAt(),
+});
+
 export const factures = pgTable(
   "factures",
   {
@@ -234,6 +251,8 @@ export const factures = pgTable(
     montantPaye: money("montant_paye").notNull().default("0"),
     donneesDocument: jsonb("donnees_document").$type<Record<string, unknown>>().notNull().default({}),
     notes: text("notes"),
+    relances: integer("relances").notNull().default(0),
+    dateDerniereRelance: timestamp("date_derniere_relance"),
     idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
       onDelete: "set null",
     }),
@@ -268,6 +287,12 @@ export const paiements = pgTable("paiements", {
   modePaiement: varchar("mode_paiement", { length: 30 }).notNull(),
   datePaiement: timestamp("date_paiement").defaultNow().notNull(),
   notes: text("notes"),
+  idSessionCaisse: integer("id_session_caisse").references(() => sessionsCaisse.id, {
+    onDelete: "set null",
+  }),
+  idPaiementAnnule: integer("id_paiement_annule").references((): AnyPgColumn => paiements.id, {
+    onDelete: "set null",
+  }),
   idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
     onDelete: "set null",
   }),
@@ -299,6 +324,8 @@ export const operationsCaisse = pgTable("operations_caisse", {
     .notNull()
     .references(() => sessionsCaisse.id, { onDelete: "restrict" }),
   idVente: integer("id_vente").references(() => ventes.id, { onDelete: "set null" }),
+  idFacture: integer("id_facture").references(() => factures.id, { onDelete: "set null" }),
+  idPaiement: integer("id_paiement").references(() => paiements.id, { onDelete: "set null" }),
   type: varchar("type", { length: 30 }).notNull(),
   modePaiement: varchar("mode_paiement", { length: 30 }).notNull(),
   montant: money("montant").notNull(),
@@ -315,7 +342,7 @@ export const retoursVente = pgTable("retours_vente", {
   idVente: integer("id_vente")
     .notNull()
     .references(() => ventes.id, { onDelete: "restrict" }),
-  statut: varchar("statut", { length: 30 }).notNull().default("confirme"),
+  statut: varchar("statut", { length: 30 }).notNull().default("en_attente"),
   motif: text("motif"),
   montantRembourse: money("montant_rembourse").notNull().default("0"),
   dateRetour: timestamp("date_retour").defaultNow().notNull(),
@@ -342,6 +369,7 @@ export const inventaires = pgTable("inventaires", {
   statut: varchar("statut", { length: 30 }).notNull().default("en_cours"),
   dateInventaire: timestamp("date_inventaire").defaultNow().notNull(),
   notes: text("notes"),
+  responsable: varchar("responsable", { length: 150 }),
   idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
     onDelete: "set null",
   }),

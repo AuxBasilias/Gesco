@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/db";
-import { factures, inventaires, lignesFacture, lignesInventaire, receptions, retoursVente, ventes } from "../db/schema";
+import { factures, inventaires, lignesFacture, lignesInventaire, retoursVente, ventes } from "../db/schema";
 import { operationsHandlers as handlers } from "../services/operations";
 
 const router = Router();
@@ -23,26 +23,25 @@ router.post("/inventaires/:id/cloture", (req, res, next) => {
   req.body = { ...req.body, cloturer: true };
   return handlers.countInventory(req, res, next);
 });
+router.delete("/inventaires/:id", handlers.deleteInventory);
 
 router.get("/commandes", handlers.listOrders);
 router.post("/commandes", handlers.createOrder);
 router.get("/commandes/:id", handlers.getOrder);
 router.post("/commandes/:id/receptions", handlers.receiveOrder);
-router.get("/receptions", async (_req, res, next) => {
-  try {
-    res.json(await db.select().from(receptions));
-  } catch (error) {
-    next(error);
-  }
-});
+router.get("/receptions", handlers.listReceptions);
 
 router.get("/ventes", handlers.listVentes);
 router.post("/ventes", handlers.createVente);
 router.get("/ventes/:id", handlers.getVente);
+router.get("/ventes/:id/serials", handlers.getVenteSerials);
+router.put("/ventes/:id/serials", handlers.updateVenteSerials);
+router.get("/ventes/:id/lignes-retournables", handlers.getReturnableSale);
 router.post("/ventes/:id/facture", handlers.createFactureFromVente);
 router.post("/ventes/:id/annulation", handlers.cancelVente);
 router.get("/ventes-retours", handlers.listReturns);
 router.post("/ventes-retours", handlers.createReturn);
+router.post("/ventes-retours/:id/statut", handlers.setReturnStatus);
 
 router.get("/caisse/sessions", handlers.listCashSessions);
 router.post("/caisse/sessions", handlers.openCashSession);
@@ -50,6 +49,7 @@ router.post("/caisse/sessions/:id/cloture", handlers.closeCashSession);
 
 router.get("/factures/stats", handlers.factureStats);
 router.get("/factures/revenue", handlers.factureRevenue);
+router.get("/factures/impayees", handlers.listUnpaidInvoices);
 router.get("/factures", handlers.getFactures);
 router.post("/factures", handlers.createFacture);
 router.delete("/factures/cleanup", handlers.cleanupFactures);
@@ -69,6 +69,8 @@ router.get("/factures/:id", handlers.getFacture);
 router.put("/factures/:id", handlers.updateFacture);
 router.delete("/factures/:id", handlers.deleteFacture);
 router.post("/factures/:id/paiements", handlers.createPaiement);
+router.post("/factures/:id/relance", handlers.remindInvoice);
+router.post("/paiements/:id/annulation", handlers.cancelPaiement);
 router.get("/paiements", handlers.listPaiements);
 
 router.get("/clients/:id/stats", handlers.listClientStats);

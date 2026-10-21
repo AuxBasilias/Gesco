@@ -1,6 +1,6 @@
-import { and, desc, eq, gte, inArray, lte, ne } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, like, lte, ne, or, sql } from "drizzle-orm";
 import type { Request, RequestHandler, Response } from "express";
-import { randomUUID } from "node:crypto";
+import nodemailer from "nodemailer";
 import { db } from "../db/db";
 import {
   categories,
@@ -17,6 +17,7 @@ import {
   lignesRetourVente,
   lignesVente,
   mouvementsStock,
+  numerosSerieLivraison,
   operationsCaisse,
   paiements,
   parametresBoutique,
@@ -39,6 +40,38 @@ class ApiError extends Error {
 }
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Tables exposant une colonne "reference" unique, utilisée par le compteur séquentiel.
+const REFERENCE_TABLES = {
+  VTE: ventes,
+  FAC: factures,
+  PAY: paiements,
+  ANN: paiements,
+  ACH: commandesFournisseurs,
+  REC: receptions,
+  RET: retoursVente,
+  CSE: sessionsCaisse,
+  INV: inventaires,
+} as const;
+
+// Génère une référence séquentielle par jour : PREFIX-AAAAMMJJ-001, -002, ...
+async function generateReference(
+  tx: DbTransaction,
+  prefix: keyof typeof REFERENCE_TABLES,
+): Promise<string> {
+  const table = REFERENCE_TABLES[prefix];
+  const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  const base = `${prefix}-${date}-`;
+  const [last] = await tx
+    .select({ reference: table.reference })
+    .from(table)
+    .where(like(table.reference, `${base}%`))
+    .orderBy(desc(table.reference))
+    .limit(1);
+  const lastNumber = last ? Number.parseInt(last.reference.slice(base.length), 10) : 0;
+  const next = Number.isFinite(lastNumber) ? lastNumber + 1 : 1;
+  return `${base}${String(next).padStart(3, "0")}`;
+}
 
 function endpoint(
   action: (req: Request, res: Response) => Promise<unknown>,
@@ -118,10 +151,6 @@ function linesFrom(value: unknown) {
       montantTotal: Math.round((prixUnitaire * quantite - remise) * 100) / 100,
     };
   });
-}
-
-function reference(prefix: string): string {
-  return `${prefix}-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
 function requestUserId(req: Request): number | undefined {
@@ -206,7 +235,7 @@ const createFacture = endpoint(async (req, res) => {
   const montantTotal = montantHT + montantTaxe;
   const [result] = await db.transaction(async (tx) => {
     const [facture] = await tx.insert(factures).values({
-      reference: String(body.reference || reference("FAC")),
+      reference: String(body.reference || (await generateReference(tx, "FAC"))),
       idClient,
       statut: String(body.statut ?? "brouillon"),
       dateFacture: body.dateFacture ? new Date(String(body.dateFacture)) : new Date(),
@@ -340,41 +369,361 @@ const factureRevenue = endpoint(async (req, res) => {
   res.json({ period, revenue: rows.reduce((sum, row) => sum + Number(row.montantPaye), 0), count: rows.length });
 });
 
-const listPaiements = endpoint(async (_req, res) => {
-  res.json(await db.select().from(paiements).orderBy(desc(paiements.datePaiement)));
+const PAYMENT_MODES: Record<string, string> = {
+  especes: "Espèces",
+  mobile_money: "Mobile Money",
+  carte: "Carte bancaire",
+  virement: "Virement",
+  cheque: "Chèque",
+};
+
+function paymentMode(value: unknown): string {
+  const mode = String(value ?? "").trim();
+  if (!mode) throw new ApiError(400, "Le mode de paiement est obligatoire.");
+  if (!PAYMENT_MODES[mode]) {
+    throw new ApiError(400, `Mode de paiement invalide. Valeurs attendues : ${Object.keys(PAYMENT_MODES).join(", ")}.`);
+  }
+  return mode;
+}
+
+function roundMoney(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+/** Un encaissement espèces alimente la session de caisse ouverte, comme pour les ventes. */
+async function attachPaymentToCashSession(
+  tx: DbTransaction,
+  req: Request,
+  payment: { id: number; reference: string; montant: number; modePaiement: string },
+  facture: { id: number; reference: string },
+  sessionId?: number | null,
+) {
+  if (payment.modePaiement !== "especes") return null;
+  const session = sessionId
+    ? (await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.id, sessionId)).for("update"))[0]
+    : (await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.statut, "ouverte")).for("update"))[0];
+  if (!session || session.statut !== "ouverte") return null;
+  await tx.update(sessionsCaisse).set({
+    montantAttendu: String(roundMoney(Number(session.montantAttendu) + payment.montant)),
+  }).where(eq(sessionsCaisse.id, session.id));
+  await tx.update(paiements).set({ idSessionCaisse: session.id }).where(eq(paiements.id, payment.id));
+  await tx.insert(operationsCaisse).values({
+    idSessionCaisse: session.id,
+    idFacture: facture.id,
+    idPaiement: payment.id,
+    type: payment.montant < 0 ? "annulation" : "encaissement_facture",
+    modePaiement: payment.modePaiement,
+    montant: String(payment.montant),
+    motif: payment.montant < 0
+      ? `Annulation du paiement ${payment.reference} — facture ${facture.reference}`
+      : `Paiement ${payment.reference} — facture ${facture.reference}`,
+    idUtilisateur: requestUserId(req) ?? null,
+  });
+  return session;
+}
+
+const listPaiements = endpoint(async (req, res) => {
+  const mode = String(req.query.mode ?? "").trim();
+  if (mode && !PAYMENT_MODES[mode]) throw new ApiError(400, "Mode de paiement invalide.");
+  const query = String(req.query.q ?? req.query.search ?? "").trim();
+  const idFacture = req.query.idFacture ? positiveId(req.query.idFacture, "Facture") : null;
+
+  const filters = [];
+  if (mode) filters.push(eq(paiements.modePaiement, mode));
+  if (idFacture) filters.push(eq(paiements.idFacture, idFacture));
+  if (query) {
+    filters.push(or(
+      ilike(paiements.reference, `%${query}%`),
+      ilike(factures.reference, `%${query}%`),
+      ilike(clientsTable.nom, `%${query}%`),
+    )!);
+  }
+
+  const rows = await db.select({
+    id: paiements.id,
+    reference: paiements.reference,
+    idFacture: paiements.idFacture,
+    montant: paiements.montant,
+    modePaiement: paiements.modePaiement,
+    datePaiement: paiements.datePaiement,
+    notes: paiements.notes,
+    idSessionCaisse: paiements.idSessionCaisse,
+    idPaiementAnnule: paiements.idPaiementAnnule,
+    idUtilisateur: paiements.idUtilisateur,
+    factureReference: factures.reference,
+    factureStatut: factures.statut,
+    factureMontantTotal: factures.montantTotal,
+    factureMontantPaye: factures.montantPaye,
+    factureDateEcheance: factures.dateEcheance,
+    idClient: factures.idClient,
+    clientNom: clientsTable.nom,
+    clientEmail: clientsTable.email,
+    agentNom: utilisateursTable.nomUtilisateur,
+  }).from(paiements)
+    .innerJoin(factures, eq(factures.id, paiements.idFacture))
+    .leftJoin(clientsTable, eq(clientsTable.id, factures.idClient))
+    .leftJoin(utilisateursTable, eq(utilisateursTable.id, paiements.idUtilisateur))
+    .where(filters.length ? and(...filters) : undefined)
+    .orderBy(desc(paiements.datePaiement), desc(paiements.id));
+
+  res.json(rows.map((row) => ({
+    ...row,
+    montant: Number(row.montant),
+    estAnnulation: row.idPaiementAnnule !== null,
+    modeLabel: PAYMENT_MODES[row.modePaiement] ?? row.modePaiement,
+  })));
+});
+
+const listUnpaidInvoices = endpoint(async (req, res) => {
+  const query = String(req.query.q ?? req.query.search ?? "").trim();
+  const filters = [
+    ne(factures.statut, "deleted"),
+    ne(factures.statut, "brouillon"),
+    sql<number>`${factures.montantTotal} - ${factures.montantPaye} > 0`,
+  ];
+  if (query) {
+    filters.push(or(
+      ilike(factures.reference, `%${query}%`),
+      ilike(clientsTable.nom, `%${query}%`),
+    )!);
+  }
+
+  const rows = await db.select({
+    id: factures.id,
+    reference: factures.reference,
+    statut: factures.statut,
+    dateFacture: factures.dateFacture,
+    dateEcheance: factures.dateEcheance,
+    montantTotal: factures.montantTotal,
+    montantPaye: factures.montantPaye,
+    relances: factures.relances,
+    dateDerniereRelance: factures.dateDerniereRelance,
+    idClient: factures.idClient,
+    clientNom: clientsTable.nom,
+    clientEmail: clientsTable.email,
+    clientTel: clientsTable.tel,
+  }).from(factures)
+    .leftJoin(clientsTable, eq(clientsTable.id, factures.idClient))
+    .where(and(...filters))
+    .orderBy(desc(factures.dateFacture));
+
+  const now = Date.now();
+  res.json(rows.map((row) => {
+    const solde = roundMoney(Number(row.montantTotal) - Number(row.montantPaye));
+    const echeance = row.dateEcheance ? new Date(row.dateEcheance) : null;
+    const retardJours = echeance && echeance.getTime() < now
+      ? Math.floor((now - echeance.getTime()) / 86_400_000)
+      : 0;
+    return {
+      ...row,
+      montantTotal: Number(row.montantTotal),
+      montantPaye: Number(row.montantPaye),
+      solde,
+      retardJours,
+      enRetard: retardJours > 0,
+    };
+  }));
 });
 
 const createPaiement = endpoint(async (req, res) => {
   const idFacture = idParam(req);
   const body = record(req.body);
   const montant = amount(body.montant, "Le paiement", false);
-  const modePaiement = String(body.modePaiement ?? "").trim();
-  if (!modePaiement) throw new ApiError(400, "Le mode de paiement est obligatoire.");
+  const modePaiement = paymentMode(body.modePaiement);
+  const notes = body.notes ? String(body.notes).trim() : null;
 
   const result = await db.transaction(async (tx) => {
-    const [facture] = await tx.select().from(factures).where(eq(factures.id, idFacture)).limit(1);
+    const [facture] = await tx.select().from(factures).where(eq(factures.id, idFacture)).for("update");
     if (!facture || facture.statut === "deleted") throw new ApiError(404, "Facture introuvable.");
-    const restant = Number(facture.montantTotal) - Number(facture.montantPaye);
-    if (montant > restant) throw new ApiError(400, "Le paiement dépasse le solde de la facture.");
+    if (facture.statut === "brouillon") {
+      throw new ApiError(409, "Cette facture est encore en brouillon : émettez-la avant d'encaisser un règlement.");
+    }
+    const restant = roundMoney(Number(facture.montantTotal) - Number(facture.montantPaye));
+    if (restant <= 0) throw new ApiError(409, "Cette facture est déjà réglée.");
+    if (montant > restant) {
+      throw new ApiError(400, `Le paiement dépasse le solde restant de la facture (${restant}).`);
+    }
     const [payment] = await tx.insert(paiements).values({
-      reference: reference("PAY"),
+      reference: await generateReference(tx, "PAY"),
       idFacture,
       montant: String(montant),
       modePaiement,
-      notes: body.notes ? String(body.notes) : null,
+      notes,
       idUtilisateur: requestUserId(req) ?? null,
     }).returning();
-    const montantPaye = Math.round((Number(facture.montantPaye) + montant) * 100) / 100;
-    await tx.update(factures).set({
+    await attachPaymentToCashSession(tx, req, { ...payment, montant }, facture);
+    const montantPaye = roundMoney(Number(facture.montantPaye) + montant);
+    const [updated] = await tx.update(factures).set({
       montantPaye: String(montantPaye),
       statut: montantPaye >= Number(facture.montantTotal) ? "payee" : "partiellement_payee",
       updatedAt: new Date(),
-    }).where(eq(factures.id, idFacture));
-    await logActivity(tx, req, "paiement.enregistre", { idFacture, montant });
-    return payment;
+    }).where(eq(factures.id, idFacture)).returning();
+    await logActivity(tx, req, "paiement.enregistre", {
+      idPaiement: payment.id,
+      reference: payment.reference,
+      idFacture,
+      montant,
+      modePaiement,
+    });
+    return { ...payment, montant, modeLabel: PAYMENT_MODES[modePaiement], facture: updated };
   });
   res.status(201).json({ success: true, data: result });
 });
+
+const cancelPaiement = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const body = record(req.body);
+  const motif = String(body.motif ?? "").trim();
+  if (!motif) throw new ApiError(400, "Indiquez le motif d'annulation du paiement.");
+
+  const result = await db.transaction(async (tx) => {
+    const [payment] = await tx.select().from(paiements).where(eq(paiements.id, id)).for("update");
+    if (!payment) throw new ApiError(404, "Paiement introuvable.");
+    if (payment.idPaiementAnnule) throw new ApiError(409, "Ce paiement est déjà une annulation.");
+    const [alreadyCancelled] = await tx.select({ id: paiements.id }).from(paiements)
+      .where(eq(paiements.idPaiementAnnule, id)).limit(1);
+    if (alreadyCancelled) throw new ApiError(409, "Ce paiement a déjà été annulé.");
+    const [facture] = await tx.select().from(factures).where(eq(factures.id, payment.idFacture)).for("update");
+    if (!facture || facture.statut === "deleted") throw new ApiError(404, "Facture introuvable.");
+
+    const montant = -Number(payment.montant);
+    const [reversal] = await tx.insert(paiements).values({
+      reference: await generateReference(tx, "ANN"),
+      idFacture: payment.idFacture,
+      montant: String(montant),
+      modePaiement: payment.modePaiement,
+      notes: motif,
+      idSessionCaisse: payment.idSessionCaisse,
+      idPaiementAnnule: payment.id,
+      idUtilisateur: requestUserId(req) ?? null,
+    }).returning();
+    await attachPaymentToCashSession(tx, req, { ...reversal, montant }, facture, payment.idSessionCaisse);
+
+    const montantPaye = roundMoney(Number(facture.montantPaye) + montant);
+    if (montantPaye < 0) throw new ApiError(409, "L'annulation rendrait le payé de la facture négatif.");
+    const [updated] = await tx.update(factures).set({
+      montantPaye: String(montantPaye),
+      statut: montantPaye <= 0
+        ? "impayee"
+        : montantPaye >= Number(facture.montantTotal) ? "payee" : "partiellement_payee",
+      updatedAt: new Date(),
+    }).where(eq(factures.id, payment.idFacture)).returning();
+    await logActivity(tx, req, "paiement.annule", {
+      idPaiement: payment.id,
+      referenceAnnulation: reversal.reference,
+      idFacture: payment.idFacture,
+      montant,
+      motif,
+    });
+    return { ...reversal, montant, modeLabel: PAYMENT_MODES[reversal.modePaiement], facture: updated, annule: payment };
+  });
+  res.status(201).json({ success: true, data: result });
+});
+
+function mailTransport() {
+  const host = process.env.SMTP_HOST ?? "";
+  const port = Number(process.env.SMTP_PORT ?? 587);
+  const user = process.env.SMTP_USER ?? "";
+  const pass = process.env.SMTP_PASS ?? "";
+  if (!host) throw new ApiError(503, "Envoi d'email non configuré : renseignez SMTP_HOST, SMTP_PORT, SMTP_USER et SMTP_PASS.");
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: user ? { user, pass } : undefined,
+  });
+}
+
+const remindInvoice = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const body = record(req.body);
+  const message = body.message ? String(body.message).trim() : "";
+
+  const [facture] = await db.select().from(factures).where(eq(factures.id, id)).limit(1);
+  if (!facture || facture.statut === "deleted") throw new ApiError(404, "Facture introuvable.");
+  const [client] = facture.idClient
+    ? await db.select().from(clientsTable).where(eq(clientsTable.id, facture.idClient)).limit(1)
+    : [];
+  const email = String(client?.email ?? "").trim();
+  if (!email) throw new ApiError(400, "Ce client n'a pas d'adresse e-mail : ajoutez-la depuis la fiche client.");
+
+  const solde = roundMoney(Number(facture.montantTotal) - Number(facture.montantPaye));
+  if (solde <= 0) throw new ApiError(409, "Cette facture est déjà réglée, aucune relance à envoyer.");
+
+  const boutique = (await db.select().from(parametresBoutique).limit(1))[0];
+  const nomBoutique = boutique?.nom ?? "SOLUTECH";
+  const expediteur = process.env.MAIL_FROM ?? boutique?.email ?? "no-reply@gesco.local";
+  const echeance = facture.dateEcheance
+    ? new Date(facture.dateEcheance).toLocaleDateString("fr-FR")
+    : "—";
+  const relanceNumero = Number(facture.relances ?? 0) + 1;
+
+  const transport = mailTransport();
+  await transport.sendMail({
+    from: `"${nomBoutique}" <${expediteur}>`,
+    to: email,
+    subject: `Rappel de règlement — facture ${facture.reference} — ${moneyText(solde)} dus`,
+    text: [
+      `Bonjour ${client?.nom ?? ""},`,
+      "",
+      `Sauf erreur de notre part, la facture ${facture.reference} du ${new Date(facture.dateFacture).toLocaleDateString("fr-FR")} présente un solde restant de ${moneyText(solde)} (échéance : ${echeance}).`,
+      message ? "" : null,
+      message || null,
+      "",
+      `Merci de procéder au règlement.${nomBoutique ? ` — ${nomBoutique}` : ""}`,
+    ].filter((line) => line !== null).join("\n"),
+    html: `
+      <p>Bonjour ${escapeHtml(client?.nom ?? "")},</p>
+      <p>Sauf erreur de notre part, la facture <strong>${escapeHtml(facture.reference)}</strong> du ${new Date(facture.dateFacture).toLocaleDateString("fr-FR")} présente un solde restant de <strong>${escapeHtml(moneyText(solde))}</strong>.</p>
+      <ul>
+        <li>Montant total : ${escapeHtml(moneyText(Number(facture.montantTotal)))}</li>
+        <li>Déjà réglé : ${escapeHtml(moneyText(Number(facture.montantPaye)))}</li>
+        <li>Échéance : ${escapeHtml(echeance)}</li>
+      </ul>
+      ${message ? `<p>${escapeHtml(message).replaceAll("\n", "<br>")}</p>` : ""}
+      <p>Merci de procéder au règlement.<br>${escapeHtml(nomBoutique)}</p>
+    `.trim(),
+  });
+
+  const now = new Date();
+  const updated = await db.transaction(async (tx) => {
+    const [current] = await tx.select().from(factures).where(eq(factures.id, id)).for("update");
+    if (!current) throw new ApiError(404, "Facture introuvable.");
+    const [row] = await tx.update(factures).set({
+      relances: Number(current.relances ?? 0) + 1,
+      dateDerniereRelance: now,
+      updatedAt: now,
+    }).where(eq(factures.id, id)).returning();
+    if (!row) throw new ApiError(404, "Facture introuvable.");
+    await logActivity(tx, req, "facture.relancee", { idFacture: id, reference: facture.reference, relances: row.relances, destinataire: email });
+    return row;
+  });
+
+  res.json({
+    success: true,
+    data: {
+      id: updated.id,
+      reference: updated.reference,
+      relances: updated.relances,
+      dateDerniereRelance: updated.dateDerniereRelance,
+      destinataire: email,
+    },
+  });
+});
+
+function moneyText(value: number): string {
+  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(value)} FCFA`;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]!);
+}
 
 const listVentes = endpoint(async (_req, res) => {
   const [sales, lines] = await Promise.all([
@@ -394,6 +743,84 @@ const getVente = endpoint(async (req, res) => {
   res.json({ ...vente, lignes });
 });
 
+const getVenteSerials = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const [vente] = await db.select().from(ventes).where(eq(ventes.id, id)).limit(1);
+  if (!vente) throw new ApiError(404, "Vente introuvable.");
+  const serials = await db.select().from(numerosSerieLivraison)
+    .where(eq(numerosSerieLivraison.idVente, id))
+    .orderBy(numerosSerieLivraison.idLigneVente, numerosSerieLivraison.id);
+  res.json(serials);
+});
+
+const updateVenteSerials = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const body = record(req.body);
+  const entrees = Array.isArray(body.serials) ? body.serials : [];
+  const serials = await db.transaction(async (tx) => {
+    const [vente] = await tx.select().from(ventes).where(eq(ventes.id, id)).for("update");
+    if (!vente) throw new ApiError(404, "Vente introuvable.");
+    const lignes = await tx.select().from(lignesVente).where(eq(lignesVente.idVente, id));
+    const ligneIds = new Set(lignes.map((ligne) => ligne.id));
+    const clean = entrees
+      .map((entree) => {
+        const item = record(entree);
+        const idLigneVente = positiveId(item.idLigneVente, "Ligne de vente");
+        return {
+          idLigneVente,
+          numeroSerie: String(item.numeroSerie ?? "").trim().slice(0, 200),
+          observation: item.observation ? String(item.observation).trim() : null,
+        };
+      })
+      .filter((item) => item.numeroSerie !== "");
+    for (const item of clean) {
+      if (!ligneIds.has(item.idLigneVente)) {
+        throw new ApiError(400, `La ligne ${item.idLigneVente} n'appartient pas à cette vente.`);
+      }
+    }
+    await tx.delete(numerosSerieLivraison).where(eq(numerosSerieLivraison.idVente, id));
+    if (clean.length > 0) {
+      await tx.insert(numerosSerieLivraison).values(clean.map((item) => ({
+        idVente: id,
+        idLigneVente: item.idLigneVente,
+        numeroSerie: item.numeroSerie,
+        observation: item.observation,
+        idUtilisateur: requestUserId(req) ?? null,
+      })));
+    }
+    await logActivity(tx, req, "vente.serials_modifiees", { id, count: clean.length });
+    return tx.select().from(numerosSerieLivraison)
+      .where(eq(numerosSerieLivraison.idVente, id))
+      .orderBy(numerosSerieLivraison.idLigneVente, numerosSerieLivraison.id);
+  });
+  res.json({ success: true, data: serials });
+});
+
+const getReturnableSale = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const [vente] = await db.select().from(ventes).where(eq(ventes.id, id)).limit(1);
+  if (!vente) throw new ApiError(404, "Vente introuvable.");
+  const lignes = await db.select().from(lignesVente).where(eq(lignesVente.idVente, id));
+  const lineIds = lignes.map((line) => line.id);
+  const returnedLines = lineIds.length
+    ? await db.select({ idLigneVente: lignesRetourVente.idLigneVente, quantite: lignesRetourVente.quantite })
+      .from(lignesRetourVente)
+      .innerJoin(retoursVente, eq(lignesRetourVente.idRetour, retoursVente.id))
+      .where(and(inArray(lignesRetourVente.idLigneVente, lineIds), ne(retoursVente.statut, "refuse")))
+    : [];
+  const returnedByLine = new Map<number, number>();
+  returnedLines.forEach((line) => {
+    returnedByLine.set(line.idLigneVente, (returnedByLine.get(line.idLigneVente) ?? 0) + line.quantite);
+  });
+  res.json({
+    ...vente,
+    lignes: lignes.map((line) => {
+      const quantiteRetournee = returnedByLine.get(line.id) ?? 0;
+      return { ...line, quantiteRetournee, quantiteRestante: Math.max(0, line.quantite - quantiteRetournee) };
+    }),
+  });
+});
+
 const createFactureFromVente = endpoint(async (req, res) => {
   const id = idParam(req);
   const result = await db.transaction(async (tx) => {
@@ -411,7 +838,7 @@ const createFactureFromVente = endpoint(async (req, res) => {
 
     const montantHT = Number(vente.montantHT);
     const [facture] = await tx.insert(factures).values({
-      reference: reference("FAC"),
+      reference: await generateReference(tx, "FAC"),
       idClient: vente.idClient,
       idVente: vente.id,
       statut: vente.statut === "annulee"
@@ -424,9 +851,11 @@ const createFactureFromVente = endpoint(async (req, res) => {
       montantTotal: vente.montantTotal,
       montantPaye: vente.montantPaye,
       donneesDocument: {
+        ...(vente.donneesDocument ?? {}),
         tauxTaxe: vente.tvaAppliquee && montantHT > 0 ? Number(vente.montantTaxe) / montantHT * 100 : 0,
         orderBanner: `Vente ${vente.reference}`,
-        paymentCondition: `Paiement : ${vente.modePaiement}`,
+        paymentCondition: (vente.donneesDocument as Record<string, unknown> | null)?.paymentCondition
+          || "60% à l'accordai et 40% à la livraison",
       },
       notes: vente.notes,
       idUtilisateur: requestUserId(req) ?? vente.idUtilisateur,
@@ -512,7 +941,7 @@ const createVente = endpoint(async (req, res) => {
       if (montantRecu < montantPaye) throw new ApiError(400, "Le montant reçu est inférieur au montant payé.");
     }
     const [created] = await tx.insert(ventes).values({
-      reference: String(body.reference ?? reference("VTE")),
+      reference: String(body.reference ?? (await generateReference(tx, "VTE"))),
       idClient,
       idSessionCaisse,
       statut: montantPaye >= montantTotal ? "payee" : "partiellement_payee",
@@ -523,6 +952,7 @@ const createVente = endpoint(async (req, res) => {
       montantPaye: String(montantPaye),
       modePaiement,
       notes: body.notes ? String(body.notes) : null,
+      donneesDocument: record(body.donneesDocument),
       idUtilisateur: requestUserId(req) ?? null,
     }).returning();
     await tx.insert(lignesVente).values(lignes.map((line) => ({
@@ -627,7 +1057,7 @@ const openCashSession = endpoint(async (req, res) => {
     const [open] = await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.statut, "ouverte")).limit(1);
     if (open) throw new ApiError(409, "Une session de caisse est déjà ouverte.");
     const [session] = await tx.insert(sessionsCaisse).values({
-      reference: reference("CSE"),
+      reference: await generateReference(tx, "CSE"),
       idUtilisateur: requestUserId(req) ?? null,
       fondOuverture: String(fondOuverture),
       montantAttendu: String(fondOuverture),
@@ -666,15 +1096,14 @@ const stockList = endpoint(async (_req, res) => {
   const rows = await db.select({
     id: produits.id,
     designation: produits.designation,
-    numeroSerie: produits.numeroSerie,
     idCategorie: produits.idCategorie,
-    codeBarres: produits.codeBarres,
     prixAchat: produits.prixAchat,
     prixVente: produits.prixVente,
     stock: stocks.quantite,
     seuilMinimum: stocks.seuilMinimum,
     idFournisseur: stocks.idFournisseur,
-  }).from(produits).leftJoin(stocks, eq(stocks.idProduit, produits.id));
+  }).from(produits).leftJoin(stocks, eq(stocks.idProduit, produits.id)).where(eq(produits.archive, false))
+    .orderBy(desc(produits.createdAt), desc(produits.id));
   res.json(rows.map((row) => ({
     ...row,
     stock: row.stock ?? 0,
@@ -689,7 +1118,7 @@ const createStockMovement = endpoint(async (req, res) => {
   const qte = quantity(body.quantite, "Quantité");
   const type = String(body.type ?? "");
   const direction = ["entree", "retour", "ajustement_positif"].includes(type) ? 1
-    : ["sortie", "perte", "ajustement_negatif"].includes(type) ? -1 : 0;
+    : ["sortie", "perte", "casse", "vol", "ajustement_negatif"].includes(type) ? -1 : 0;
   if (!direction) throw new ApiError(400, "Type de mouvement de stock invalide.");
   const result = await db.transaction(async (tx) => {
     const [stock] = await tx.select().from(stocks).where(eq(stocks.idProduit, idProduit)).for("update");
@@ -727,7 +1156,7 @@ const createOrder = endpoint(async (req, res) => {
       line.designation = product.designation;
     }
     const [order] = await tx.insert(commandesFournisseurs).values({
-      reference: String(body.reference ?? reference("ACH")),
+      reference: String(body.reference ?? (await generateReference(tx, "ACH"))),
       idFournisseur,
       statut: String(body.statut ?? "envoyee"),
       dateLivraisonPrevue: body.dateLivraisonPrevue ? new Date(String(body.dateLivraisonPrevue)) : null,
@@ -765,15 +1194,15 @@ const listOrders = endpoint(async (_req, res) => {
   const [orders, suppliers, lines] = await Promise.all([
     db.select().from(commandesFournisseurs).orderBy(desc(commandesFournisseurs.dateCommande)),
     db.select({ id: fournisseurs.id, nom: fournisseurs.nom }).from(fournisseurs),
-    db.select({ idCommande: lignesCommande.idCommande }).from(lignesCommande),
+    db.select({ idCommande: lignesCommande.idCommande, quantite: lignesCommande.quantite }).from(lignesCommande),
   ]);
   const supplierNames = new Map(suppliers.map((supplier) => [supplier.id, supplier.nom]));
-  const lineCounts = new Map<number, number>();
-  lines.forEach(({ idCommande }) => lineCounts.set(idCommande, (lineCounts.get(idCommande) ?? 0) + 1));
+  const articleCounts = new Map<number, number>();
+  lines.forEach(({ idCommande, quantite }) => articleCounts.set(idCommande, (articleCounts.get(idCommande) ?? 0) + quantite));
   res.json(orders.map((order) => ({
     ...order,
     idFournisseurLabel: supplierNames.get(order.idFournisseur) ?? `Fournisseur ${order.idFournisseur}`,
-    articleCount: lineCounts.get(order.id) ?? 0,
+    articleCount: articleCounts.get(order.id) ?? 0,
   })));
 });
 
@@ -793,7 +1222,7 @@ const receiveOrder = endpoint(async (req, res) => {
     if (!order || order.statut === "annulee") throw new ApiError(404, "Commande fournisseur introuvable.");
     const orderLines = await tx.select().from(lignesCommande).where(eq(lignesCommande.idCommande, idCommande)).for("update");
     const linesById = new Map(orderLines.map((line) => [line.id, line]));
-    const receiptRef = reference("REC");
+    const receiptRef = await generateReference(tx, "REC");
     const [receipt] = await tx.insert(receptions).values({
       reference: receiptRef,
       idCommande,
@@ -841,6 +1270,67 @@ const receiveOrder = endpoint(async (req, res) => {
   res.status(201).json({ success: true, data: result });
 });
 
+const listReceptions = endpoint(async (_req, res) => {
+  const [receipts, orders, orderLines, receiptLines, suppliers, users] = await Promise.all([
+    db.select().from(receptions).orderBy(desc(receptions.dateReception)),
+    db.select({ id: commandesFournisseurs.id, reference: commandesFournisseurs.reference, idFournisseur: commandesFournisseurs.idFournisseur }).from(commandesFournisseurs),
+    db.select({ id: lignesCommande.id, idCommande: lignesCommande.idCommande, quantite: lignesCommande.quantite, prixUnitaire: lignesCommande.prixUnitaire }).from(lignesCommande),
+    db.select({ idReception: lignesReception.idReception, idLigneCommande: lignesReception.idLigneCommande, quantiteRecue: lignesReception.quantiteRecue }).from(lignesReception),
+    db.select({ id: fournisseurs.id, nom: fournisseurs.nom }).from(fournisseurs),
+    db.select({ id: utilisateursTable.id, nomUtilisateur: utilisateursTable.nomUtilisateur }).from(utilisateursTable),
+  ]);
+
+  const orderById = new Map(orders.map((order) => [order.id, order]));
+  const supplierNames = new Map(suppliers.map((supplier) => [supplier.id, supplier.nom]));
+  const userNames = new Map(users.map((user) => [user.id, user.nomUtilisateur]));
+  const orderLineById = new Map(orderLines.map((line) => [line.id, line]));
+
+  const orderTotals = new Map<number, number>();
+  orderLines.forEach((line) => orderTotals.set(line.idCommande, (orderTotals.get(line.idCommande) ?? 0) + line.quantite));
+
+  const receptionQuantities = new Map<number, number>();
+  const receptionAmounts = new Map<number, number>();
+  receiptLines.forEach((line) => {
+    const orderLine = orderLineById.get(line.idLigneCommande);
+    receptionQuantities.set(line.idReception, (receptionQuantities.get(line.idReception) ?? 0) + line.quantiteRecue);
+    if (orderLine) {
+      receptionAmounts.set(line.idReception, (receptionAmounts.get(line.idReception) ?? 0) + line.quantiteRecue * Number(orderLine.prixUnitaire));
+    }
+  });
+
+  const receiptsByOrder = new Map<number, typeof receipts>();
+  receipts.forEach((receipt) => {
+    const group = receiptsByOrder.get(receipt.idCommande) ?? [];
+    group.push(receipt);
+    receiptsByOrder.set(receipt.idCommande, group);
+  });
+  const completedReceptions = new Set<number>();
+  receiptsByOrder.forEach((group, idCommande) => {
+    const expected = orderTotals.get(idCommande) ?? 0;
+    let received = 0;
+    [...group]
+      .sort((left, right) => new Date(left.dateReception).getTime() - new Date(right.dateReception).getTime() || left.id - right.id)
+      .forEach((receipt) => {
+        received += receptionQuantities.get(receipt.id) ?? 0;
+        if (expected > 0 && received >= expected) completedReceptions.add(receipt.id);
+      });
+  });
+
+  res.json(receipts.map((receipt) => {
+    const order = orderById.get(receipt.idCommande);
+    return {
+      ...receipt,
+      idCommandeLabel: order?.reference ?? `Commande ${receipt.idCommande}`,
+      fournisseurNom: order ? supplierNames.get(order.idFournisseur) ?? "—" : "—",
+      quantiteRecue: receptionQuantities.get(receipt.id) ?? 0,
+      quantiteAttendue: orderTotals.get(receipt.idCommande) ?? 0,
+      montantRecu: receptionAmounts.get(receipt.id) ?? 0,
+      nomUtilisateur: receipt.idUtilisateur ? userNames.get(receipt.idUtilisateur) ?? null : null,
+      receptionStatut: completedReceptions.has(receipt.id) ? "complete" : "partielle",
+    };
+  }));
+});
+
 const createReturn = endpoint(async (req, res) => {
   const body = record(req.body);
   const idVente = positiveId(body.idVente, "Vente");
@@ -851,8 +1341,9 @@ const createReturn = endpoint(async (req, res) => {
     if (!sale || sale.statut === "annulee") throw new ApiError(404, "Vente introuvable.");
     const saleLines = await tx.select().from(lignesVente).where(eq(lignesVente.idVente, idVente));
     const [retour] = await tx.insert(retoursVente).values({
-      reference: reference("RET"),
+      reference: await generateReference(tx, "RET"),
       idVente,
+      statut: "en_attente",
       motif: body.motif ? String(body.motif) : null,
       idUtilisateur: requestUserId(req) ?? null,
     }).returning();
@@ -863,16 +1354,15 @@ const createReturn = endpoint(async (req, res) => {
       const qte = quantity(lineBody.quantite, "Quantité retournée");
       const saleLine = saleLines.find((line) => line.id === idLigneVente);
       if (!saleLine) throw new ApiError(400, "Produit ne faisant pas partie de cette vente.");
-      const previousReturns = await tx.select().from(lignesRetourVente).where(eq(lignesRetourVente.idLigneVente, idLigneVente));
+      const previousReturns = await tx.select({ quantite: lignesRetourVente.quantite })
+        .from(lignesRetourVente)
+        .innerJoin(retoursVente, eq(lignesRetourVente.idRetour, retoursVente.id))
+        .where(and(eq(lignesRetourVente.idLigneVente, idLigneVente), ne(retoursVente.statut, "refuse")));
       const alreadyReturned = previousReturns.reduce((sum, line) => sum + line.quantite, 0);
       if (alreadyReturned + qte > saleLine.quantite) throw new ApiError(409, "La quantité retournée dépasse la quantité achetée.");
       const lineAmount = Math.round(Number(saleLine.prixUnitaire) * qte * 100) / 100;
       total += lineAmount;
       await tx.insert(lignesRetourVente).values({ idRetour: retour.id, idLigneVente, quantite: qte, montant: String(lineAmount) });
-      const [stock] = await tx.select().from(stocks).where(eq(stocks.idProduit, saleLine.idProduit)).for("update");
-      if (!stock) throw new ApiError(409, "Stock du produit introuvable.");
-      await tx.update(stocks).set({ quantite: stock.quantite + qte, updatedAt: new Date() }).where(eq(stocks.id, stock.id));
-      await storeStockMovement(tx, req, saleLine.idProduit, "retour", qte, retour.reference, String(body.motif ?? ""));
     }
     const [updated] = await tx.update(retoursVente).set({ montantRembourse: String(total) })
       .where(eq(retoursVente.id, retour.id)).returning();
@@ -882,16 +1372,83 @@ const createReturn = endpoint(async (req, res) => {
   res.status(201).json({ success: true, data: result });
 });
 
+const setReturnStatus = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const body = record(req.body);
+  const statut = String(body.statut ?? "");
+  if (!["rembourse", "echange", "refuse"].includes(statut)) {
+    throw new ApiError(400, "Statut de retour invalide.");
+  }
+  const result = await db.transaction(async (tx) => {
+    const [retour] = await tx.select().from(retoursVente).where(eq(retoursVente.id, id)).for("update");
+    if (!retour) throw new ApiError(404, "Retour introuvable.");
+    if (retour.statut !== "en_attente") throw new ApiError(409, "Ce retour a déjà été traité.");
+    if (statut === "rembourse" || statut === "echange") {
+      const lines = await tx.select().from(lignesRetourVente).where(eq(lignesRetourVente.idRetour, id));
+      for (const line of lines) {
+        const [saleLine] = await tx.select().from(lignesVente).where(eq(lignesVente.id, line.idLigneVente)).limit(1);
+        if (!saleLine) throw new ApiError(409, "Ligne de vente introuvable.");
+        const [stock] = await tx.select().from(stocks).where(eq(stocks.idProduit, saleLine.idProduit)).for("update");
+        if (!stock) throw new ApiError(409, "Stock du produit introuvable.");
+        await tx.update(stocks).set({ quantite: stock.quantite + line.quantite, updatedAt: new Date() }).where(eq(stocks.id, stock.id));
+        await storeStockMovement(tx, req, saleLine.idProduit, "retour", line.quantite, retour.reference, retour.motif ?? "");
+      }
+    }
+    const [updated] = await tx.update(retoursVente).set({ statut }).where(eq(retoursVente.id, id)).returning();
+    await logActivity(tx, req, "vente.retour_statut", { idRetour: id, statut });
+    return updated;
+  });
+  res.json({ success: true, data: result });
+});
+
 const listReturns = endpoint(async (_req, res) => {
-  res.json(await db.select().from(retoursVente).orderBy(desc(retoursVente.dateRetour)));
+  const [returns, sales] = await Promise.all([
+    db.select().from(retoursVente).orderBy(desc(retoursVente.dateRetour)),
+    db.select().from(ventes).orderBy(desc(ventes.dateVente)),
+  ]);
+  const saleById = new Map(sales.map((sale) => [sale.id, sale]));
+  const rows: Array<Record<string, unknown>> = returns.map((retour) => {
+    const sale = saleById.get(retour.idVente);
+    return {
+      id: retour.id,
+      type: "retour",
+      reference: retour.reference,
+      date: retour.dateRetour,
+      idVente: retour.idVente,
+      venteReference: sale?.reference ?? null,
+      motif: retour.motif,
+      montant: Number(retour.montantRembourse),
+      statut: retour.statut,
+    };
+  });
+  sales.filter((sale) => sale.statut === "annulee").forEach((sale) => {
+    rows.push({
+      id: sale.id,
+      type: "annulation",
+      reference: sale.reference,
+      date: sale.dateVente,
+      idVente: sale.id,
+      venteReference: sale.reference,
+      motif: "Annulation de vente",
+      montant: Number(sale.montantTotal),
+      statut: "annulee",
+    });
+  });
+  rows.sort((left, right) => new Date(String(right.date)).getTime() - new Date(String(left.date)).getTime());
+  res.json(rows);
 });
 
 const createInventory = endpoint(async (req, res) => {
   const body = record(req.body);
+  const inventoryTitle = String(body.reference ?? "").trim();
+  if (inventoryTitle.length > 50) throw new ApiError(400, "Le titre de l'inventaire ne peut pas dépasser 50 caractères.");
+  const responsable = String(body.responsable ?? "").trim();
+  if (responsable.length > 150) throw new ApiError(400, "Le nom du responsable ne peut pas dépasser 150 caractères.");
   const result = await db.transaction(async (tx) => {
     const [inventory] = await tx.insert(inventaires).values({
-      reference: String(body.reference ?? reference("INV")),
+      reference: inventoryTitle || (await generateReference(tx, "INV")),
       notes: body.notes ? String(body.notes) : null,
+      responsable: responsable || null,
       idUtilisateur: requestUserId(req) ?? null,
     }).returning();
     const products = await tx.select().from(stocks);
@@ -909,7 +1466,42 @@ const createInventory = endpoint(async (req, res) => {
 });
 
 const listInventories = endpoint(async (_req, res) => {
-  res.json(await db.select().from(inventaires).orderBy(desc(inventaires.dateInventaire)));
+  const [inventories, lines] = await Promise.all([
+    db.select({
+      id: inventaires.id,
+      reference: inventaires.reference,
+      statut: inventaires.statut,
+      dateInventaire: inventaires.dateInventaire,
+      notes: inventaires.notes,
+      idUtilisateur: inventaires.idUtilisateur,
+      createdAt: inventaires.createdAt,
+      responsable: sql<string | null>`coalesce(${inventaires.responsable}, ${utilisateursTable.nomUtilisateur})`.as("responsable"),
+    }).from(inventaires)
+      .leftJoin(utilisateursTable, eq(utilisateursTable.id, inventaires.idUtilisateur))
+      .orderBy(desc(inventaires.dateInventaire)),
+    db.select().from(lignesInventaire),
+  ]);
+  const stats = new Map<number, { total: number; comptes: number; ecarts: number; ecartNet: number }>();
+  for (const line of lines) {
+    const entry = stats.get(line.idInventaire) ?? { total: 0, comptes: 0, ecarts: 0, ecartNet: 0 };
+    entry.total += 1;
+    if (line.quantiteComptee !== null) entry.comptes += 1;
+    if (line.ecart !== null && line.ecart !== 0) {
+      entry.ecarts += 1;
+      entry.ecartNet += line.ecart;
+    }
+    stats.set(line.idInventaire, entry);
+  }
+  res.json(inventories.map((inventory) => {
+    const entry = stats.get(inventory.id) ?? { total: 0, comptes: 0, ecarts: 0, ecartNet: 0 };
+    return {
+      ...inventory,
+      lignesTotal: entry.total,
+      articlesComptes: entry.comptes,
+      ecarts: entry.ecarts,
+      ecartNet: entry.ecartNet,
+    };
+  }));
 });
 
 const countInventory = endpoint(async (req, res) => {
@@ -952,6 +1544,36 @@ const countInventory = endpoint(async (req, res) => {
     return { idInventaire, cloture: body.cloturer === true };
   });
   res.json({ success: true, data: result });
+});
+
+const deleteInventory = endpoint(async (req, res) => {
+  const idInventaire = idParam(req);
+  await db.transaction(async (tx) => {
+    const [inventory] = await tx.select().from(inventaires).where(eq(inventaires.id, idInventaire)).for("update");
+    if (!inventory) throw new ApiError(404, "Inventaire introuvable.");
+    if (inventory.statut === "termine") {
+      const adjustments = await tx.select().from(mouvementsStock).where(and(
+        eq(mouvementsStock.type, "inventaire"),
+        eq(mouvementsStock.reference, inventory.reference),
+      ));
+      for (const movement of adjustments) {
+        await tx.update(stocks)
+          .set({ quantite: sql`${stocks.quantite} - ${movement.quantite}`, updatedAt: new Date() })
+          .where(eq(stocks.idProduit, movement.idProduit));
+      }
+      await tx.delete(mouvementsStock).where(and(
+        eq(mouvementsStock.type, "inventaire"),
+        eq(mouvementsStock.reference, inventory.reference),
+      ));
+    }
+    await tx.delete(journalActivite).where(and(
+      inArray(journalActivite.action, ["stock.inventaire_cree", "stock.inventaire_compte"]),
+      sql`(${journalActivite.details}->>'id' = ${String(idInventaire)} OR ${journalActivite.details}->>'idInventaire' = ${String(idInventaire)})`,
+    ));
+    await tx.delete(lignesInventaire).where(eq(lignesInventaire.idInventaire, idInventaire));
+    await tx.delete(inventaires).where(eq(inventaires.id, idInventaire));
+  });
+  res.json({ success: true, message: "Inventaire supprimé." });
 });
 
 const storeSettings = endpoint(async (req, res) => {
@@ -1075,10 +1697,43 @@ const dashboard = endpoint(async (req, res) => {
       designation: productById.get(stock.idProduit)?.designation ?? `Produit ${stock.idProduit}`,
       quantite: stock.quantite,
       seuilMinimum: stock.seuilMinimum,
-      numeroSerie: productById.get(stock.idProduit)?.numeroSerie ?? null,
     }))
     .sort((a, b) => a.quantite - b.quantite)
     .slice(0, 8);
+  const clientSales = new Map<number, { ventes: number; chiffreAffaires: number }>();
+  for (const sale of periodSales) {
+    if (!sale.idClient) continue;
+    const totals = clientSales.get(sale.idClient) ?? { ventes: 0, chiffreAffaires: 0 };
+    totals.ventes += 1;
+    totals.chiffreAffaires += Number(sale.montantPaye);
+    clientSales.set(sale.idClient, totals);
+  }
+  const topClients = [...clientSales.entries()]
+    .map(([idClient, totals]) => ({
+      idClient,
+      nom: clientNames.get(idClient) ?? `Client ${idClient}`,
+      ...totals,
+    }))
+    .sort((a, b) => b.chiffreAffaires - a.chiffreAffaires)
+    .slice(0, 5);
+  const categorySales = new Map<number, { quantite: number; chiffreAffaires: number }>();
+  for (const line of saleLineRows) {
+    if (!periodSaleIds.has(line.idVente)) continue;
+    const product = productById.get(line.idProduit);
+    const idCategorie = product?.idCategorie ?? -1;
+    const totals = categorySales.get(idCategorie) ?? { quantite: 0, chiffreAffaires: 0 };
+    totals.quantite += line.quantite;
+    totals.chiffreAffaires += Number(line.montantTotal);
+    categorySales.set(idCategorie, totals);
+  }
+  const topCategories = [...categorySales.entries()]
+    .map(([idCategorie, totals]) => ({
+      idCategorie,
+      categorie: categoryNames.get(idCategorie) ?? "Sans catégorie",
+      ...totals,
+    }))
+    .sort((a, b) => b.chiffreAffaires - a.chiffreAffaires)
+    .slice(0, 6);
   const topProducts = [...productSales.entries()]
     .map(([idProduit, totals]) => {
       const product = productById.get(idProduit);
@@ -1119,6 +1774,8 @@ const dashboard = endpoint(async (req, res) => {
     valeurStock: stockValue,
     ventesParJour: [...dailyStats.values()],
     meilleuresVentes: topProducts,
+    meilleursClients: topClients,
+    ventesParCategorie: topCategories,
     stocksFaibles: lowStockProducts,
     ventesRecentes: recentSalesRows.map((sale) => ({
         ...sale,
@@ -1212,9 +1869,15 @@ export const operationsHandlers = {
   factureStats,
   factureRevenue,
   listPaiements,
+  listUnpaidInvoices,
   createPaiement,
+  cancelPaiement,
+  remindInvoice,
   listVentes,
   getVente,
+  getVenteSerials,
+  updateVenteSerials,
+  getReturnableSale,
   createFactureFromVente,
   createVente,
   cancelVente,
@@ -1228,11 +1891,14 @@ export const operationsHandlers = {
   listOrders,
   getOrder,
   receiveOrder,
+  listReceptions,
   createReturn,
   listReturns,
+  setReturnStatus,
   createInventory,
   listInventories,
   countInventory,
+  deleteInventory,
   storeSettings,
   getSettings,
   dashboard,

@@ -144,7 +144,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -522,12 +522,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -548,12 +548,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -572,7 +566,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -614,7 +608,7 @@ setTimeout(function () {
                             <div class="col-md-7">
                                 <div class="input-group">
                                     <span class="input-group-text bg-none"><i class="bi bi-upc-scan"></i></span>
-                                    <input type="text" class="form-control" id="pos-search" placeholder="Scanner un code-barres ou rechercher un produit...">
+                                    <input type="text" class="form-control" id="pos-search" placeholder="Rechercher un produit...">
                                 </div>
                             </div>
                             <div class="col-md-5">
@@ -685,6 +679,17 @@ setTimeout(function () {
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="fw-bold">Total</span>
                             <span class="fw-bold fs-4" id="pos-total">0 FCFA</span>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small text-secondary mb-1">Validité</label>
+                                <input type="text" class="form-control form-control-sm" id="pos-validity" placeholder="Ex : 30 jours">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-secondary mb-1">Garantie</label>
+                                <input type="text" class="form-control form-control-sm" id="pos-guarantee" placeholder="Ex : 1 an">
+                            </div>
                         </div>
 
                         <div class="mb-2">
@@ -838,5 +843,7 @@ setTimeout(function () {
 
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 </html>

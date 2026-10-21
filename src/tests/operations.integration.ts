@@ -6,8 +6,10 @@ import {
   commandesFournisseurs,
   factures,
   journalActivite,
+  inventaires,
   lignesCommande,
   lignesFacture,
+  lignesInventaire,
   lignesReception,
   lignesVente,
   mouvementsStock,
@@ -116,6 +118,28 @@ async function removeTestOrder(
   });
 }
 
+async function removeTestInventory(
+  inventory: JsonRecord | undefined,
+  productId: number,
+  originalStock: number,
+): Promise<void> {
+  if (!inventory?.id) return;
+  await db.transaction(async (tx) => {
+    await tx.delete(mouvementsStock).where(and(
+      eq(mouvementsStock.type, "inventaire"),
+      eq(mouvementsStock.reference, inventory.reference),
+    ));
+    await tx.delete(journalActivite).where(and(
+      inArray(journalActivite.action, ["stock.inventaire_cree", "stock.inventaire_compte"]),
+      sql`(${journalActivite.details}->>'id' = ${String(inventory.id)} OR ${journalActivite.details}->>'idInventaire' = ${String(inventory.id)})`,
+    ));
+    await tx.delete(lignesInventaire).where(eq(lignesInventaire.idInventaire, inventory.id));
+    await tx.delete(inventaires).where(eq(inventaires.id, inventory.id));
+    await tx.update(stocks).set({ quantite: originalStock, updatedAt: new Date() })
+      .where(eq(stocks.idProduit, productId));
+  });
+}
+
 async function main(): Promise<void> {
   const [supplierRows, productRows, sessionRows] = await Promise.all([
     db.select().from(fournisseurs).limit(1),
@@ -137,9 +161,85 @@ async function main(): Promise<void> {
   const saleReference = `TST-VTE-${testRunId}`;
   let order: JsonRecord | undefined;
   let sale: JsonRecord | undefined;
+  let inventory: JsonRecord | undefined;
   const failures: Error[] = [];
 
   try {
+    const inventoryResponse = await api("/api/inventaires", {
+      method: "POST",
+      body: JSON.stringify({
+        reference: `Inventaire test ${testRunId.slice(0, 8)}`,
+        notes: `Inventaire de test ${testRunId}`,
+        responsable: "Responsable de test",
+      }),
+    });
+    checkStatus(inventoryResponse.status, 201, "Création d'un inventaire");
+    const inv = inventoryResponse.data;
+    inventory = inv;
+    assert.ok(inv?.id, "L'inventaire créé doit avoir un identifiant.");
+    assert.equal(inv.reference, `Inventaire test ${testRunId.slice(0, 8)}`);
+    assert.equal(inv.statut, "en_cours");
+    assert.equal(inv.responsable, "Responsable de test", "Le responsable saisi doit être enregistré.");
+
+    const inventoryDetail = await api(`/api/inventaires/${inv.id}`);
+    checkStatus(inventoryDetail.status, 200, "Lecture de l'inventaire");
+    const lines = inventoryDetail.data.lignes as JsonRecord[];
+    assert.ok(lines.length >= 1, "L'inventaire doit contenir les lignes de stock.");
+    const targetLine = lines.find((line) => line.idProduit === product.produits.id);
+    assert.ok(targetLine, "Le produit de test doit figurer dans l'inventaire.");
+    const counted = lines.map((line) => ({
+      idProduit: line.idProduit,
+      quantiteComptee: line.idProduit === product.produits.id
+        ? Number(line.quantiteTheorique) + 1
+        : Number(line.quantiteTheorique),
+    }));
+
+    const countResponse = await api(`/api/inventaires/${inv.id}/comptages`, {
+      method: "POST",
+      body: JSON.stringify({ lignes: counted }),
+    });
+    checkStatus(countResponse.status, 200, "Enregistrement du comptage");
+    const afterCount = await api(`/api/inventaires/${inv.id}`);
+    const countedLine = (afterCount.data.lignes as JsonRecord[]).find((line) => line.idProduit === product.produits.id);
+    assert.equal(Number(countedLine?.ecart), 1, "L'écart du produit compté doit être de +1.");
+
+    const listAfterCount = await api("/api/inventaires");
+    const listed = (listAfterCount.data as JsonRecord[]).find((item) => item.id === inv.id);
+    assert.equal(Number(listed?.articlesComptes), lines.length, "Toutes les lignes doivent être comptées.");
+    assert.equal(Number(listed?.ecarts), 1, "Un seul article présente un écart.");
+    assert.equal(listed?.responsable, "Responsable de test", "La liste doit exposer le responsable enregistré.");
+
+    const closeResponse = await api(`/api/inventaires/${inv.id}/cloture`, {
+      method: "POST",
+      body: JSON.stringify({ lignes: counted }),
+    });
+    checkStatus(closeResponse.status, 200, "Clôture de l'inventaire");
+    const [closedInventory] = await db.select().from(inventaires).where(eq(inventaires.id, inv.id));
+    assert.equal(closedInventory.statut, "termine");
+    const currentStock = await api(`/api/produits/${product.produits.id}`);
+    assert.equal(Number(currentStock.data.stock), originalStock + 1, "Le stock doit refléter l'écart d'inventaire.");
+    const adjustmentMovement = await db.select().from(mouvementsStock).where(and(
+      eq(mouvementsStock.type, "inventaire"),
+      eq(mouvementsStock.reference, inv.reference),
+    ));
+    assert.equal(adjustmentMovement.length, 1, "Un mouvement d'ajustement doit être journalisé.");
+    assert.equal(adjustmentMovement[0].quantite, 1);
+    console.log("PASS: création, comptage, clôture d'inventaire et ajustement de stock");
+
+    const deleteResponse = await api(`/api/inventaires/${inv.id}`, { method: "DELETE" });
+    checkStatus(deleteResponse.status, 200, "Suppression de l'inventaire");
+    const remainingInventory = await db.select().from(inventaires).where(eq(inventaires.id, inv.id));
+    assert.equal(remainingInventory.length, 0, "L'inventaire supprimé ne doit plus exister.");
+    const remainingMovements = await db.select().from(mouvementsStock).where(and(
+      eq(mouvementsStock.type, "inventaire"),
+      eq(mouvementsStock.reference, inv.reference),
+    ));
+    assert.equal(remainingMovements.length, 0, "Les mouvements liés doivent être supprimés.");
+    inventory = undefined;
+    const [restoredStock] = await db.select().from(stocks).where(eq(stocks.idProduit, product.produits.id));
+    assert.equal(restoredStock.quantite, originalStock, "Le stock doit être restauré après suppression de l'inventaire.");
+    console.log("PASS: suppression d'inventaire et annulation de l'ajustement de stock");
+
     const orderResponse = await api("/api/commandes", {
       method: "POST",
       body: JSON.stringify({
@@ -254,6 +354,12 @@ async function main(): Promise<void> {
           order = { ...persistedOrder, testProductId: product.produits.id };
         }
       }
+      if (!inventory) {
+        const [persistedInventory] = await db.select().from(inventaires)
+          .where(eq(inventaires.notes, `Inventaire de test ${testRunId}`));
+        if (persistedInventory) inventory = persistedInventory;
+      }
+      await removeTestInventory(inventory, product.produits.id, originalStock);
       await removeTestSale(sale);
       await removeTestOrder(order, originalStockRow);
       const [restoredSession] = await db.select().from(sessionsCaisse).where(eq(sessionsCaisse.id, session.id));

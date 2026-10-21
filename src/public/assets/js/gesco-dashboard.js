@@ -102,6 +102,37 @@
               </div>
             </section>
           </div>
+          <div class="col-12 col-xl-7">
+            <section class="card h-100" aria-labelledby="dashboard-top-clients-title">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div><h2 class="h5 mb-1" id="dashboard-top-clients-title">Meilleurs clients</h2><p class="small text-secondary mb-0">Clients ayant le plus acheté sur la période</p></div>
+                  <a href="gesco-clients.html" class="btn btn-sm btn-link">Tous les clients</a>
+                </div>
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0">
+                    <thead><tr><th>Client</th><th class="text-center">Ventes</th><th class="text-end">Chiffre d'affaires</th></tr></thead>
+                    <tbody class="dashboard-top-clients"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div class="col-12 col-xl-5">
+            <section class="card h-100" aria-labelledby="dashboard-top-categories-title">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div><h2 class="h5 mb-1" id="dashboard-top-categories-title">Ventes par catégorie</h2><p class="small text-secondary mb-0">Répartition du chiffre d'affaires sur la période</p></div>
+                </div>
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0">
+                    <thead><tr><th>Catégorie</th><th class="text-center">Articles</th><th class="text-end">Chiffre d'affaires</th></tr></thead>
+                    <tbody class="dashboard-top-categories"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
         <p class="small text-secondary text-end mb-3" data-updated-at></p>`;
 
@@ -253,6 +284,62 @@
         row.append(amount);
         return row;
       });
+      const emptyTable = (containerSelector, cols, message) => {
+        const body = root.querySelector(containerSelector);
+        if (!body) return;
+        body.replaceChildren();
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = cols;
+        td.className = "text-center text-secondary py-4";
+        td.textContent = message;
+        tr.append(td);
+        body.append(tr);
+      };
+      const clients = Array.isArray(data.meilleursClients) ? data.meilleursClients : [];
+      const clientBody = root.querySelector(".dashboard-top-clients");
+      if (clientBody) {
+        if (!clients.length) {
+          emptyTable(".dashboard-top-clients", 3, "Aucun client n'a acheté sur cette période.");
+        } else {
+          clientBody.replaceChildren();
+          clients.forEach((client, index) => {
+            const row = document.createElement("tr");
+            const name = document.createElement("td");
+            name.textContent = `${index + 1}. ${client.nom || "—"}`;
+            const sales = document.createElement("td");
+            sales.className = "text-center";
+            sales.textContent = number(client.ventes);
+            const amount = document.createElement("td");
+            amount.className = "text-end text-nowrap";
+            amount.textContent = money(client.chiffreAffaires);
+            row.append(name, sales, amount);
+            clientBody.append(row);
+          });
+        }
+      }
+      const categories = Array.isArray(data.ventesParCategorie) ? data.ventesParCategorie : [];
+      const categoryBody = root.querySelector(".dashboard-top-categories");
+      if (categoryBody) {
+        if (!categories.length) {
+          emptyTable(".dashboard-top-categories", 3, "Aucune vente de produit sur cette période.");
+        } else {
+          categoryBody.replaceChildren();
+          categories.forEach((category) => {
+            const row = document.createElement("tr");
+            const name = document.createElement("td");
+            name.textContent = category.categorie || "—";
+            const quantity = document.createElement("td");
+            quantity.className = "text-center";
+            quantity.textContent = number(category.quantite);
+            const amount = document.createElement("td");
+            amount.className = "text-end text-nowrap";
+            amount.textContent = money(category.chiffreAffaires);
+            row.append(name, quantity, amount);
+            categoryBody.append(row);
+          });
+        }
+      }
 
       const notice = root.querySelector("#dashboard-empty-notice");
       const noSales = !Number(data.ventesPeriode);

@@ -313,6 +313,12 @@ html, body {
   font-size: 8.4pt;
 }
 
+.client-email-val {
+  font-size: 8.4pt;
+  color: #000000;
+  text-decoration: underline;
+}
+
 .client-location u {
   text-decoration: underline;
 }
@@ -409,21 +415,31 @@ html, body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  white-space: nowrap;
+  flex-wrap: nowrap;
+  gap: 3mm;
+  max-width: 100%;
   margin-top: auto;
 }
 
 .phone-val {
-  font-size: 9.8pt;
+  font-size: 8.4pt;
   font-weight: 800;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .email-val {
-  font-size: 7.4pt;
+  font-size: 6.4pt;
   font-weight: 600;
   color: #000000;
   text-decoration: underline;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: right;
 }
 
 /* ==========================================================================
@@ -443,8 +459,8 @@ html, body {
 }
 
 .col-ref   { width: 11%; }
-.col-qty   { width: 8%; }
-.col-desc  { width: 48%; }
+.col-qty   { width: 9%; }
+.col-desc  { width: 47%; }
 .col-pu    { width: 14%; }
 .col-rate  { width: 6%; }
 .col-amount{ width: 13%; }
@@ -470,6 +486,12 @@ html, body {
      (128mm répartis entre le nombre d'articles de la page) et appliquée
      en style inline sur chaque <tr> — cette valeur n'est qu'un repli. */
   height: 119.5mm;
+}
+
+/* Une seule ligne : pas de trait de séparation en bas de celle-ci (le cadre
+   du tableau reste tracé par la ligne de remplissage / la bordure externe). */
+.items-table.single-row tbody tr:first-child td {
+  border-bottom: none;
 }
 
 .order-banner-row {

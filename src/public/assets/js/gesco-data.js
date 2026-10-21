@@ -46,6 +46,100 @@
   }
   const money = (value) => `${Number(value || 0).toLocaleString("fr-FR")} FCFA`;
   const roundedMoney = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
+  let confirmResolve = null;
+  let confirmElement = null;
+
+  function closeConfirm(value) {
+    const resolve = confirmResolve;
+    if (!resolve) return;
+    confirmResolve = null;
+    resolve(value);
+    if (window.bootstrap?.Modal) {
+      window.bootstrap.Modal.getOrCreateInstance(confirmElement).hide();
+    } else if (confirmElement) {
+      confirmElement.remove();
+      confirmElement = null;
+    }
+  }
+
+  function confirmAction(options) {
+    const settings = typeof options === "string" ? { message: options } : (options ?? {});
+    const danger = settings.tone === "danger";
+    if (!confirmElement) {
+      confirmElement = document.createElement("div");
+      confirmElement.className = "modal fade";
+      confirmElement.tabIndex = -1;
+      confirmElement.setAttribute("role", "dialog");
+      confirmElement.setAttribute("aria-modal", "true");
+      confirmElement.setAttribute("aria-hidden", "true");
+
+      const dialog = document.createElement("div");
+      dialog.className = "modal-dialog modal-dialog-centered";
+      const content = document.createElement("div");
+      content.className = "modal-content border-0 shadow-lg rounded-4";
+      const body = document.createElement("div");
+      body.className = "modal-body px-4 pt-4 pb-2 text-center";
+
+      const icon = document.createElement("div");
+      icon.className = "mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle";
+      icon.style.cssText = "width:64px;height:64px;font-size:1.6rem;";
+      const glyph = document.createElement("i");
+      glyph.className = "bi";
+      icon.append(glyph);
+
+      const title = document.createElement("h5");
+      title.className = "mb-2";
+      const message = document.createElement("p");
+      message.className = "text-secondary mb-0";
+      body.append(icon, title, message);
+
+      const footer = document.createElement("div");
+      footer.className = "modal-footer border-0 px-4 pb-4 pt-2 justify-content-center gap-2";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "btn btn-outline-secondary px-4";
+      cancel.addEventListener("click", () => closeConfirm(false));
+      const confirm = document.createElement("button");
+      confirm.type = "button";
+      confirm.className = "btn px-4";
+      confirm.addEventListener("click", () => closeConfirm(true));
+      footer.append(cancel, confirm);
+
+      content.append(body, footer);
+      dialog.append(content);
+      confirmElement.append(dialog);
+      confirmElement.addEventListener("hidden.bs.modal", () => closeConfirm(false));
+      document.body.append(confirmElement);
+    }
+
+    const icon = confirmElement.querySelector(".modal-body > div");
+    const glyph = icon.querySelector("i");
+    const title = confirmElement.querySelector(".modal-body > h5");
+    const message = confirmElement.querySelector(".modal-body > p");
+    const [cancel, confirm] = confirmElement.querySelectorAll(".modal-footer button");
+
+    icon.className = `mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle ${danger ? "bg-danger-subtle text-danger" : "bg-theme-1-subtle text-theme-1"}`;
+    glyph.className = `bi ${danger ? "bi-exclamation-triangle" : "bi-question-circle"}`;
+    title.textContent = settings.title ?? "Confirmation";
+    message.textContent = settings.message ?? "Voulez-vous continuer ?";
+    cancel.textContent = settings.cancelLabel ?? "Annuler";
+    confirm.textContent = settings.confirmLabel ?? "Confirmer";
+    confirm.className = `btn px-4 ${danger ? "btn-danger" : "btn-theme"}`;
+
+    if (confirmResolve) closeConfirm(false);
+    return new Promise((resolve) => {
+      confirmResolve = resolve;
+      if (window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(confirmElement).show();
+        setTimeout(() => confirm.focus(), 200);
+      } else {
+        confirmElement.style.cssText = "inset:0;background:rgba(0,0,0,.45);display:block;z-index:1080;";
+        confirmElement.classList.add("show");
+      }
+    });
+  }
+
   async function loadOrderHistory() {
     const orders = list(await api.getCommandes());
     const now = new Date();
@@ -106,7 +200,7 @@
 
   const apiPages = {
     "gesco-stock-produits.html": {
-      tables: [{ load: api.getProduits, columns: [["Référence", "numeroSerie"], ["Désignation", "designation"], ["Catégorie", "idCategorie"], ["Prix de vente", "prixVente", "money"], ["Stock", "stock"], ["Seuil", "seuilMinimum"], ["État", "stockState", "status"]] }],
+      tables: [{ load: api.getProduits, columns: [["Désignation", "designation"], ["Catégorie", "idCategorie"], ["Prix de vente", "prixVente", "money"], ["Stock", "stock"], ["Seuil", "seuilMinimum"], ["État", "stockState", "status"]] }],
       create: "produit",
     },
     "gesco-dashboard.html": {
@@ -135,7 +229,7 @@
           if (!id) return [];
           const supplierId = Number(id);
           return list(await api.getStocks()).filter((row) => row.idFournisseur === supplierId);
-        }, columns: [["Produit", "designation"], ["Référence", "numeroSerie"], ["Prix d'achat", "prixAchat", "money"], ["Stock", "stock"]] },
+        }, columns: [["Produit", "designation"], ["Prix d'achat", "prixAchat", "money"], ["Stock", "stock"]] },
       ],
     },
     "gesco-stock-produit-detail.html": {
@@ -144,15 +238,17 @@
           const id = findId();
           if (!id) return [];
           return list(await api.getStockMovements()).filter((row) => row.idProduit === Number(id));
-        }, columns: [["Date", "createdAt", "date"], ["Type", "type"], ["Quantité", "quantite"], ["Référence", "reference"], ["Motif", "motif"]] },
+        }, columns: [["Date", "createdAt", "date"], ["Type", "type", "movementType"], ["Référence", "reference"], ["Quantité", "quantite", "quantity"], ["Motif", "motif"]] },
         { load: async () => {
           const id = findId();
           if (!id) return [];
           const productId = Number(id);
           const sales = list(await api.getVentes());
           const details = await Promise.all(sales.map((sale) => api.getVente(sale.id)));
-          return details.flatMap((sale) => (sale.lignes ?? []).filter((line) => line.idProduit === productId).map((line) => ({ ...line, reference: sale.reference, dateVente: sale.dateVente, idClient: sale.idClient })));
-        }, columns: [["Vente", "reference"], ["Date", "dateVente", "date"], ["Quantité", "quantite"], ["Prix", "prixUnitaire", "money"], ["Montant", "montantTotal", "money"]] },
+          return details.flatMap((sale) => (sale.lignes ?? [])
+            .filter((line) => line.idProduit === productId)
+            .map((line) => ({ ...line, venteReference: sale.reference, idVente: sale.id, dateVente: sale.dateVente, idClient: sale.idClient })));
+        }, columns: [["Vente", "venteReference"], ["Client", "idClient"], ["Date", "dateVente", "date"], ["Quantité", "quantite"], ["Montant", "montantTotal", "money"]] },
       ],
     },
     "gesco-approvisionnement-commandes.html": {
@@ -160,14 +256,15 @@
       create: "commande",
     },
     "gesco-approvisionnement-receptions.html": {
-      tables: [{ load: api.getReceptions, columns: [["N° réception", "reference"], ["Date", "dateReception", "date"], ["Commande", "idCommande"], ["Statut", "statut"], ["Réceptionné par", "idUtilisateur"]] }],
+      key: "reception",
+      tables: [{ load: api.getReceptions, columns: [["N° réception", "reference"], ["Date", "dateReception", "date"], ["Commande", "idCommandeLabel"], ["Fournisseur", "fournisseurNom"], ["Reçu / attendu", "quantiteRecue", "receptionProgress"], ["Statut", "receptionStatut", "receptionStatus"], ["Réceptionné par", "nomUtilisateur"]] }],
     },
     "gesco-stock-mouvements.html": {
       tables: [{ load: api.getStockMovements, columns: [["Date", "createdAt", "date"], ["Type", "type", "movementType"], ["Produit", "idProduit"], ["Quantité", "quantite", "quantity"], ["Référence", "reference"], ["Motif", "motif"]] }],
       create: "mouvement",
     },
     "gesco-stock-inventaires.html": {
-      tables: [{ load: api.getInventories, columns: [["Référence", "reference"], ["Date", "dateInventaire", "date"], ["Responsable", "idUtilisateur"], ["Statut", "statut"]] }],
+      tables: [{ load: api.getInventories, columns: [["Titre de l'inventaire", "reference"], ["Date", "dateInventaire", "date"], ["Responsable", "responsable"], ["Comptage", "articlesComptes", "inventoryProgress"], ["Écarts", "ecarts"], ["Statut", "statut", "inventoryStatus"]] }],
       create: "inventaire",
     },
     "gesco-ventes.html": {
@@ -183,11 +280,15 @@
         if (invoiceLink) invoiceLink.href = `gesco-facturation-detail.html?venteId=${encodeURIComponent(result.id)}`;
         const deliveryLink = document.querySelector('a[href="gesco-livraison-detail.html"]');
         if (deliveryLink) deliveryLink.href = `gesco-livraison-detail.html?venteId=${encodeURIComponent(result.id)}`;
+        if (typeof window.__hydrateVenteDetail === "function") {
+          try { window.__hydrateVenteDetail(result); } catch (e) { console.error(e); }
+        }
         return result.lignes ?? [];
       }, columns: [["Produit", "designation"], ["Quantité", "quantite"], ["Prix unitaire", "prixUnitaire", "money"], ["Montant", "montantTotal", "money"]] }],
     },
     "gesco-ventes-retours.html": {
-      tables: [{ load: api.getRetours, columns: [["N° retour", "reference"], ["Date", "dateRetour", "date"], ["Vente", "idVente"], ["Motif", "motif"], ["Montant remboursé", "montantRembourse", "money"], ["Statut", "statut"]] }],
+      key: "retour",
+      tables: [{ load: api.getRetours, columns: [["Type", "type", "returnType"], ["Référence", "reference"], ["Date", "date", "date"], ["Vente", "venteReference"], ["Motif", "motif"], ["Montant", "montant", "money"], ["Statut", "statut", "returnStatus"]] }],
       create: "retour",
     },
     "gesco-ventes-sessions.html": {
@@ -198,7 +299,7 @@
       tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut"]] }],
     },
     "gesco-facturation.html": {
-      tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total TTC", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut"], ["Échéance", "dateEcheance", "date"]] }],
+      tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total TTC", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut"]] }],
       create: "facture",
     },
     "gesco-facturation-paiements.html": {
@@ -207,15 +308,6 @@
         { load: api.getFactures, columns: [["Facture", "reference"], ["Client", "idClient"], ["Montant total", "montantTotal", "money"], ["Solde", "solde", "money"], ["Échéance", "dateEcheance", "date"]] },
       ],
       create: "paiement",
-    },
-    "gesco-administration-rapports.html": {
-      tables: [
-        { load: async () => (await api.getStocks()).map((row) => ({ ...row, marge: Number(row.prixVente) - Number(row.prixAchat) })), columns: [["Produit", "designation"], ["Stock", "stock"], ["Prix de vente", "prixVente", "money"], ["Marge", "marge", "money"]] },
-        { load: async () => {
-          const report = await api.getRapport({});
-          return report.clients || [];
-        }, columns: [["Client", "nom"], ["Achats", "totalAchats", "money"], ["Solde dû", "soldeDu", "money"], ["Dernier achat", "dernierAchat", "date"]] },
-      ],
     },
     "gesco-administration.html": {
       tables: [
@@ -233,16 +325,13 @@
       method: api.createProduit,
       fields: [
         ["designation", "Désignation", "text", true],
-        ["numeroSerie", "Référence", "text"],
         ["idCategorie", "Catégorie", "category", true],
-        ["codeBarres", "Code-barres", "text"],
         ["description", "Description", "textarea"],
         ["prixAchat", "Prix d'achat", "number", true],
         ["prixVente", "Prix de vente", "number", true],
         ["stockInitial", "Stock initial", "number"],
         ["seuilMinimum", "Seuil minimum", "number"],
         ["idFournisseur", "Fournisseur principal", "supplier"],
-        ["garantie", "Garantie", "text"],
       ],
     },
     fournisseur: {
@@ -263,12 +352,10 @@
     inventaire: {
       title: "Nouvel inventaire",
       method: api.createInventory,
-      fields: [["notes", "Notes", "textarea"]],
+      fields: [["reference", "Titre de l'inventaire", "text", true], ["responsable", "Responsable", "text"]],
     },
     retour: {
       title: "Enregistrer un retour",
-      method: api.createRetour,
-      fields: [["idVente", "Vente concernée", "sale", true], ["motif", "Motif", "textarea", true], ["lignes", "Lignes (JSON : idLigneVente, quantite)", "textarea", true]],
     },
     session: {
       title: "Ouvrir une caisse",
@@ -287,7 +374,7 @@
     utilisateur: {
       title: "Nouvel utilisateur",
       method: api.createUtilisateur,
-      fields: [["nomUtilisateur", "Nom d'utilisateur", "text", true], ["email", "E-mail", "email", true], ["telephone", "Téléphone"], ["motDePasse", "Mot de passe (8 caractères minimum)", "password", true], ["role", "Rôle", "select", true, [["user", "Utilisateur standard"], ["admin", "Administrateur"]]]],
+      fields: [["nomUtilisateur", "Nom d'utilisateur", "text", true], ["email", "E-mail", "email", true], ["telephone", "Téléphone"], ["motDePasse", "Mot de passe (8 caractères minimum)", "password", true], ["role", "Rôle", "select", true, [["admin", "Administrateur"], ["caissiere", "Caissière"], ["comptable", "Comptable"], ["user", "Utilisateur standard"]]]],
     },
     parametres: {
       title: "Paramètres de la boutique",
@@ -361,13 +448,29 @@
       return list(await api.getVentes()).map((item) => [item.id, item.reference]);
     }
     if (kind === "invoice") {
-      return list(await api.getFactures()).map((item) => [item.id, item.reference]);
+      return list(await api.getFactures())
+        .map((item) => ({ item, solde: invoiceBalance(item) }))
+        .filter(({ item, solde }) => solde > 0 && !["deleted", "annulee"].includes(String(item.statut)))
+        .map(({ item, solde }) => [item.id, `${item.reference} — reste ${money(solde)}`]);
     }
     return [];
   }
 
+  function invoiceBalance(invoice) {
+    return Math.max(0, Number(invoice?.montantTotal ?? 0) - Number(invoice?.montantPaye ?? 0));
+  }
+
+  async function invoiceBalanceMap() {
+    const balances = new Map();
+    for (const invoice of list(await api.getFactures())) {
+      balances.set(String(invoice.id), invoiceBalance(invoice));
+    }
+    return balances;
+  }
+
   async function showForm(key, target, editUser = null) {
     if (key === "commande") return showOrderForm(target);
+    if (key === "retour") return showReturnForm(target);
     const definition = forms[key];
     const overlay = document.createElement("div");
     overlay.className = "gesco-modal-backdrop";
@@ -396,6 +499,12 @@
     const body = document.createElement("div");
     body.className = "card-body";
     body.append(error);
+    if (key === "inventaire") {
+      const guidance = document.createElement("p");
+      guidance.className = "small text-secondary";
+      guidance.textContent = "Les quantités théoriques sont reprises du stock enregistré pour chaque produit. Après sa création, le comptage s'ouvre automatiquement.";
+      body.append(guidance);
+    }
     try {
       for (const [name, label, type = "text", required = false, options] of definition.fields) {
         const fieldRequired = name === "motDePasse" && editUser ? false : required;
@@ -429,6 +538,14 @@
         input.id = `gesco-${name}`;
         input.name = name;
         input.required = fieldRequired;
+        if (key === "inventaire" && name === "reference") {
+          input.maxLength = 50;
+          input.placeholder = "Ex. Inventaire du magasin — octobre";
+        }
+        if (key === "inventaire" && name === "responsable") {
+          input.maxLength = 150;
+          input.placeholder = "Ex. Kossi Adjo";
+        }
         if (name === "motDePasse") input.autocomplete = "new-password";
         if (editUser && name !== "motDePasse" && editUser[name] !== undefined && editUser[name] !== null) {
           input.value = String(editUser[name]);
@@ -452,6 +569,27 @@
       error.textContent = loadError.message;
       error.classList.remove("d-none");
     }
+    if (key === "paiement" && !editUser) {
+      try {
+        const invoiceSelect = body.querySelector('[name="idFacture"]');
+        const amountInput = body.querySelector('[name="montant"]');
+        const balances = await invoiceBalanceMap();
+        const hint = document.createElement("div");
+        hint.className = "form-text";
+        hint.id = "gesco-payment-balance";
+        invoiceSelect?.closest(".mb-3")?.append(hint);
+        const refreshBalance = () => {
+          const solde = balances.get(invoiceSelect?.value ?? "");
+          hint.textContent = solde === undefined ? "" : `Solde restant à payer : ${money(solde)}`;
+          if (solde === undefined) amountInput?.removeAttribute("max");
+          else amountInput?.setAttribute("max", String(solde));
+        };
+        invoiceSelect?.addEventListener("change", refreshBalance);
+        refreshBalance();
+      } catch {
+        /* l'indice de solde reste facultatif */
+      }
+    }
     const actions = document.createElement("div");
     actions.className = "card-footer d-flex justify-content-end gap-2";
     const cancel = document.createElement("button");
@@ -462,13 +600,14 @@
     const save = document.createElement("button");
     save.type = "submit";
     save.className = "btn btn-primary";
-    save.textContent = "Enregistrer";
+    save.textContent = key === "inventaire" ? "Suivant" : "Enregistrer";
     actions.append(cancel, save);
     form.append(body, actions);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       error.classList.add("d-none");
       save.disabled = true;
+      let created;
       try {
         const data = {};
         for (const field of definition.fields) {
@@ -489,14 +628,27 @@
         } else if (editUser) {
           await api.updateUtilisateur(editUser.id, data);
         } else {
-          await definition.method(data);
+          created = await definition.method(data);
         }
-        overlay.remove();
-        await loadPage(target);
       } catch (submitError) {
         error.textContent = submitError.message || "Échec de l'enregistrement.";
         error.classList.remove("d-none");
         save.disabled = false;
+        return;
+      }
+      overlay.remove();
+      try {
+        await loadPage(target);
+      } catch (refreshError) {
+        const alertBox = document.createElement("div");
+        alertBox.className = "alert alert-warning";
+        alertBox.setAttribute("role", "alert");
+        alertBox.textContent = `Enregistrement effectué, mais la liste n'a pas pu être actualisée : ${refreshError.message || "erreur de chargement."}`;
+        document.querySelector("main")?.prepend(alertBox);
+      }
+      if (key === "inventaire") {
+        const createdId = created?.data?.id ?? created?.id;
+        if (createdId) await openInventoryCount(createdId, target);
       }
     });
     panel.append(header, form);
@@ -607,11 +759,10 @@
       productSelect.required = true;
       productSelect.append(new Option("Sélectionner un produit", ""));
       productList.forEach((product) => {
-        const reference = product.numeroSerie ? ` · ${product.numeroSerie}` : "";
         const stock = Number(product.stock ?? 0);
         const minimum = Number(product.seuilMinimum ?? 0);
         productSelect.append(new Option(
-          `${product.designation}${reference} — Stock : ${stock} (minimum ${minimum})`,
+          `${product.designation} — Stock : ${stock} (minimum ${minimum})`,
           product.id,
         ));
       });
@@ -760,6 +911,402 @@
     return form;
   }
 
+  async function showReceptionForm(orderId, target) {
+    const order = await api.getCommande(orderId);
+    const orderLines = list(order.lignes);
+    const overlay = document.createElement("div");
+    overlay.className = "gesco-modal-backdrop";
+    overlay.setAttribute("role", "presentation");
+    const panel = document.createElement("section");
+    panel.className = "card adminuiux-card gesco-form-dialog shadow";
+    panel.style.width = "min(60rem, 100%)";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-labelledby", "gesco-reception-form-title");
+
+    const title = document.createElement("h2");
+    title.className = "h5 mb-0";
+    title.id = "gesco-reception-form-title";
+    title.textContent = `Réception — ${order.reference}`;
+    const header = document.createElement("div");
+    header.className = "card-header d-flex align-items-center justify-content-between";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "btn-close";
+    close.setAttribute("aria-label", "Fermer");
+    close.addEventListener("click", () => overlay.remove());
+    header.append(title, close);
+
+    const form = document.createElement("form");
+    form.className = "gesco-form";
+    form.noValidate = true;
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const error = document.createElement("div");
+    error.className = "alert alert-danger d-none";
+    error.setAttribute("role", "alert");
+    body.append(error);
+
+    const supplier = order.fournisseur?.nom ?? order.idFournisseurLabel ?? "—";
+    let infoText = `Fournisseur : ${supplier}`;
+    if (order.dateLivraisonPrevue) infoText += ` · Livraison prévue : ${date(order.dateLivraisonPrevue)}`;
+    const info = document.createElement("p");
+    info.className = "small text-secondary mb-3";
+    info.textContent = infoText;
+    body.append(info);
+
+    const table = document.createElement("table");
+    table.className = "table table-sm table-bordered align-middle";
+    table.innerHTML = "<thead><tr><th>Produit</th><th class='text-center' style='width:110px'>Commandé</th><th class='text-center' style='width:110px'>Déjà reçu</th><th class='text-center' style='width:90px'>Reste</th><th style='width:150px'>Qté à recevoir</th></tr></thead>";
+    const tableBody = document.createElement("tbody");
+    table.append(tableBody);
+    const inputs = [];
+    orderLines.forEach((line) => {
+      const commande = Number(line.quantite || 0);
+      const recue = Number(line.quantiteRecue || 0);
+      const reste = Math.max(0, commande - recue);
+      const row = document.createElement("tr");
+      const productCell = document.createElement("td");
+      productCell.textContent = line.designation || `Produit ${line.idProduit}`;
+      const commandeCell = document.createElement("td");
+      commandeCell.className = "text-center";
+      commandeCell.textContent = String(commande);
+      const recueCell = document.createElement("td");
+      recueCell.className = "text-center";
+      recueCell.textContent = String(recue);
+      const resteCell = document.createElement("td");
+      resteCell.className = "text-center fw-medium";
+      resteCell.textContent = String(reste);
+      const inputCell = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "number";
+      input.className = "form-control form-control-sm";
+      input.min = "0";
+      input.max = String(reste);
+      input.step = "1";
+      input.value = reste > 0 ? String(reste) : "0";
+      input.disabled = reste === 0;
+      inputCell.append(input);
+      row.append(productCell, commandeCell, recueCell, resteCell, inputCell);
+      tableBody.append(row);
+      inputs.push({ line, input, reste });
+    });
+    body.append(table);
+
+    const notes = document.createElement("textarea");
+    notes.className = "form-control mt-3";
+    notes.rows = 2;
+    notes.placeholder = "Note de réception (facultatif)";
+    const notesLabel = document.createElement("label");
+    notesLabel.className = "form-label mt-3";
+    notesLabel.textContent = "Notes";
+    notesLabel.append(notes);
+    body.append(notesLabel);
+
+    const actions = document.createElement("div");
+    actions.className = "card-footer d-flex justify-content-end gap-2";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-outline-secondary";
+    cancel.textContent = "Annuler";
+    cancel.addEventListener("click", () => overlay.remove());
+    const save = document.createElement("button");
+    save.type = "submit";
+    save.className = "btn btn-primary";
+    save.textContent = "Valider la réception";
+    actions.append(cancel, save);
+    form.append(body, actions);
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.classList.add("d-none");
+      const lignes = [];
+      let invalid = false;
+      inputs.forEach(({ line, input, reste }) => {
+        if (input.disabled || input.value === "") return;
+        const qte = Number(input.value);
+        if (!Number.isSafeInteger(qte) || qte < 0 || qte > reste) {
+          invalid = true;
+          return;
+        }
+        if (qte > 0) lignes.push({ idLigneCommande: line.id, quantiteRecue: qte });
+      });
+      if (invalid) {
+        error.textContent = "Les quantités doivent être des entiers compris entre 0 et le reste à recevoir.";
+        error.classList.remove("d-none");
+        return;
+      }
+      if (lignes.length === 0) {
+        error.textContent = "Saisissez au moins une quantité à recevoir.";
+        error.classList.remove("d-none");
+        return;
+      }
+      save.disabled = true;
+      try {
+        await api.receiveCommande(orderId, { lignes, notes: notes.value.trim() || undefined });
+        overlay.remove();
+        await loadPage(target);
+      } catch (submitError) {
+        error.textContent = submitError.message || "Échec de la réception.";
+        error.classList.remove("d-none");
+        save.disabled = false;
+      }
+    });
+
+    panel.append(header, form);
+    overlay.append(panel);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) overlay.remove();
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overlay.remove();
+    });
+    document.body.append(overlay);
+    return form;
+  }
+
+  async function showReturnForm(target) {
+    const overlay = document.createElement("div");
+    overlay.className = "gesco-modal-backdrop";
+    overlay.setAttribute("role", "presentation");
+    const panel = document.createElement("section");
+    panel.className = "card adminuiux-card gesco-form-dialog shadow";
+    panel.style.width = "min(70rem, 100%)";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-labelledby", "gesco-return-form-title");
+
+    const title = document.createElement("h2");
+    title.className = "h5 mb-0";
+    title.id = "gesco-return-form-title";
+    title.textContent = "Enregistrer un retour";
+    const header = document.createElement("div");
+    header.className = "card-header d-flex align-items-center justify-content-between";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "btn-close";
+    close.setAttribute("aria-label", "Fermer");
+    close.addEventListener("click", () => overlay.remove());
+    header.append(title, close);
+
+    const form = document.createElement("form");
+    form.className = "gesco-form";
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const error = document.createElement("div");
+    error.className = "alert alert-danger d-none";
+    error.setAttribute("role", "alert");
+    body.append(error);
+
+    const [salesResult, clientsResult] = await Promise.all([api.getVentes(), api.getClients()]);
+    const clientNames = new Map(list(clientsResult).map((client) => [Number(client.id), client.nom]));
+    const sales = list(salesResult).filter((sale) => sale.statut !== "annulee");
+
+    const saleSelect = document.createElement("select");
+    saleSelect.className = "form-select";
+    saleSelect.required = true;
+    saleSelect.append(new Option("Sélectionner une vente", ""));
+    sales.forEach((sale) => {
+      const date = sale.dateVente ? new Date(sale.dateVente).toLocaleDateString("fr-FR") : "";
+      const client = sale.idClient ? (clientNames.get(Number(sale.idClient)) ?? "Client comptoir") : "Client comptoir";
+      saleSelect.append(new Option(`${sale.reference} — ${client} — ${date} — ${money(sale.montantTotal)}`, sale.id));
+    });
+    const saleLabel = document.createElement("label");
+    saleLabel.className = "form-label fw-semibold";
+    saleLabel.textContent = "Vente concernée";
+    saleLabel.append(saleSelect);
+    body.append(saleLabel);
+
+    const linesTitle = document.createElement("h3");
+    linesTitle.className = "h6 mb-2 mt-4";
+    linesTitle.textContent = "Produits à retourner";
+    const table = document.createElement("table");
+    table.className = "table table-sm table-bordered align-middle";
+    table.innerHTML = "<thead><tr><th>Produit</th><th class='text-center' style='width:110px'>Qté vendue</th><th class='text-center' style='width:120px'>Déjà retourné</th><th style='width:150px'>Qté à retourner</th><th class='text-end' style='width:150px'>Montant</th></tr></thead>";
+    const tableBody = document.createElement("tbody");
+    table.append(tableBody);
+    const emptyMessage = "Sélectionnez une vente pour afficher ses produits.";
+    const setEmpty = (message) => {
+      tableBody.innerHTML = "";
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 5;
+      cell.className = "text-center text-secondary py-4";
+      cell.textContent = message;
+      row.append(cell);
+      tableBody.append(row);
+    };
+    setEmpty(emptyMessage);
+
+    const lines = [];
+    const total = document.createElement("strong");
+    total.className = "fs-5";
+    total.textContent = money(0);
+
+    const updateTotal = () => {
+      let amount = 0;
+      lines.forEach((line) => {
+        const qty = Math.max(0, Number(line.quantity.value) || 0);
+        const lineTotal = qty * line.unitPrice;
+        line.amount.textContent = money(lineTotal);
+        amount += lineTotal;
+      });
+      total.textContent = money(amount);
+    };
+
+    const renderLines = (saleLines) => {
+      lines.length = 0;
+      tableBody.innerHTML = "";
+      if (!saleLines.length) {
+        setEmpty("Cette vente ne contient aucune ligne.");
+        updateTotal();
+        return;
+      }
+      saleLines.forEach((saleLine) => {
+        const restante = Number(saleLine.quantiteRestante ?? saleLine.quantite ?? 0);
+        const row = document.createElement("tr");
+
+        const productCell = document.createElement("td");
+        productCell.textContent = saleLine.designation;
+
+        const soldCell = document.createElement("td");
+        soldCell.className = "text-center";
+        soldCell.textContent = String(saleLine.quantite);
+
+        const returnedCell = document.createElement("td");
+        returnedCell.className = "text-center";
+        returnedCell.textContent = String(saleLine.quantiteRetournee ?? 0);
+
+        const qtyCell = document.createElement("td");
+        const quantity = document.createElement("input");
+        quantity.type = "number";
+        quantity.className = "form-control form-control-sm";
+        quantity.min = "0";
+        quantity.max = String(restante);
+        quantity.step = "1";
+        quantity.value = "0";
+        quantity.disabled = restante <= 0;
+        qtyCell.append(quantity);
+        if (restante <= 0) qtyCell.append(Object.assign(document.createElement("small"), { className: "text-secondary", textContent: "Déjà tout retourné" }));
+
+        const amountCell = document.createElement("td");
+        amountCell.className = "text-end text-nowrap";
+        amountCell.textContent = money(0);
+
+        row.append(productCell, soldCell, returnedCell, qtyCell, amountCell);
+        tableBody.append(row);
+
+        const line = { idLigneVente: saleLine.id, unitPrice: Number(saleLine.prixUnitaire), quantity, amount: amountCell, restante };
+        quantity.addEventListener("input", () => {
+          let value = Math.floor(Number(quantity.value) || 0);
+          if (value < 0) value = 0;
+          if (value > restante) value = restante;
+          quantity.value = String(value);
+          updateTotal();
+        });
+        lines.push(line);
+      });
+      updateTotal();
+    };
+
+    const totalBar = document.createElement("div");
+    totalBar.className = "d-flex justify-content-between align-items-center border-top pt-3 mt-3";
+    const totalLabel = document.createElement("span");
+    totalLabel.className = "text-secondary";
+    totalLabel.textContent = "Montant à rembourser";
+    totalBar.append(totalLabel, total);
+
+    const motif = document.createElement("textarea");
+    motif.className = "form-control";
+    motif.rows = 2;
+    motif.required = true;
+    motif.placeholder = "Motif du retour (ex : produit défectueux, erreur de commande...)";
+    const motifLabel = document.createElement("label");
+    motifLabel.className = "form-label mt-3";
+    motifLabel.textContent = "Motif";
+    motifLabel.append(motif);
+
+    body.append(linesTitle, table, totalBar, motifLabel);
+
+    saleSelect.addEventListener("change", async () => {
+      error.classList.add("d-none");
+      lines.length = 0;
+      if (!saleSelect.value) {
+        setEmpty(emptyMessage);
+        updateTotal();
+        return;
+      }
+      setEmpty("Chargement des produits…");
+      try {
+        const result = await api.getVenteRetournable(Number(saleSelect.value));
+        renderLines(list(result?.lignes ?? result));
+      } catch (loadError) {
+        setEmpty("Impossible de charger les produits de cette vente.");
+        error.textContent = loadError.message || "Impossible de charger les produits de cette vente.";
+        error.classList.remove("d-none");
+      }
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "card-footer d-flex justify-content-end gap-2";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-outline-secondary";
+    cancel.textContent = "Annuler";
+    cancel.addEventListener("click", () => overlay.remove());
+    const save = document.createElement("button");
+    save.type = "submit";
+    save.className = "btn btn-primary";
+    save.textContent = "Enregistrer le retour";
+    actions.append(cancel, save);
+    form.append(body, actions);
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.classList.add("d-none");
+      if (!saleSelect.value) {
+        error.textContent = "Sélectionnez la vente concernée.";
+        error.classList.remove("d-none");
+        return;
+      }
+      const selected = lines
+        .map((line) => ({ idLigneVente: line.idLigneVente, quantite: Math.floor(Number(line.quantity.value) || 0) }))
+        .filter((line) => line.quantite > 0);
+      if (!selected.length) {
+        error.textContent = "Indiquez au moins une quantité à retourner.";
+        error.classList.remove("d-none");
+        return;
+      }
+      if (!motif.value.trim()) {
+        error.textContent = "Renseignez le motif du retour.";
+        error.classList.remove("d-none");
+        return;
+      }
+      save.disabled = true;
+      try {
+        await api.createRetour({ idVente: Number(saleSelect.value), motif: motif.value.trim(), lignes: selected });
+        overlay.remove();
+        await loadPage(target);
+      } catch (submitError) {
+        error.textContent = submitError.message || "Échec de l'enregistrement du retour.";
+        error.classList.remove("d-none");
+        save.disabled = false;
+      }
+    });
+
+    panel.append(header, form);
+    overlay.append(panel);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) overlay.remove();
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overlay.remove();
+    });
+    document.body.append(overlay);
+    saleSelect.focus();
+    return form;
+  }
+
   const referenceSources = {
     idCategorie: [api.getCategories, "label"],
     idFournisseur: [api.getFournisseurs, "nom"],
@@ -775,9 +1322,14 @@
   async function loadReferenceMap(key) {
     if (!referenceCache.has(key)) {
       const [loader, labelField] = referenceSources[key];
-      referenceCache.set(key, loader().then((result) => new Map(
-        list(result).map((item) => [String(item.id), item[labelField] ?? item.id]),
-      )));
+      const promise = Promise.resolve()
+        .then(() => loader())
+        .then((result) => new Map(list(result).map((item) => [String(item.id), item[labelField] ?? item.id])))
+        .catch((error) => {
+          referenceCache.delete(key);
+          throw error;
+        });
+      referenceCache.set(key, promise);
     }
     return referenceCache.get(key);
   }
@@ -827,10 +1379,12 @@
         partielle: "Partiellement reçue",
         recue: "Reçue",
         annulee: "Annulée",
+        confirme: "Confirmé",
       })[value] ?? (value ? esc(value) : "—");
     }
     if (formatter === "userRole") {
-      return value === "admin" ? "Administrateur" : value === "user" ? "Utilisateur standard" : esc(value || "—");
+      const labels = { admin: "Administrateur", caissiere: "Caissière", comptable: "Comptable", user: "Utilisateur standard" };
+      return labels[value] ?? (value ? esc(value) : "—");
     }
     if (formatter === "saleStatus") {
       return ({
@@ -838,6 +1392,28 @@
         partiellement_payee: "Partiellement payée",
         annulee: "Annulée",
       })[value] ?? (value ? esc(value) : "—");
+    }
+    if (formatter === "returnType") {
+      return ({ retour: "Retour", annulation: "Annulation" })[value] ?? (value ? esc(value) : "—");
+    }
+    if (formatter === "returnStatus") {
+      return ({
+        en_attente: "En attente",
+        rembourse: "Remboursé",
+        echange: "Échangé",
+        refuse: "Refusé",
+        annulee: "Annulée",
+        confirme: "Confirmé",
+      })[value] ?? (value ? esc(value) : "—");
+    }
+    if (formatter === "receptionProgress") {
+      return `${Number(record.quantiteRecue || 0)} / ${Number(record.quantiteAttendue || 0)}`;
+    }
+    if (formatter === "receptionStatus") {
+      return ({ complete: "Complète", partielle: "Partielle" })[value] ?? (value ? esc(value) : "—");
+    }
+    if (formatter === "inventoryStatus") {
+      return ({ en_cours: "En cours", termine: "Validé", annule: "Annulé" })[value] ?? (value ? esc(value) : "—");
     }
     if (key === "articleCount") return `${Number(value || 0)} article${Number(value || 0) === 1 ? "" : "s"}`;
     if (formatter === "movementType") {
@@ -849,6 +1425,8 @@
         vente: "Vente",
         sortie: "Sortie",
         perte: "Perte",
+        casse: "Casse",
+        vol: "Vol",
         ajustement_positif: "Ajustement positif",
         ajustement_negatif: "Ajustement négatif",
         annulation_vente: "Annulation de vente",
@@ -876,7 +1454,13 @@
         const td = document.createElement("td");
         const header = headers[index];
         if (header?.className) td.className = header.className;
-        if (formatter === "status" || formatter === "movementType" || formatter === "saleStatus") {
+        if (formatter === "inventoryProgress") {
+          const counted = Number(row.articlesComptes || 0);
+          const total = Number(row.lignesTotal || 0);
+          td.classList.add("text-center");
+          td.textContent = `${counted} / ${total}`;
+          td.setAttribute("aria-label", `${counted} article${counted === 1 ? "" : "s"} compté${counted === 1 ? "" : "s"} sur ${total}`);
+        } else if (formatter === "status" || formatter === "movementType" || formatter === "saleStatus" || formatter === "returnStatus" || formatter === "receptionStatus" || formatter === "inventoryStatus") {
           const badge = document.createElement("span");
           const statusClasses = {
             "En stock": "text-bg-success",
@@ -906,6 +1490,16 @@
             "Envoyée": "text-bg-primary",
             "Partiellement reçue": "text-bg-warning",
             "Reçue": "text-bg-success",
+            "Confirmé": "text-bg-success",
+            "En attente": "text-bg-warning",
+            "Remboursé": "text-bg-success",
+            "Échangé": "text-bg-primary",
+            "Refusé": "text-bg-danger",
+            "Complète": "text-bg-success",
+            "Partielle": "text-bg-warning",
+            "En cours": "text-bg-warning",
+            "Validé": "text-bg-success",
+            "Annulé": "text-bg-danger",
           };
           const label = normalize(row, key, formatter);
           badge.className = `badge badge-light ${statusClasses[label] ?? "text-bg-secondary"}`;
@@ -922,10 +1516,9 @@
             : `gesco-facturation-detail.html?venteId=${encodeURIComponent(row.id)}`;
           link.textContent = normalize(row, key, formatter);
           td.append(link);
-        } else if (target.key === "produit" && key === "numeroSerie" && target.detail && row.id) {
+        } else if (key === "venteReference" && row.idVente) {
           const link = document.createElement("a");
-          link.className = "fw-medium";
-          link.href = `${target.detail}?id=${encodeURIComponent(row.id)}`;
+          link.href = `gesco-ventes-detail.html?id=${encodeURIComponent(row.idVente)}`;
           link.textContent = normalize(row, key, formatter);
           td.append(link);
         } else if (target.key === "produit" && key === "designation") {
@@ -957,22 +1550,22 @@
         open.innerHTML = '<i class="bi bi-eye" aria-hidden="true"></i>';
         actions.append(open);
       }
-      if (target.key === "commande" && row.id) {
+      if (target.key === "commande" && row.id && ["envoyee", "partielle"].includes(row.statut)) {
         const receive = document.createElement("button");
         receive.type = "button";
         receive.className = "btn btn-sm btn-outline-success ms-1";
         receive.textContent = "Réceptionner";
-        receive.addEventListener("click", async () => {
-          const raw = prompt("Saisissez les lignes réceptionnées au format JSON : [{\"idLigneCommande\":1,\"quantiteRecue\":1}]");
-          if (!raw) return;
-          try {
-            await api.receiveCommande(row.id, { lignes: JSON.parse(raw) });
-            await loadPage(target);
-          } catch (error) {
-            alert(error.message);
-          }
-        });
+        receive.addEventListener("click", () => showReceptionForm(row.id, target));
         actions.append(receive);
+      }
+      if (target.key === "reception" && row.idCommande) {
+        const open = document.createElement("a");
+        open.className = "btn btn-sm btn-square btn-link";
+        open.href = `gesco-approvisionnement-commande-detail.html?id=${encodeURIComponent(row.idCommande)}`;
+        open.title = "Voir la commande";
+        open.setAttribute("aria-label", "Voir la commande");
+        open.innerHTML = '<i class="bi bi-eye" aria-hidden="true"></i>';
+        actions.append(open);
       }
       if (target.key === "session" && row.statut === "ouverte") {
         const close = document.createElement("button");
@@ -991,6 +1584,39 @@
         });
         actions.append(close);
       }
+      if (target.key === "retour" && row.type === "retour" && row.statut === "en_attente" && row.id) {
+        [["rembourse", "Rembourser", "btn-outline-success"], ["echange", "Échanger", "btn-outline-primary"], ["refuse", "Refuser", "btn-outline-danger"]]
+          .forEach(([statut, label, variant]) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = `btn btn-sm ${variant} ms-1`;
+            button.textContent = label;
+            button.addEventListener("click", async () => {
+              if (!(await confirmAction({
+                title: `${label} le retour`,
+                message: `Confirmez-vous « ${label.toLowerCase()} » pour le retour ${row.reference} ?`,
+                confirmLabel: label,
+                tone: statut === "refuse" ? "danger" : "primary",
+              }))) return;
+              try {
+                await api.setRetourStatut(row.id, statut);
+                await loadPage(target);
+              } catch (error) {
+                window.alert(error.message);
+              }
+            });
+            actions.append(button);
+          });
+      }
+      if (target.key === "retour" && row.type === "annulation" && row.idVente) {
+        const open = document.createElement("a");
+        open.className = "btn btn-sm btn-square btn-link";
+        open.href = `gesco-ventes-detail.html?id=${encodeURIComponent(row.idVente)}`;
+        open.title = "Voir la vente";
+        open.setAttribute("aria-label", "Voir la vente");
+        open.innerHTML = '<i class="bi bi-eye" aria-hidden="true"></i>';
+        actions.append(open);
+      }
       if (target.key === "vente" && row.statut !== "annulee" && row.id) {
         const cancel = document.createElement("button");
         cancel.type = "button";
@@ -999,7 +1625,12 @@
         cancel.setAttribute("aria-label", "Annuler la vente");
         cancel.innerHTML = '<i class="bi bi-x-circle" aria-hidden="true"></i>';
         cancel.addEventListener("click", async () => {
-          if (!window.confirm(`Annuler la vente ${row.reference} ?`)) return;
+          if (!(await confirmAction({
+            title: "Annuler la vente",
+            message: `La vente ${row.reference} sera annulée. Cette action est définitive.`,
+            confirmLabel: "Annuler la vente",
+            tone: "danger",
+          }))) return;
           try {
             await api.cancelVente(row.id);
             await loadPage(target);
@@ -1028,7 +1659,12 @@
         toggle.innerHTML = `<i class="bi ${active ? "bi-person-x" : "bi-person-check"}" aria-hidden="true"></i>`;
         toggle.addEventListener("click", async () => {
           const action = active ? "désactiver" : "réactiver";
-          if (!window.confirm(`Voulez-vous ${action} le compte ${row.nomUtilisateur} ?`)) return;
+          if (!(await confirmAction({
+            title: active ? "Désactiver le compte" : "Réactiver le compte",
+            message: `Voulez-vous ${action} le compte de ${row.nomUtilisateur} ?`,
+            confirmLabel: active ? "Désactiver" : "Réactiver",
+            tone: active ? "danger" : "primary",
+          }))) return;
           try {
             await api.updateUtilisateur(row.id, { actif: !active });
             await loadPage(target);
@@ -1037,6 +1673,45 @@
           }
         });
         actions.append(toggle);
+      }
+      if (target.key === "inventaire" && row.id) {
+        const count = document.createElement("button");
+        count.type = "button";
+        count.className = "btn btn-sm btn-square btn-link";
+        count.title = row.statut === "en_cours" ? "Compter les articles" : "Consulter l'inventaire";
+        count.setAttribute("aria-label", count.title);
+        count.innerHTML = row.statut === "en_cours"
+          ? '<i class="bi bi-clipboard-check" aria-hidden="true"></i>'
+          : '<i class="bi bi-eye" aria-hidden="true"></i>';
+        count.addEventListener("click", () => openInventoryCount(row.id, target));
+        actions.append(count);
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btn btn-sm btn-square btn-link text-danger";
+        remove.title = "Supprimer l'inventaire";
+        remove.setAttribute("aria-label", "Supprimer l'inventaire");
+        remove.innerHTML = '<i class="bi bi-trash" aria-hidden="true"></i>';
+        remove.addEventListener("click", async () => {
+          const message = row.statut === "termine"
+            ? `Les ajustements de stock appliqués par l'inventaire ${row.reference} seront annulés.`
+            : `L'inventaire ${row.reference} et son comptage seront supprimés.`;
+          if (!(await confirmAction({
+            title: "Supprimer l'inventaire",
+            message,
+            confirmLabel: "Supprimer",
+            tone: "danger",
+          }))) return;
+          remove.disabled = true;
+          try {
+            await api.deleteInventory(row.id);
+            await loadPage(target);
+          } catch (error) {
+            remove.disabled = false;
+            window.alert(error.message || "Impossible de supprimer l'inventaire.");
+          }
+        });
+        actions.append(remove);
       }
       if (hasActions) tr.append(actions);
       body.append(tr);
@@ -1060,9 +1735,13 @@
       renderTable(table, rows, columns, config);
       if (page === "gesco-administration.html" && index === 0) setupUserManagement(rows);
       if (page === "gesco-approvisionnement-commandes.html" && index === 0) setupOrderHistory(rows, config);
+      if (page === "gesco-approvisionnement-receptions.html" && index === 0) setupReceptions(rows, config);
       if (page === "gesco-stock-produits.html" && index === 0) await setupProductCatalogue(rows, config);
       if (page === "gesco-stock-mouvements.html" && index === 0) setupStockMovements(rows, config);
+      if (page === "gesco-stock-inventaires.html" && index === 0) setupInventories(rows, config);
       if (page === "gesco-ventes.html" && index === 0) setupSalesHistory(rows, config);
+      if (page === "gesco-ventes-retours.html" && index === 0) await setupReturns(rows, config);
+      if (page === "gesco-facturation.html" && index === 0) setupInvoices(rows, config);
     }
   }
 
@@ -1082,7 +1761,7 @@
     const totalEntries = currentMonth.reduce((sum, movement) => sum + Math.max(0, Number(movement.quantite || 0)), 0);
     const totalExits = currentMonth.reduce((sum, movement) => sum + Math.max(0, -Number(movement.quantite || 0)), 0);
     const totalLosses = currentMonth
-      .filter((movement) => movement.type === "perte")
+      .filter((movement) => ["perte", "casse", "vol"].includes(movement.type))
       .reduce((sum, movement) => sum + Math.abs(Number(movement.quantite || 0)), 0);
     const indicators = main?.querySelectorAll(".row.g-3.mb-4 .card-body h3");
     if (indicators?.length >= 4) {
@@ -1127,6 +1806,306 @@
     render();
   }
 
+  function setupInvoices(invoices, config) {
+    const main = document.querySelector("main");
+    const table = mainTable(0);
+    const search = document.getElementById("factures-search");
+    const count = document.getElementById("factures-count");
+    const columns = config.tables[0].columns;
+
+    const render = () => {
+      const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
+      const filtered = invoices.filter((invoice) => {
+        if (!query) return true;
+        const searchable = [
+          invoice.reference,
+          invoice.idClientLabel,
+          invoice.statut,
+          normalize(invoice, "statut"),
+          normalize(invoice, "idClient"),
+        ].join(" ").toLocaleLowerCase("fr");
+        return searchable.includes(query);
+      });
+      renderTable(table, filtered, columns, config);
+      if (count) {
+        count.textContent = `Affichage de ${filtered.length} document${filtered.length === 1 ? "" : "s"} sur ${invoices.length}`;
+      }
+      main?.querySelector(".pagination")?.closest("nav")?.classList.add("d-none");
+    };
+
+    search?.addEventListener("input", render);
+    render();
+  }
+
+  async function setupLossDialog(config) {
+    const modal = document.getElementById("declarerPerte");
+    if (!modal) return;
+    const productSelect = modal.querySelector("#perte-produit");
+    const typeSelect = modal.querySelector("#perte-type");
+    const quantityInput = modal.querySelector("#perte-quantite");
+    const motifInput = modal.querySelector("#perte-motif");
+    const submit = modal.querySelector("#perte-enregistrer");
+    const error = modal.querySelector("#perte-error");
+    const showError = (message) => {
+      if (!error) return;
+      error.textContent = message;
+      error.classList.remove("d-none");
+    };
+    try {
+      const products = list(await api.getProduits());
+      products.forEach((product) => {
+        productSelect?.append(new Option(`${product.designation} — stock : ${product.stock ?? 0}`, product.id));
+      });
+    } catch (loadError) {
+      showError(loadError.message || "Impossible de charger la liste des produits.");
+    }
+    submit?.addEventListener("click", async () => {
+      error?.classList.add("d-none");
+      const idProduit = Number(productSelect?.value);
+      if (!idProduit) {
+        showError("Veuillez sélectionner un produit.");
+        return;
+      }
+      submit.disabled = true;
+      try {
+        await api.createStockMovement({
+          idProduit,
+          type: typeSelect?.value || "perte",
+          quantite: Number(quantityInput?.value || 1),
+          motif: motifInput?.value?.trim() || null,
+        });
+        if (productSelect) productSelect.value = "";
+        if (quantityInput) quantityInput.value = 1;
+        if (motifInput) motifInput.value = "";
+        if (window.bootstrap?.Modal) window.bootstrap.Modal.getOrCreateInstance(modal).hide();
+        await loadPage(apiPages[page]);
+      } catch (submitError) {
+        showError(submitError.message || "Échec de l'enregistrement.");
+        submit.disabled = false;
+      }
+    });
+  }
+
+  function setupInventories(inventories, config) {
+    const main = document.querySelector("main");
+    const table = mainTable(0);
+    if (!main || !table) return;
+    const search = main.querySelector("#inventaires-recherche");
+    const statusSelect = main.querySelector("#inventaires-statut");
+    const state = table._gescoInventoryState ?? { inventories: [], config, attached: false };
+    state.inventories = inventories;
+    state.config = config;
+    table._gescoInventoryState = state;
+    const indicators = main?.querySelectorAll(".row.g-3.mb-4 .card-body h3");
+    const currentYear = new Date().getFullYear();
+    if (indicators?.length >= 4) {
+      const thisYear = state.inventories.filter((item) => new Date(item.dateInventaire).getFullYear() === currentYear);
+      const ongoing = state.inventories.filter((item) => item.statut === "en_cours");
+      const validated = state.inventories.filter((item) => item.statut === "termine");
+      const totalEcarts = state.inventories.reduce((sum, item) => sum + Number(item.ecarts || 0), 0);
+      indicators[0].textContent = thisYear.length.toLocaleString("fr-FR");
+      indicators[1].textContent = ongoing.length.toLocaleString("fr-FR");
+      indicators[2].textContent = validated.length.toLocaleString("fr-FR");
+      indicators[3].textContent = totalEcarts.toLocaleString("fr-FR");
+    }
+
+    if (statusSelect) {
+      const selectedStatus = statusSelect.value;
+      statusSelect.replaceChildren(
+        new Option("Tous les statuts", ""),
+        new Option("En cours", "en_cours"),
+        new Option("Validé", "termine"),
+      );
+      statusSelect.value = selectedStatus;
+    }
+
+    const render = () => {
+      const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
+      const filtered = state.inventories.filter((inventory) => {
+        const searchable = [inventory.reference, inventory.responsable, inventory.notes]
+          .join(" ").toLocaleLowerCase("fr");
+        return (!query || searchable.includes(query))
+          && (!statusSelect?.value || inventory.statut === statusSelect.value);
+      });
+      renderTable(table, filtered, state.config.tables[0].columns, state.config);
+      const count = main?.querySelector(".row.gx-3.align-items-center.mt-3 .small.text-secondary");
+      if (count) {
+        count.textContent = `${filtered.length} inventaire${filtered.length === 1 ? "" : "s"} affiché${filtered.length === 1 ? "" : "s"} sur ${state.inventories.length}`;
+      }
+    };
+    if (!state.attached) {
+      search?.addEventListener("input", render);
+      statusSelect?.addEventListener("change", render);
+      state.attached = true;
+    }
+    main?.querySelector(".pagination")?.closest("nav")?.classList.add("d-none");
+    render();
+  }
+
+  async function openInventoryCount(id, target) {
+    const modalEl = document.getElementById("inventaireComptage");
+    if (!modalEl || !id) return;
+    const title = modalEl.querySelector("#inventaire-comptage-titre");
+    const subtitle = modalEl.querySelector("#inventaire-comptage-sous-titre");
+    const body = modalEl.querySelector("#inventaire-comptage-corps");
+    const search = modalEl.querySelector("#inventaire-comptage-recherche");
+    const alertBox = modalEl.querySelector("#inventaire-comptage-alerte");
+    const closeHelp = modalEl.querySelector("#inventaire-comptage-aide-cloture");
+    const saveButton = modalEl.querySelector("#inventaire-comptage-enregistrer");
+    const closeButton = modalEl.querySelector("#inventaire-comptage-cloturer");
+    const showAlert = (message) => {
+      if (!alertBox) return;
+      alertBox.textContent = message;
+      alertBox.classList.remove("d-none");
+    };
+    alertBox?.classList.add("d-none");
+
+    let inventory;
+    let productNames;
+    try {
+      [inventory, productNames] = await Promise.all([
+        api.getInventory(id),
+        loadReferenceMap("idProduit"),
+      ]);
+    } catch (error) {
+      showAlert(error.message || "Impossible de charger l'inventaire.");
+      window.bootstrap?.Modal?.getOrCreateInstance(modalEl).show();
+      return;
+    }
+    const lines = list(inventory.lignes);
+    const editable = inventory.statut === "en_cours";
+    if (title) title.textContent = `Comptage — ${inventory.reference}`;
+    if (search) search.value = "";
+    const refreshProgress = () => {
+      const inputs = Array.from(body?.querySelectorAll('input[type="number"]') ?? []);
+      const counts = inputs.filter((input) => input.value !== "").length;
+      if (subtitle) {
+        subtitle.textContent = `${date(inventory.dateInventaire)} · ${counts}/${lines.length} article${lines.length === 1 ? "" : "s"} compté${counts === 1 ? "" : "s"}${editable ? "" : " · inventaire validé"}`;
+      }
+      if (saveButton) saveButton.disabled = !editable || counts === 0;
+      if (closeButton) closeButton.disabled = !editable || !lines.length;
+      if (closeHelp) {
+        closeHelp.textContent = !lines.length
+          ? "Aucun article ne figure dans cet inventaire."
+          : counts === lines.length
+            ? "Tous les articles sont comptés. La clôture appliquera les écarts au stock."
+            : `La clôture nécessite une quantité pour chaque article (${counts}/${lines.length} comptés).`;
+      }
+    };
+    body?.replaceChildren();
+    lines.forEach((line) => {
+      const tr = document.createElement("tr");
+      const name = document.createElement("td");
+      name.textContent = productNames.get(String(line.idProduit)) ?? `Produit ${line.idProduit}`;
+      tr.dataset.productName = name.textContent.toLocaleLowerCase("fr");
+      const theoretical = document.createElement("td");
+      theoretical.className = "text-center text-secondary";
+      theoretical.textContent = String(line.quantiteTheorique);
+      const counted = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "0";
+      input.step = "1";
+      input.className = "form-control form-control-sm text-center";
+      input.value = line.quantiteComptee === null ? "" : String(line.quantiteComptee);
+      input.disabled = !editable;
+      counted.append(input);
+      const gap = document.createElement("td");
+      gap.className = "text-center fw-bold";
+      const refreshGap = () => {
+        if (input.value === "") {
+          gap.textContent = "—";
+          gap.className = "text-center fw-bold text-secondary";
+          return;
+        }
+        const ecart = Number(input.value) - Number(line.quantiteTheorique);
+        gap.textContent = ecart > 0 ? `+${ecart}` : String(ecart);
+        gap.className = `text-center fw-bold ${ecart > 0 ? "text-success" : ecart < 0 ? "text-danger" : "text-secondary"}`;
+      };
+      input.addEventListener("input", () => {
+        refreshGap();
+        refreshProgress();
+      });
+      refreshGap();
+      tr.append(name, theoretical, counted, gap);
+      body?.append(tr);
+    });
+    if (!lines.length) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 4;
+      td.className = "text-center text-secondary py-4";
+      td.textContent = "Aucun article dans cet inventaire.";
+      tr.append(td);
+      body?.append(tr);
+    }
+    refreshProgress();
+    if (search) {
+      search.oninput = () => {
+        const query = search.value.trim().toLocaleLowerCase("fr");
+        Array.from(body?.rows ?? []).forEach((row) => {
+          row.hidden = Boolean(query) && !String(row.dataset.productName ?? "").includes(query);
+        });
+      };
+    }
+
+    const collectLines = () => {
+      const requests = [];
+      lines.forEach((line, index) => {
+        const input = body?.querySelectorAll("input[type=number]")[index];
+        if (!input || input.value === "") return;
+        requests.push({ idProduit: line.idProduit, quantiteComptee: Number(input.value) });
+      });
+      return requests;
+    };
+
+    if (saveButton) {
+      saveButton.onclick = async () => {
+        const requests = collectLines();
+        alertBox?.classList.add("d-none");
+        if (!requests.length) {
+          showAlert("Saisissez au moins une quantité comptée.");
+          return;
+        }
+        saveButton.disabled = true;
+        try {
+          await api.countInventory(id, { lignes: requests });
+          await loadPage(target);
+          await openInventoryCount(id, target);
+        } catch (error) {
+          showAlert(error.message || "Échec de l'enregistrement du comptage.");
+          saveButton.disabled = false;
+        }
+      };
+    }
+    if (closeButton) {
+      closeButton.onclick = async () => {
+        const requests = collectLines();
+        alertBox?.classList.add("d-none");
+        if (requests.length !== lines.length) {
+          showAlert("Comptez tous les articles avant de clôturer l'inventaire.");
+          return;
+        }
+        if (!(await confirmAction({
+          title: "Clôturer l'inventaire",
+          message: `Clôturer l'inventaire ${inventory.reference} ? Le stock sera ajusté selon les écarts saisis.`,
+          confirmLabel: "Clôturer",
+          tone: "primary",
+        }))) return;
+        closeButton.disabled = true;
+        try {
+          await api.closeInventory(id, { lignes: requests });
+          window.bootstrap?.Modal?.getOrCreateInstance(modalEl).hide();
+          await loadPage(target);
+        } catch (error) {
+          showAlert(error.message || "Échec de la clôture de l'inventaire.");
+          closeButton.disabled = false;
+        }
+      };
+    }
+    window.bootstrap?.Modal?.getOrCreateInstance(modalEl).show();
+  }
+
   async function setupProductCatalogue(products, config) {
     const main = document.querySelector("main");
     const search = main?.querySelector('input[type="search"], input[placeholder*="Rechercher"]');
@@ -1152,7 +2131,7 @@
     const update = () => {
       const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
       const filtered = products.filter((item) => {
-        const matchesQuery = !query || `${item.designation ?? ""} ${item.numeroSerie ?? ""} ${item.codeBarres ?? ""}`
+        const matchesQuery = !query || `${item.designation ?? ""}`
           .toLocaleLowerCase("fr").includes(query);
         const matchesCategory = !categorySelect?.value || String(item.idCategorie) === categorySelect.value;
         const matchesState = !stateSelect?.value || item.stockState === stateSelect.value;
@@ -1189,34 +2168,128 @@
 
   async function loadClientDetail() {
     const id = findId();
-    const container = document.getElementById("clientInfo");
-    if (!id || !container) return;
+    const titleElement = document.getElementById("client-page-title");
+    if (!id || !titleElement) return;
+    const editButton = document.getElementById("clientModifierBtn");
+    if (editButton) editButton.onclick = () => { window.location.href = `gesco-clients-modifier.html?id=${encodeURIComponent(id)}`; };
+
+    const setText = (elementId, value) => {
+      const element = document.getElementById(elementId);
+      if (element) element.textContent = value;
+    };
+    const orNa = (value) => (value === null || value === undefined || value === "" ? "N/A" : value);
+    const modeLabel = (mode) => ({
+      especes: "Espèces",
+      mobile_money: "Mobile Money",
+      carte: "Carte",
+      virement: "Virement",
+      cheque: "Chèque",
+    })[mode] ?? (mode ? String(mode) : "—");
+    const invoiceBadge = (statut) => {
+      const map = {
+        payee: ["Payée", "text-bg-success"],
+        partiellement_payee: ["Partiellement payée", "text-bg-warning"],
+        impayee: ["Impayée", "text-bg-danger"],
+        envoyee: ["Envoyée", "text-bg-primary"],
+        brouillon: ["Brouillon", "text-bg-secondary"],
+        annulee: ["Annulée", "text-bg-danger"],
+      };
+      const [label, cls] = map[statut] ?? [statut ? String(statut) : "—", "text-bg-secondary"];
+      return `<span class="badge badge-light ${cls}">${esc(label)}</span>`;
+    };
+    const renderRows = (tbodyId, count, rows, rowHtml) => {
+      const body = document.getElementById(tbodyId);
+      if (!body) return;
+      body.innerHTML = rows.length
+        ? rows.map(rowHtml).join("")
+        : `<tr><td colspan="${count}" class="text-center text-secondary py-4">Aucune donnée</td></tr>`;
+    };
+    const byDateDesc = (getter) => (a, b) => new Date(getter(b) || 0) - new Date(getter(a) || 0);
+
     try {
-      const [client, stats] = await Promise.all([api.getClient(id), api.getClientStats(id)]);
-      const data = client.client ?? client;
-      const title = document.createElement("h2");
-      title.className = "h4";
-      title.textContent = data.nom;
-      const fields = [
-        ["Type", data.type], ["E-mail", data.email], ["Téléphone", data.tel],
-        ["Ville", data.ville], ["Adresse", data.adresse], ["NIF", data.nif],
-        ["Achats", money(stats.totalAchats)], ["Solde dû", money(stats.soldeDu)],
-        ["Dernier achat", date(stats.dernierAchat)],
-      ];
-      const listElement = document.createElement("dl");
-      listElement.className = "row";
-      fields.forEach(([label, value]) => {
-        const dt = document.createElement("dt");
-        dt.className = "col-sm-4";
-        dt.textContent = label;
-        const dd = document.createElement("dd");
-        dd.className = "col-sm-8";
-        dd.textContent = esc(value || "—");
-        listElement.append(dt, dd);
-      });
-      container.replaceChildren(title, listElement);
+      const [clientResult, statsResult, salesResult, invoicesResult, paymentsResult] = await Promise.all([
+        api.getClient(id),
+        api.getClientStats(id),
+        api.getVentes(),
+        api.getFactures(),
+        api.getPaiements(),
+      ]);
+      const client = clientResult.client ?? clientResult.data ?? clientResult;
+      const stats = statsResult.data ?? statsResult;
+      const type = String(client.type ?? "").trim().toLowerCase();
+      const isEntreprise = type.startsWith("entr");
+      const nom = orNa(client.nom);
+
+      setText("client-breadcrumb", nom);
+      setText("client-page-title", nom);
+      setText("client-avatar", String(client.nom || "").trim().slice(0, 2).toUpperCase() || "NA");
+      setText("client-name", nom);
+      const created = client.createdAt ? new Date(client.createdAt) : null;
+      const since = created && !Number.isNaN(created.getTime())
+        ? created.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+        : null;
+      const role = isEntreprise ? "Client entreprise" : type.startsWith("particulier") ? "Client particulier" : "Client";
+      setText("client-subtitle", since ? `${role} depuis ${since}` : role);
+      const badge = document.getElementById("client-type-badge");
+      if (badge) {
+        badge.textContent = isEntreprise ? "Entreprise" : type.startsWith("particulier") ? "Particulier" : "N/A";
+        badge.className = `badge badge-light ${isEntreprise ? "text-bg-theme-1" : "text-bg-secondary"}`;
+      }
+      setText("client-email", orNa(client.email));
+      setText("client-tel", orNa(client.tel));
+      setText("client-adresse", [client.adresse, client.ville].filter(Boolean).join(", ") || "N/A");
+      setText("client-nif", orNa(client.nif));
+
+      const totalAchats = Number(stats.totalAchats || 0);
+      const nbVentes = Number(stats.nombreVentes || 0);
+      const solde = Number(stats.soldeDu || 0);
+      setText("stat-total-achats", money(totalAchats));
+      setText("stat-ventes", String(nbVentes));
+      setText("stat-panier-moyen", money(nbVentes ? totalAchats / nbVentes : 0));
+      setText("stat-dernier-achat", stats.dernierAchat ? date(stats.dernierAchat) : "N/A");
+      setText("client-solde-amount", money(solde));
+      setText("client-solde-detail", solde > 0 ? "Montant restant à régler par le client" : "");
+      const soldeCard = document.getElementById("client-solde-card");
+      if (soldeCard) soldeCard.classList.toggle("d-none", solde <= 0);
+
+      const sales = list(salesResult)
+        .filter((sale) => Number(sale.idClient) === Number(id))
+        .sort(byDateDesc((sale) => sale.dateVente));
+      const saleIds = new Set(sales.map((sale) => Number(sale.id)));
+      renderRows("client-ventes-body", 4, sales, (sale) => `
+        <tr>
+          <td><a href="gesco-ventes-detail.html?id=${encodeURIComponent(sale.id)}">${esc(sale.reference)}</a></td>
+          <td class="small">${date(sale.dateVente)}</td>
+          <td class="text-end fw-medium">${money(sale.montantTotal)}</td>
+          <td class="small">${esc(modeLabel(sale.modePaiement))}</td>
+        </tr>`);
+
+      const invoices = list(invoicesResult)
+        .filter((invoice) => Number(invoice.idClient) === Number(id) || saleIds.has(Number(invoice.idVente)))
+        .sort(byDateDesc((invoice) => invoice.dateFacture));
+      renderRows("client-factures-body", 4, invoices, (invoice) => `
+        <tr>
+          <td><a href="gesco-facturation-detail.html?id=${encodeURIComponent(invoice.id)}">${esc(invoice.reference)}</a></td>
+          <td class="small">${date(invoice.dateFacture)}</td>
+          <td class="text-end fw-medium">${money(invoice.montantTotal)}</td>
+          <td>${invoiceBadge(invoice.statut)}</td>
+        </tr>`);
+
+      const invoiceIds = new Set(invoices.map((invoice) => Number(invoice.id)));
+      const payments = list(paymentsResult)
+        .filter((payment) => invoiceIds.has(Number(payment.idFacture)))
+        .sort(byDateDesc((payment) => payment.datePaiement));
+      renderRows("client-paiements-body", 4, payments, (payment) => `
+        <tr>
+          <td class="small">${esc(payment.reference)}</td>
+          <td class="small">${date(payment.datePaiement)}</td>
+          <td class="text-end fw-medium text-success">+${money(payment.montant)}</td>
+          <td class="small">${esc(modeLabel(payment.modePaiement))}</td>
+        </tr>`);
     } catch (error) {
-      container.textContent = error.message;
+      console.error("Erreur chargement client :", error);
+      setText("client-page-title", "Client introuvable");
+      setText("client-name", error.message || "Erreur");
     }
   }
 
@@ -1270,6 +2343,210 @@
     render();
   }
 
+  async function setupReturns(returns, config) {
+    const main = document.querySelector("main");
+    const table = mainTable(0);
+    if (!main || !table) return;
+    const state = table._gescoReturnsState ?? { rows: [], config, attached: false };
+    state.rows = returns;
+    state.config = config;
+    table._gescoReturnsState = state;
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const inMonth = (value) => {
+      const parsed = new Date(value);
+      return !Number.isNaN(parsed.getTime()) && parsed >= monthStart;
+    };
+    const monthlyReturns = returns.filter((row) => row.type === "retour" && inMonth(row.date));
+    const refunded = monthlyReturns.reduce((sum, row) => sum + Number(row.montant || 0), 0);
+    const cancelled = returns.filter((row) => row.type === "annulation" && inMonth(row.date)).length;
+    const pending = returns.filter((row) => row.type === "retour" && row.statut === "en_attente").length;
+    const indicators = main.querySelectorAll(".row.g-3.mb-4 .card-body h3");
+    if (indicators.length >= 4) {
+      indicators[0].textContent = String(monthlyReturns.length);
+      indicators[1].textContent = money(refunded);
+      indicators[2].textContent = String(cancelled);
+      indicators[3].textContent = String(pending);
+    }
+
+    const search = main.querySelector("#returns-search");
+    const statusFilter = main.querySelector("#returns-status-filter");
+    const render = () => {
+      const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
+      const filtered = state.rows.filter((row) => {
+        const searchable = `${row.reference ?? ""} ${row.venteReference ?? ""} ${row.motif ?? ""}`.toLocaleLowerCase("fr");
+        return (!query || searchable.includes(query))
+          && (!statusFilter?.value || row.statut === statusFilter.value);
+      });
+      renderTable(table, filtered, state.config.tables[0].columns, state.config);
+      const count = main.querySelector("#returns-result-count");
+      if (count) {
+        count.textContent = `${filtered.length} opération${filtered.length === 1 ? "" : "s"} affichée${filtered.length === 1 ? "" : "s"} sur ${state.rows.length}`;
+      }
+    };
+    if (!state.attached) {
+      search?.addEventListener("input", render);
+      statusFilter?.addEventListener("change", render);
+      state.attached = true;
+    }
+    render();
+
+    const cancelButton = main.querySelector("#cancel-sale-btn");
+    if (cancelButton && !cancelButton._gescoBound) {
+      cancelButton._gescoBound = true;
+      cancelButton.addEventListener("click", () => showCancelSaleForm(config));
+    }
+  }
+
+  async function setupReceptions(receipts, config) {
+    const main = document.querySelector("main");
+    const table = mainTable(0);
+    if (!main || !table) return;
+    const state = table._gescoReceptionsState ?? { rows: [], config, attached: false };
+    state.rows = receipts;
+    state.config = config;
+    table._gescoReceptionsState = state;
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const inMonth = (value) => {
+      const parsed = new Date(value);
+      return !Number.isNaN(parsed.getTime()) && parsed >= monthStart;
+    };
+    const monthly = receipts.filter((row) => inMonth(row.dateReception));
+    const monthlyQuantity = monthly.reduce((sum, row) => sum + Number(row.quantiteRecue || 0), 0);
+    const monthlyValue = monthly.reduce((sum, row) => sum + Number(row.montantRecu || 0), 0);
+    const partial = receipts.filter((row) => row.receptionStatut === "partielle").length;
+    const indicators = main.querySelectorAll(".row.g-3.mb-4 .card-body h3");
+    if (indicators.length >= 4) {
+      indicators[0].textContent = String(monthly.length);
+      indicators[1].textContent = monthlyQuantity.toLocaleString("fr-FR");
+      indicators[2].textContent = String(partial);
+      indicators[3].textContent = money(monthlyValue);
+    }
+
+    const search = main.querySelector("#receptions-search");
+    const statusFilter = main.querySelector("#receptions-status-filter");
+    const render = () => {
+      const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
+      const filtered = state.rows.filter((row) => {
+        const searchable = `${row.reference ?? ""} ${row.idCommandeLabel ?? ""} ${row.fournisseurNom ?? ""}`.toLocaleLowerCase("fr");
+        return (!query || searchable.includes(query))
+          && (!statusFilter?.value || row.receptionStatut === statusFilter.value);
+      });
+      renderTable(table, filtered, state.config.tables[0].columns, state.config);
+      const count = main.querySelector("#receptions-result-count");
+      if (count) {
+        count.textContent = `${filtered.length} réception${filtered.length === 1 ? "" : "s"} affichée${filtered.length === 1 ? "" : "s"} sur ${state.rows.length}`;
+      }
+    };
+    if (!state.attached) {
+      search?.addEventListener("input", render);
+      statusFilter?.addEventListener("change", render);
+      state.attached = true;
+    }
+    render();
+  }
+
+  async function showCancelSaleForm(target) {
+    const overlay = document.createElement("div");
+    overlay.className = "gesco-modal-backdrop";
+    overlay.setAttribute("role", "presentation");
+    const panel = document.createElement("section");
+    panel.className = "card adminuiux-card gesco-form-dialog shadow";
+    panel.style.width = "min(40rem, 100%)";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+
+    const title = document.createElement("h2");
+    title.className = "h5 mb-0";
+    title.textContent = "Annuler une vente";
+    const header = document.createElement("div");
+    header.className = "card-header d-flex align-items-center justify-content-between";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "btn-close";
+    close.setAttribute("aria-label", "Fermer");
+    close.addEventListener("click", () => overlay.remove());
+    header.append(title, close);
+
+    const form = document.createElement("form");
+    form.className = "gesco-form";
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const error = document.createElement("div");
+    error.className = "alert alert-danger d-none";
+    error.setAttribute("role", "alert");
+    const warning = document.createElement("p");
+    warning.className = "small text-secondary";
+    warning.textContent = "L'annulation remet les produits en stock et rembourse la vente. Elle est impossible si la session de caisse est clôturée.";
+    body.append(error, warning);
+
+    const sales = list(await api.getVentes()).filter((sale) => sale.statut !== "annulee");
+    const saleSelect = document.createElement("select");
+    saleSelect.className = "form-select";
+    saleSelect.required = true;
+    saleSelect.append(new Option("Sélectionner une vente", ""));
+    sales.forEach((sale) => {
+      const date = sale.dateVente ? new Date(sale.dateVente).toLocaleDateString("fr-FR") : "";
+      saleSelect.append(new Option(`${sale.reference} — ${date} — ${money(sale.montantTotal)}`, sale.id));
+    });
+    const saleLabel = document.createElement("label");
+    saleLabel.className = "form-label fw-semibold mt-3";
+    saleLabel.textContent = "Vente à annuler";
+    saleLabel.append(saleSelect);
+    body.append(saleLabel);
+
+    const actions = document.createElement("div");
+    actions.className = "card-footer d-flex justify-content-end gap-2";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-outline-secondary";
+    cancel.textContent = "Annuler";
+    cancel.addEventListener("click", () => overlay.remove());
+    const submit = document.createElement("button");
+    submit.type = "submit";
+    submit.className = "btn btn-danger";
+    submit.textContent = "Confirmer l'annulation";
+    actions.append(cancel, submit);
+    form.append(body, actions);
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.classList.add("d-none");
+      if (!saleSelect.value) {
+        error.textContent = "Sélectionnez la vente à annuler.";
+        error.classList.remove("d-none");
+        return;
+      }
+      submit.disabled = true;
+      try {
+        await api.cancelVente(Number(saleSelect.value));
+        overlay.remove();
+        await loadPage(target);
+      } catch (submitError) {
+        error.textContent = submitError.message || "Échec de l'annulation.";
+        error.classList.remove("d-none");
+        submit.disabled = false;
+      }
+    });
+
+    panel.append(header, form);
+    overlay.append(panel);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) overlay.remove();
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overlay.remove();
+    });
+    document.body.append(overlay);
+    saleSelect.focus();
+    return form;
+  }
+
   async function loadPointOfSale() {
     const grid = document.getElementById("pos-product-grid");
     const cartContainer = document.getElementById("pos-cart-items");
@@ -1291,6 +2568,8 @@
     const checkout = document.getElementById("pos-checkout-btn");
     const receivedInput = document.getElementById("pos-received");
     const changeInput = document.getElementById("pos-change");
+    const validityInput = document.getElementById("pos-validity");
+    const guaranteeInput = document.getElementById("pos-guarantee");
     const paymentRadios = Array.from(document.querySelectorAll('input[name="payment"]'));
     const closeButton = document.getElementById("caisse-close-btn");
     const openButton = document.getElementById("caisse-open-btn");
@@ -1390,7 +2669,7 @@
       grid.replaceChildren();
       const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
       const filtered = productRows.filter((item) => {
-        const searchable = `${item.designation ?? ""} ${item.numeroSerie ?? ""} ${item.codeBarres ?? ""}`;
+        const searchable = `${item.designation ?? ""}`;
         return searchable.toLocaleLowerCase("fr").includes(query)
           && (!currentCategory.id || String(item.idCategorie) === currentCategory.id);
       });
@@ -1405,16 +2684,13 @@
         button.disabled = stock <= 0;
         const name = document.createElement("strong");
         name.textContent = product.designation;
-        const referenceText = document.createElement("small");
-        referenceText.className = "text-secondary";
-        referenceText.textContent = product.numeroSerie || product.codeBarres || "Référence non renseignée";
         const price = document.createElement("span");
         price.className = "mt-2 fw-bold";
         price.textContent = money(product.prixVente);
         const available = document.createElement("small");
         available.className = stock > 0 ? "text-success mt-1" : "text-danger mt-1";
         available.textContent = stock > 0 ? `Stock disponible : ${stock}` : "Rupture de stock";
-        button.append(name, referenceText, price, available);
+        button.append(name, price, available);
         button.addEventListener("click", () => addProduct(product));
         column.append(button);
         grid.append(column);
@@ -1497,6 +2773,8 @@
       document.getElementById("pos-discount").value = "0";
       if (applyTaxToggle) applyTaxToggle.checked = true;
       if (receivedInput) receivedInput.value = "";
+      if (validityInput) validityInput.value = "";
+      if (guaranteeInput) guaranteeInput.value = "";
       drawCart();
     }
     search?.addEventListener("input", drawProducts);
@@ -1506,9 +2784,7 @@
       const scannedCode = search.value.trim().toLocaleLowerCase("fr");
       if (!scannedCode) return;
       const product = productRows.find((item) =>
-        [item.codeBarres, item.numeroSerie].some((value) =>
-          String(value ?? "").trim().toLocaleLowerCase("fr") === scannedCode,
-        ),
+        String(item.designation ?? "").trim().toLocaleLowerCase("fr") === scannedCode,
       );
       if (!product) {
         showError(`Aucun produit trouvé pour le code « ${search.value.trim()} ».`);
@@ -1581,6 +2857,10 @@
           montantPaye: total,
           ...(modePaiement === "especes" ? { montantRecu: received } : {}),
           modePaiement,
+          donneesDocument: {
+            validity: validityInput?.value.trim() || "",
+            guarantee: guaranteeInput?.value.trim() || "",
+          },
           lignes: lines,
         });
         const sale = response.data ?? response;
@@ -1699,6 +2979,138 @@
     updateSessionStatus();
     drawProducts();
     drawCart();
+    const preselectId = Number(new URLSearchParams(location.search).get("product"));
+    if (Number.isSafeInteger(preselectId) && preselectId > 0) {
+      const preselected = productRows.find((item) => Number(item.id) === preselectId);
+      if (preselected && Number(preselected.stock ?? 0) > 0) {
+        addProduct(preselected);
+        cartContainer.scrollIntoView?.({ block: "nearest" });
+      }
+    }
+  }
+
+  async function setupProductDetail() {
+    const id = findId();
+    if (!id) return;
+    const main = document.querySelector("main");
+    let product;
+    try {
+      const result = await api.getProduit(id);
+      product = result?.data ?? result;
+    } catch (error) {
+      window.alert(error.message || "Produit introuvable.");
+      location.href = "gesco-stock-produits.html";
+      return;
+    }
+    if (!product?.id) {
+      window.alert("Produit introuvable.");
+      location.href = "gesco-stock-produits.html";
+      return;
+    }
+
+    const setText = (selector, value) => {
+      const element = main?.querySelector(selector) ?? document.getElementById(selector.replace(/^#/, ""));
+      if (element) element.textContent = value ?? "—";
+    };
+    const [categoryLabels, supplierLabels] = await Promise.all([
+      loadReferenceMap("idCategorie"),
+      loadReferenceMap("idFournisseur"),
+    ]);
+
+    const designation = product.designation || "Produit";
+    document.title = `GESCO — ${designation} | SOLUTECH`;
+    setText("#pd-breadcrumb", designation);
+    setText("#pd-title", designation);
+    setText("#pd-category", categoryLabels.get(String(product.idCategorie)) ?? (product.idCategorie ? `Catégorie ${product.idCategorie}` : "—"));
+    setText(
+      "#pd-supplier",
+      product.idFournisseur
+        ? (supplierLabels.get(String(product.idFournisseur)) ?? `Fournisseur ${product.idFournisseur}`)
+        : "Aucun fournisseur",
+    );
+
+    const stock = Number(product.stock ?? 0);
+    const seuil = Number(product.seuilMinimum ?? 0);
+    setText("#pd-stock", String(stock));
+    setText("#pd-price-buy", money(product.prixAchat));
+    setText("#pd-price-sell", money(product.prixVente));
+
+    const thresholdCard = document.getElementById("pd-alert-card");
+    const thresholdMessage = document.getElementById("pd-threshold-message");
+    if (thresholdCard) thresholdCard.classList.toggle("d-none", seuil <= 0);
+    if (thresholdMessage) {
+      thresholdMessage.replaceChildren(
+        document.createTextNode(`Réapprovisionner sous ${seuil} unité${seuil === 1 ? "" : "s"} en stock. Actuellement : `),
+      );
+      const strong = document.createElement("strong");
+      strong.textContent = String(stock);
+      thresholdMessage.append(strong, document.createTextNode("."));
+    }
+    const sell = document.getElementById("pd-sell");
+    if (sell) sell.href = `gesco-ventes-terminal.html?product=${encodeURIComponent(product.id)}`;
+    const edit = document.getElementById("pd-edit");
+    if (edit) edit.href = `gesco-stock-nouveau-produit.html?id=${encodeURIComponent(product.id)}`;
+
+    const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    let sold = 0;
+    try {
+      const movements = list(await api.getStockMovements()).filter((row) => row.idProduit === Number(id));
+      for (const row of movements) {
+        const createdAt = new Date(row.createdAt).getTime();
+        if (!Number.isFinite(createdAt) || createdAt < since) continue;
+        if (row.type === "vente") sold += Math.abs(Number(row.quantite ?? 0));
+        else if (row.type === "annulation_vente") sold -= Math.abs(Number(row.quantite ?? 0));
+      }
+    } catch {
+      sold = 0;
+    }
+    setText("#pd-sold30", String(Math.max(0, sold)));
+
+    if (product.archive) {
+      setText("#pd-archived", "Archivé");
+      document.getElementById("pd-archived")?.classList.remove("d-none");
+      document.getElementById("pd-delete")?.classList.add("d-none");
+      document.getElementById("pd-sell")?.setAttribute("aria-disabled", "true");
+      document.getElementById("pd-sell")?.classList.add("disabled");
+      return;
+    }
+
+    const deleteButton = document.getElementById("pd-delete");
+    const deleteModalElement = document.getElementById("pd-delete-modal");
+    const motifInput = document.getElementById("pd-delete-motif");
+    const errorBox = document.getElementById("pd-delete-error");
+    const confirmButton = document.getElementById("pd-delete-confirm");
+    if (!deleteButton || !deleteModalElement || !motifInput || !confirmButton) return;
+    const modal = window.bootstrap?.Modal?.getOrCreateInstance(deleteModalElement)
+      ?? new (window.bootstrap.Modal)(deleteModalElement);
+    deleteButton.addEventListener("click", () => {
+      motifInput.value = "";
+      errorBox?.classList.add("d-none");
+      confirmButton.disabled = false;
+      modal.show();
+    });
+    confirmButton.addEventListener("click", async () => {
+      const motif = String(motifInput.value ?? "").trim();
+      if (motif.length < 3) {
+        if (errorBox) {
+          errorBox.textContent = "Veuillez indiquer le motif de suppression.";
+          errorBox.classList.remove("d-none");
+        }
+        motifInput.focus();
+        return;
+      }
+      confirmButton.disabled = true;
+      try {
+        await api.deleteProduit(product.id, { motif });
+        location.href = "gesco-stock-produits.html";
+      } catch (error) {
+        if (errorBox) {
+          errorBox.textContent = error.message || "Impossible de supprimer le produit.";
+          errorBox.classList.remove("d-none");
+        }
+        confirmButton.disabled = false;
+      }
+    });
   }
 
   async function loadProductCreationForm() {
@@ -1719,6 +3131,80 @@
       supplierSelect.append(new Option(supplier.nom, supplier.id));
     });
 
+    // Bouton "ajouter une catégorie" : soumission de la modale + rafraîchissement
+    const addCategoryForm = document.getElementById("add-category-form");
+    if (addCategoryForm) {
+      addCategoryForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const alertEl = document.getElementById("add-category-alert");
+        const submitBtn = document.getElementById("add-category-submit");
+        const input = document.getElementById("new-category-label");
+        const label = input.value.trim();
+        if (!label) {
+          alertEl.textContent = "Indiquez un nom de catégorie.";
+          alertEl.classList.remove("d-none");
+          return;
+        }
+        alertEl.classList.add("d-none");
+        submitBtn.disabled = true;
+        try {
+          const result = await api.createCategorie({ label });
+          const created = result?.data ?? result;
+          if (created?.id) {
+            categorySelect.append(new Option(created.label, created.id));
+            categorySelect.value = String(created.id);
+          }
+          input.value = "";
+          const modalEl = document.getElementById("addCategoryModal");
+          if (window.bootstrap && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+          }
+        } catch (error) {
+          alertEl.textContent = error.message || "Impossible de créer la catégorie.";
+          alertEl.classList.remove("d-none");
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    const editId = findId();
+    let product = null;
+    if (editId) {
+      try {
+        const result = await api.getProduit(editId);
+        product = result?.data ?? result;
+      } catch (error) {
+        window.alert(error.message || "Produit introuvable.");
+        location.href = "/gesco-stock-produits.html";
+        return;
+      }
+      if (!product?.id) {
+        window.alert("Produit introuvable.");
+        location.href = "/gesco-stock-produits.html";
+        return;
+      }
+      const setValue = (field, value) => {
+        const element = document.getElementById(field);
+        if (element) element.value = value ?? "";
+      };
+      setValue("product-designation", product.designation);
+      categorySelect.value = product.idCategorie ?? "";
+      setValue("product-description", product.description);
+      setValue("product-cost", product.prixAchat);
+      setValue("product-price", product.prixVente);
+      setValue("product-stock", product.stock);
+      setValue("product-threshold", product.seuilMinimum);
+      supplierSelect.value = product.idFournisseur ?? "";
+      document.title = `GESCO — ${product.designation} (modification) | SOLUTECH`;
+      const pageTitle = document.getElementById("product-page-title");
+      const breadcrumb = document.getElementById("product-breadcrumb");
+      const submit = form.querySelector('button[type="submit"]');
+      if (pageTitle) pageTitle.textContent = "Modifier le produit";
+      if (breadcrumb) breadcrumb.textContent = "Modifier le produit";
+      if (submit) submit.textContent = "Enregistrer les modifications";
+    }
+
     const alertBox = document.createElement("div");
     alertBox.className = "alert d-none";
     alertBox.setAttribute("role", "alert");
@@ -1731,21 +3217,27 @@
       try {
         const payload = {
           designation: document.getElementById("product-designation").value.trim(),
-          numeroSerie: document.getElementById("product-reference").value.trim(),
           idCategorie: categorySelect.value,
-          codeBarres: document.getElementById("product-barcode").value.trim(),
           description: document.getElementById("product-description").value.trim(),
           prixAchat: document.getElementById("product-cost").value,
           prixVente: document.getElementById("product-price").value,
-          stockInitial: document.getElementById("product-stock").value || "0",
           seuilMinimum: document.getElementById("product-threshold").value || "0",
           idFournisseur: supplierSelect.value,
-          garantie: document.getElementById("product-warranty").value.trim(),
         };
+        const stockValue = document.getElementById("product-stock").value || "0";
+        if (!product || Number(stockValue) !== Number(product.stock ?? 0)) {
+          payload.stockInitial = stockValue;
+        }
+        if (product) {
+          await api.updateProduit(product.id, payload);
+          location.href = `/gesco-stock-produit-detail.html?id=${encodeURIComponent(product.id)}`;
+          return;
+        }
         await api.createProduit(payload);
         location.href = "/gesco-stock-produits.html";
       } catch (error) {
-        alertBox.textContent = error.message || "Impossible de créer le produit.";
+        alertBox.textContent = error.message
+          || (product ? "Impossible d'enregistrer les modifications." : "Impossible de créer le produit.");
         alertBox.className = "alert alert-danger";
         submit.disabled = false;
       }
@@ -1766,8 +3258,10 @@
         }[page];
         await loadPage(config);
         if (config.create) createButton(config.create, config);
+        if (page === "gesco-stock-mouvements.html") await setupLossDialog(config);
       }
       if (page === "gesco-clients-detail.html") await loadClientDetail();
+      if (page === "gesco-stock-produit-detail.html") await setupProductDetail();
       if (page === "gesco-caisse.html" || page === "gesco-ventes-terminal.html") await loadPointOfSale();
       if (page === "gesco-stock-nouveau-produit.html") await loadProductCreationForm();
       if (page === "gesco-administration.html") {

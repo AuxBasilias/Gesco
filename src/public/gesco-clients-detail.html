@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -582,22 +576,19 @@ setTimeout(function () {
     </div>
 </div>
                         <main class="adminuiux-content has-sidebar" onclick="contentClick()">
-    <div id="clientInfo"></div>
-
-
-<!-- <div class="container-fluid mt-3">
+    <div class="container-fluid mt-3">
         <div class="row gx-1 align-items-center mb-3">
             <div class="col">
                 <nav aria-label="breadcrumb" class="mb-1">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
-                        <li class="breadcrumb-item"><a href="gesco-clients.html">Clients</a></li><li class="breadcrumb-item active" aria-current="page">Ets Kponou</li>
+                        <li class="breadcrumb-item"><a href="gesco-clients.html">Clients</a></li><li class="breadcrumb-item active" aria-current="page" id="client-breadcrumb">Client</li>
                     </ol>
                 </nav>
-                <h4 class="mb-0">Ets Kponou</h4>
+                <h4 class="mb-0" id="client-page-title">Client</h4>
             </div>
             <div class="col-auto d-flex gap-2">
-                <button class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</button>
+                <button class="btn btn-outline-secondary" id="clientModifierBtn" type="button"><i class="bi bi-pencil"></i> Modifier</button>
                 <a href="gesco-ventes-terminal.html" class="btn btn-theme"><i class="bi bi-plus-lg"></i> Nouvelle vente</a>
             </div>
         </div>
@@ -606,24 +597,24 @@ setTimeout(function () {
             <div class="col-lg-4">
                 <div class="card adminuiux-card border-0 shadow-sm mb-4">
                     <div class="card-body text-center p-4">
-                        <span class="avatar avatar-70 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center mx-auto mb-3 fw-bold fs-4">EK</span>
-                        <h5 class="mb-0">Ets Kponou</h5>
-                        <p class="small text-secondary mb-2">Client entreprise depuis mars 2024</p>
-                        <span class="badge badge-light text-bg-theme-1">Entreprise</span>
+                        <span class="avatar avatar-70 rounded-circle bg-theme-1 text-white d-flex align-items-center justify-content-center mx-auto mb-3 fw-bold fs-4" id="client-avatar">NA</span>
+                        <h5 class="mb-0" id="client-name">—</h5>
+                        <p class="small text-secondary mb-2" id="client-subtitle">—</p>
+                        <span class="badge badge-light text-bg-theme-1" id="client-type-badge">—</span>
                     </div>
                     <div class="card-body border-top">
-                        <p class="text-secondary mb-1"><i class="bi bi-envelope me-2"></i> contact@kponou.tg</p>
-                        <p class="text-secondary mb-1"><i class="bi bi-telephone me-2"></i> 91 22 45 67</p>
-                        <p class="text-secondary mb-1"><i class="bi bi-geo-alt me-2"></i> Quartier Bè-Kpota, Lomé - Togo</p>
-                        <p class="text-secondary mb-0"><i class="bi bi-receipt me-2"></i> NIF : 100045821</p>
+                        <p class="text-secondary mb-1"><i class="bi bi-envelope me-2"></i> <span id="client-email">N/A</span></p>
+                        <p class="text-secondary mb-1"><i class="bi bi-telephone me-2"></i> <span id="client-tel">N/A</span></p>
+                        <p class="text-secondary mb-1"><i class="bi bi-geo-alt me-2"></i> <span id="client-adresse">N/A</span></p>
+                        <p class="text-secondary mb-0"><i class="bi bi-receipt me-2"></i> NIF : <span id="client-nif">N/A</span></p>
                     </div>
                 </div>
 
-                <div class="card adminuiux-card border-0 shadow-sm bg-danger-subtle">
+                <div class="card adminuiux-card border-0 shadow-sm bg-danger-subtle d-none" id="client-solde-card">
                     <div class="card-body">
                         <h6 class="mb-1"><i class="bi bi-exclamation-triangle text-danger me-1"></i> Solde dû</h6>
-                        <h3 class="mb-0 text-danger">320 000 FCFA</h3>
-                        <p class="small text-secondary mb-0">Facture FA-2026/0158 — échue le 25/09/2026</p>
+                        <h3 class="mb-0 text-danger" id="client-solde-amount">0 FCFA</h3>
+                        <p class="small text-secondary mb-0" id="client-solde-detail"></p>
                     </div>
                 </div>
             </div>
@@ -632,22 +623,22 @@ setTimeout(function () {
                 <div class="row g-3 mb-4">
                     <div class="col-6 col-lg-3">
                         <div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                            <p class="small text-secondary mb-1">Total achats</p><h4 class="mb-0">4 820 000</h4>
+                            <p class="small text-secondary mb-1">Total achats</p><h4 class="mb-0" id="stat-total-achats">0</h4>
                         </div></div>
                     </div>
                     <div class="col-6 col-lg-3">
                         <div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                            <p class="small text-secondary mb-1">Ventes</p><h4 class="mb-0">34</h4>
+                            <p class="small text-secondary mb-1">Ventes</p><h4 class="mb-0" id="stat-ventes">0</h4>
                         </div></div>
                     </div>
                     <div class="col-6 col-lg-3">
                         <div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                            <p class="small text-secondary mb-1">Panier moyen</p><h4 class="mb-0">141 700</h4>
+                            <p class="small text-secondary mb-1">Panier moyen</p><h4 class="mb-0" id="stat-panier-moyen">0</h4>
                         </div></div>
                     </div>
                     <div class="col-6 col-lg-3">
                         <div class="card adminuiux-card border-0 shadow-sm h-100"><div class="card-body">
-                            <p class="small text-secondary mb-1">Dernier achat</p><h4 class="mb-0 fs-6 pt-2">10/09/2026</h4>
+                            <p class="small text-secondary mb-1">Dernier achat</p><h4 class="mb-0 fs-6 pt-2" id="stat-dernier-achat">N/A</h4>
                         </div></div>
                     </div>
                 </div>
@@ -662,10 +653,8 @@ setTimeout(function () {
                         <div class="card adminuiux-card border-0 shadow-sm">
                             <div class="table-responsive"><table class="table adminuiux-table align-middle mb-0">
                                 <thead><tr><th>Vente</th><th>Date</th><th class="text-end">Montant</th><th>Paiement</th></tr></thead>
-                                <tbody>
-                                    <tr><td><a href="gesco-ventes-detail.html">V-3392</a></td><td class="small">16/09/2026</td><td class="text-end fw-medium">77 500 FCFA</td><td class="small">Espèces</td></tr>
-                                    <tr><td><a href="gesco-ventes-detail.html">V-3301</a></td><td class="small">02/09/2026</td><td class="text-end fw-medium">1 362 900 FCFA</td><td class="small">Virement</td></tr>
-                                    <tr><td><a href="gesco-ventes-detail.html">V-3212</a></td><td class="small">18/08/2026</td><td class="text-end fw-medium">245 000 FCFA</td><td class="small">Espèces</td></tr>
+                                <tbody id="client-ventes-body">
+                                    <tr><td colspan="4" class="text-center text-secondary py-4">Chargement…</td></tr>
                                 </tbody>
                             </table></div>
                         </div>
@@ -674,9 +663,8 @@ setTimeout(function () {
                         <div class="card adminuiux-card border-0 shadow-sm">
                             <div class="table-responsive"><table class="table adminuiux-table align-middle mb-0">
                                 <thead><tr><th>Facture</th><th>Date</th><th class="text-end">Total</th><th>Statut</th></tr></thead>
-                                <tbody>
-                                    <tr><td><a href="gesco-facturation-detail.html">FA-2026/0159</a></td><td class="small">16/09/2026</td><td class="text-end fw-medium">77 500 FCFA</td><td><span class="badge badge-light text-bg-success">Payée</span></td></tr>
-                                    <tr><td><a href="gesco-facturation-detail.html">FA-2026/0158</a></td><td class="small">10/09/2026</td><td class="text-end fw-medium">1 362 900 FCFA</td><td><span class="badge badge-light text-bg-danger">Impayée</span></td></tr>
+                                <tbody id="client-factures-body">
+                                    <tr><td colspan="4" class="text-center text-secondary py-4">Chargement…</td></tr>
                                 </tbody>
                             </table></div>
                         </div>
@@ -685,9 +673,8 @@ setTimeout(function () {
                         <div class="card adminuiux-card border-0 shadow-sm">
                             <div class="table-responsive"><table class="table adminuiux-table align-middle mb-0">
                                 <thead><tr><th>Référence</th><th>Date</th><th class="text-end">Montant</th><th>Mode</th></tr></thead>
-                                <tbody>
-                                    <tr><td class="small">PM-2026-0312</td><td class="small">16/09/2026</td><td class="text-end fw-medium text-success">+77 500 FCFA</td><td class="small">Espèces</td></tr>
-                                    <tr><td class="small">PM-2026-0309</td><td class="small">10/09/2026</td><td class="text-end fw-medium text-success">+1 042 900 FCFA</td><td class="small">Virement</td></tr>
+                                <tbody id="client-paiements-body">
+                                    <tr><td colspan="4" class="text-center text-secondary py-4">Chargement…</td></tr>
                                 </tbody>
                             </table></div>
                         </div>
@@ -695,7 +682,7 @@ setTimeout(function () {
                 </div>
             </div>
         </div>
-    </div> -->
+    </div>
 </main>
 
                 </div>
@@ -1085,7 +1072,9 @@ setTimeout(function () {
 <!-- Page Level js -->
     <script src="assets/js/api.js"></script>      
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

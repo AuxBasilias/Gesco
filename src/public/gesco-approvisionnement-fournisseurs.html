@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -596,8 +590,8 @@ setTimeout(function () {
             <div class="col-auto"><button class="btn btn-theme"><i class="bi bi-plus-lg"></i> Nouveau fournisseur</button></div>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-lg-3">
+        <div class="row g-3 mb-4 mt-1">
+            <div class="col-6 col-lg-4">
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
@@ -607,25 +601,11 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Enregistrés</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">12</h3>
+                        <h3 class="mb-0" data-stat="fournisseurs">—</h3>
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-lg-3">
-                <div class="card adminuiux-card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="avatar avatar-40 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center""><i class="bi bi-check-circle"></i></span>
-                            <div>
-                                <h6 class="mb-0">Actifs</h6>
-                                <p class="small text-secondary mb-0">Commande < 6 mois</p>
-                            </div>
-                        </div>
-                        <h3 class="mb-0">9</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-lg-4">
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
@@ -635,11 +615,11 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Cette année</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">41</h3>
+                        <h3 class="mb-0" data-stat="commandes">—</h3>
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-lg-4">
                 <div class="card adminuiux-card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-2 mb-2">
@@ -649,7 +629,7 @@ setTimeout(function () {
                                 <p class="small text-secondary mb-0">Cette année</p>
                             </div>
                         </div>
-                        <h3 class="mb-0">21,5M</h3>
+                        <h3 class="mb-0" data-stat="achats">—</h3>
                     </div>
                 </div>
             </div>
@@ -662,105 +642,16 @@ setTimeout(function () {
                         <h6 class="mb-0">Tous les fournisseurs</h6>
                         <p class="small text-secondary mb-0">Coordonnées, historique de commandes et volume d'achats</p>
                     </div>
-                    <div class="col-auto">
-                        <div class="input-group">
-                            <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" placeholder="Rechercher un fournisseur...">
-                        </div>
-                    </div><div class="col-auto"><select class="form-select"><option selected>Tous</option><option>Actifs</option><option>Inactifs</option></select></div>
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
-                        <thead><tr><th>Référence</th><th>Fournisseur</th><th>Spécialité</th><th>Ville</th><th>Téléphone</th><th class="text-center">Commandes</th><th class="text-end">Total achats</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
-                        <tbody>
-                            <tr>
-                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-012</a></td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
-                                        <p class="mb-0 fw-medium">TechImport SARL</p>
-                                    </div>
-                                </td>
-                                <td class="small text-secondary">Ordinateurs, composants</td>
-                                <td class="small">Lomé</td>
-                                <td class="small">22 41 55 80</td>
-                                <td class="text-center small">18</td>
-                                <td class="text-end fw-medium">12 480 000 FCFA</td>
-                                <td><span class="badge badge-light text-bg-success">Actif</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-008</a></td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
-                                        <p class="mb-0 fw-medium">Global Access Togo</p>
-                                    </div>
-                                </td>
-                                <td class="small text-secondary">Réseau, câblage</td>
-                                <td class="small">Lomé</td>
-                                <td class="small">22 30 18 44</td>
-                                <td class="text-center small">11</td>
-                                <td class="text-end fw-medium">4 215 000 FCFA</td>
-                                <td><span class="badge badge-light text-bg-success">Actif</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-021</a></td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
-                                        <p class="mb-0 fw-medium">Sahel Informatique</p>
-                                    </div>
-                                </td>
-                                <td class="small text-secondary">Accessoires, consommables</td>
-                                <td class="small">Kara</td>
-                                <td class="small">26 60 12 09</td>
-                                <td class="text-center small">7</td>
-                                <td class="text-end fw-medium">1 860 000 FCFA</td>
-                                <td><span class="badge badge-light text-bg-success">Actif</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-approvisionnement-fournisseur-detail.html" class="fw-medium">FR-005</a></td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-truck"></i></span>
-                                        <p class="mb-0 fw-medium">Dépôt Central Onduleurs</p>
-                                    </div>
-                                </td>
-                                <td class="small text-secondary">Onduleurs, énergie</td>
-                                <td class="small">Lomé</td>
-                                <td class="small">22 25 74 31</td>
-                                <td class="text-center small">5</td>
-                                <td class="text-end fw-medium">2 940 000 FCFA</td>
-                                <td><span class="badge badge-light text-bg-secondary">Inactif</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-approvisionnement-fournisseur-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr></tbody>
+                        <thead><tr><th>Fournisseur</th><th>Téléphone</th><th>E-mail</th><th>Adresse</th><th>NIF</th><th class="text-end">Actions</th></tr></thead>
+                        <tbody id="fournisseurs-tbody"></tbody>
                     </table>
                 </div>
                 <div class="row gx-3 align-items-center mt-3">
-                    <div class="col"><p class="small text-secondary mb-0">Affichage de 1 à 4 sur 12 fournisseurs</p></div>
-                    <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
-                        </ul></nav>
-                    </div>
+                    <div class="col"><p class="small text-secondary mb-0" id="fournisseurs-pagination">Affichage en cours...</p></div>
+                    <div class="col-auto"></div>
                 </div>
             </div>
         </div>
@@ -1348,8 +1239,11 @@ setTimeout(function () {
 <!-- Page Level js -->
 
     <script src="assets/js/api.js"></script>
+    <script src="assets/js/gesco-fournisseurs.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>

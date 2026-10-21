@@ -23,7 +23,16 @@ const __dirname = path.dirname(__filename);
 
 // fichiers statiques
 app.use(express.static(path.join(__dirname, "public"), {
-  extensions: ["html"]
+  extensions: ["html"],
+  setHeaders: (res, filePath) => {
+    // Les pages HTML ne doivent pas être mises en cache : l'état d'authentification
+    // est vérifié à chaque visite (évite les retours arrière sur des pages périmées).
+    if (filePath.endsWith(".html")) {
+      res.setHeader("Cache-Control", "no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
+  }
 }));
 
 app.get("/", (req, res) => {
@@ -32,12 +41,13 @@ app.get("/", (req, res) => {
 
 
 app.use("/api/login", loginRouter);
-app.use("/api", operationsRouter);
 
-
-// app.use("/api", authMiddleware);
+// 🔒 Toutes les routes /api suivantes exigent un token JWT valide.
+// /api/login reste public (monté ci-dessus, avant ce middleware).
+app.use("/api", authMiddleware);
 
 // routes protégées
+app.use("/api", operationsRouter);
 app.use("/api/produits", produitsRouter);
 app.use("/api/clients", clientsRouter);
 app.use("/api/categories", categoriesRouter);

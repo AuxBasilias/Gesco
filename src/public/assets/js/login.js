@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Si l'utilisateur est déjà connecté, retour direct au tableau de bord
+    if (window.AA && typeof AA.isAuthenticated === 'function' && AA.isAuthenticated()) {
+        window.location.replace('gesco-dashboard.html');
+        return;
+    }
+
     // 1. Sélection des éléments du DOM
     const emailInput = document.getElementById('emailadd');
     const passwordInput = document.getElementById('passwd');
@@ -70,16 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showAlert('Connexion réussie...', 'success');
 
-            localStorage.setItem('token', token);
-            sessionStorage.setItem('tt_token', token);
-
-            sessionStorage.setItem('tt_user_id', data.utilisateur.id);
-            sessionStorage.setItem('tt_user_email', data.utilisateur.email || '');
-            sessionStorage.setItem('tt_auth', JSON.stringify(data.utilisateur));
+            AA.setAuthSession(data);
 
             // Redirection vers le tableau de bord
             setTimeout(() => {
-                window.location.href = data.redirectUrl || 'gesco-dashboard.html';
+                window.location.replace(data.redirectUrl || 'gesco-dashboard.html');
             }, 500);
 
         } catch (error) {

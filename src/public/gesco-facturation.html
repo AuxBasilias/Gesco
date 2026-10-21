@@ -143,7 +143,7 @@ setTimeout(function () {
                                 </a>
                             </div>
                             <div>
-                                <a class="dropdown-item theme-red" href="index.html">
+                                <a class="dropdown-item theme-red" href="index.html" data-logout>
                                     <i data-feather="power" class="avatar avatar-18 me-1"></i> Déconnexion
                                 </a>
                             </div>
@@ -521,12 +521,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
-                    <div class="nav-item">
+                    <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
                             <span class="menu-name">Paiements &amp; impayés</span>
                         </a>
-                    </div>
+                    </div>-->
                 </div>
             </li>
             <li class="nav-item">
@@ -547,12 +547,6 @@ setTimeout(function () {
                             <span class="menu-name">Paramètres &amp; utilisateurs</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-administration-rapports.html" class="nav-link">
-                            <i class="menu-icon bi bi-graph-up"></i>
-                            <span class="menu-name">Rapports &amp; statistiques</span>
-                        </a>
-                    </div>
                 </div>
             </li>
         </ul>
@@ -571,7 +565,7 @@ setTimeout(function () {
                             <a href="gesco-administration.html" class="btn btn-square btn-link" title="Paramètres">
                                 <i data-feather="settings"></i>
                             </a>
-                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion">
+                            <a href="index.html" class="btn btn-square btn-link" title="Déconnexion" data-logout>
                                 <i data-feather="log-out"></i>
                             </a>
                         </div>
@@ -659,115 +653,27 @@ setTimeout(function () {
             <div class="card-body">
                 <div class="row gx-3 align-items-center mb-3">
                     <div class="col">
-                        <h6 class="mb-0">Factures, devis et avoirs</h6>
-                        <p class="small text-secondary mb-0">Numérotation automatique et séquentielle</p>
+                        <h6 class="mb-0">Factures</h6>
+                        <p class="small text-secondary mb-0">Liste des factures</p>
                     </div>
                     <div class="col-auto">
                         <div class="input-group">
                             <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" placeholder="N° facture, client...">
+                            <input id="factures-search" type="search" class="form-control" placeholder="Rechercher (n°, client...)">
                         </div>
-                    </div><div class="col-auto"><select class="form-select"><option selected>Tous les documents</option><option>Factures</option><option>Devis</option><option>Avoirs</option><option>Reçus</option></select></div><div class="col-auto"><select class="form-select"><option selected>Tous les statuts</option><option>Payée</option><option>Partielle</option><option>Impayée</option></select></div>
+                    
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
-                        <thead><tr><th>N° document</th><th>Date</th><th>Client</th><th class="text-end">Total TTC</th><th class="text-end">Payé</th><th class="text-end">Solde dû</th><th>Statut</th><th>Échéance</th><th class="text-end">Actions</th></tr></thead>
+                        <thead><tr><th>N° document</th><th>Date</th><th>Client</th><th class="text-end">Total TTC</th><th class="text-end">Payé</th><th class="text-end">Solde dû</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
                         <tbody>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0159</a></td>
-                                <td class="small">16/09/2026</td>
-                                <td class="small">Ets Kponou</td>
-                                <td class="text-end fw-medium">77 500 FCFA</td>
-                                <td class="text-end small">77 500</td>
-                                <td class="text-end small text-secondary">—</td>
-                                <td><span class="badge badge-light text-bg-success">Payée</span></td>
-                                <td class="small text-secondary">16/09/2026</td>
-                                <td class="text-end">
-                                    <a href="gesco-facturation-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Télécharger"><i class="bi bi-file-earmark-pdf"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0158</a></td>
-                                <td class="small">10/09/2026</td>
-                                <td class="small">Ets Kponou</td>
-                                <td class="text-end fw-medium">1 362 900 FCFA</td>
-                                <td class="text-end small">1 042 900</td>
-                                <td class="text-end small text-danger fw-medium">320 000</td>
-                                <td><span class="badge badge-light text-bg-danger">Impayée</span></td>
-                                <td class="small text-secondary">25/09/2026</td>
-                                <td class="text-end">
-                                    <a href="gesco-facturation-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Télécharger"><i class="bi bi-file-earmark-pdf"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0157</a></td>
-                                <td class="small">15/09/2026</td>
-                                <td class="small">Bureau Moderne SARL</td>
-                                <td class="text-end fw-medium">312 000 FCFA</td>
-                                <td class="text-end small">312 000</td>
-                                <td class="text-end small text-secondary">—</td>
-                                <td><span class="badge badge-light text-bg-success">Payée</span></td>
-                                <td class="small text-secondary">15/09/2026</td>
-                                <td class="text-end">
-                                    <a href="gesco-facturation-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Télécharger"><i class="bi bi-file-earmark-pdf"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0156</a></td>
-                                <td class="small">15/09/2026</td>
-                                <td class="small">Cabinet Sogbossi</td>
-                                <td class="text-end fw-medium">185 000 FCFA</td>
-                                <td class="text-end small">0</td>
-                                <td class="text-end small text-danger fw-medium">185 000</td>
-                                <td><span class="badge badge-light text-bg-warning">Partielle</span></td>
-                                <td class="small text-secondary">30/09/2026</td>
-                                <td class="text-end">
-                                    <a href="gesco-facturation-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Télécharger"><i class="bi bi-file-earmark-pdf"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">FA-2026/0155</a></td>
-                                <td class="small">12/09/2026</td>
-                                <td class="small">Pharmacie du Lac</td>
-                                <td class="text-end fw-medium">742 000 FCFA</td>
-                                <td class="text-end small">742 000</td>
-                                <td class="text-end small text-secondary">—</td>
-                                <td><span class="badge badge-light text-bg-success">Payée</span></td>
-                                <td class="small text-secondary">12/09/2026</td>
-                                <td class="text-end">
-                                    <a href="gesco-facturation-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Télécharger"><i class="bi bi-file-earmark-pdf"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="gesco-facturation-detail.html" class="fw-medium">DV-2026/0034</a></td>
-                                <td class="small">14/09/2026</td>
-                                <td class="small">Bureau Moderne SARL</td>
-                                <td class="text-end fw-medium">486 000 FCFA</td>
-                                <td class="text-end small">—</td>
-                                <td class="text-end small text-secondary">—</td>
-                                <td><span class="badge badge-light text-bg-theme-1">Devis</span></td>
-                                <td class="small text-secondary">14/10/2026</td>
-                                <td class="text-end">
-                                    <a href="gesco-facturation-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Télécharger"><i class="bi bi-file-earmark-pdf"></i></button>
-                                </td>
-                            </tr></tbody>
+                            </tbody>
                     </table>
                 </div>
                 <div class="row gx-3 align-items-center mt-3">
-                    <div class="col"><p class="small text-secondary mb-0">Affichage de 1 à 6 sur 42 documents</p></div>
+                    <div class="col"><p id="factures-count" class="small text-secondary mb-0">—</p></div>
                     <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
-                        </ul></nav>
+                        <nav class="d-none"><ul class="pagination mb-0"></ul></nav>
                     </div>
                 </div>
             </div>
@@ -1169,7 +1075,9 @@ setTimeout(function () {
 
     <script src="assets/js/api.js"></script>
     <script src="assets/js/profile.js"></script>
-    </body>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
 
 
 </html>
