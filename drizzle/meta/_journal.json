@@ -134,6 +134,13 @@
       "when": 1792731600000,
       "tag": "0018_delivery_serials",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792598566367,
+      "tag": "0019_chemical_professor_monster",
+      "breakpoints": true
     }
   ]
 }
