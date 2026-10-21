@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "dependencies": {
     "@libsql/client": "^0.17.4",
     "bcrypt": "^6.0.0",
