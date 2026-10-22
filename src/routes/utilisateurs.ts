@@ -1,5 +1,5 @@
 import express, { type Request } from "express";
-import { authMiddleware, adminMiddleware } from "../auth/auth";
+import { authMiddleware, adminMiddleware } from "../auth/auth.js";
 import {
   createUtilisateur,
   getAllUtilisateurs,
