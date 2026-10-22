@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { verifierMotDePasse } from "./password";
+import { verifierMotDePasse } from "./password.js";
 import * as utilisateurService from "../services/utilisateurs.js";
 import jwt from 'jsonwebtoken';
 import { Request, RequestHandler, Response } from "express";
