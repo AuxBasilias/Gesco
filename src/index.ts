@@ -41,6 +41,9 @@ app.get("/", (req, res) => {
 
 
 app.use("/api/login", loginRouter);
+app.use("/api/utilisateurs", utilisateursRouter);
+
+
 
 // 🔒 Toutes les routes /api suivantes exigent un token JWT valide.
 // /api/login reste public (monté ci-dessus, avant ce middleware).
@@ -51,7 +54,6 @@ app.use("/api", operationsRouter);
 app.use("/api/produits", produitsRouter);
 app.use("/api/clients", clientsRouter);
 app.use("/api/categories", categoriesRouter);
-app.use("/api/utilisateurs", utilisateursRouter);
 app.use("/api/fournisseurs", fournisseursRouter);
 app.use("/api/auth", authRoutes);
 
