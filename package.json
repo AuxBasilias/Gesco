@@ -22,7 +22,6 @@
   },
   "scripts": {
     "dev": "npx tsx watch src/index.ts",
-    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "db:migrate": "drizzle-kit migrate",
     "test:integration": "npx tsx src/tests/operations.integration.ts"
