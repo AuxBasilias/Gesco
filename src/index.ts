@@ -1,13 +1,13 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import loginRouter from "./routes/login"
-import produitsRouter from "./routes/produits"
-import clientsRouter from "./routes/clients"
-import categoriesRouter from "./routes/categories"
-import utilisateursRouter from "./routes/utilisateurs"
-import fournisseursRouter from "./routes/fournisseurs"
-import operationsRouter from "./routes/operations"
+import loginRouter from "./routes/login.js"
+import produitsRouter from "./routes/produits.js"
+import clientsRouter from "./routes/clients.js"
+import categoriesRouter from "./routes/categories.js"
+import utilisateursRouter from "./routes/utilisateurs.js"
+import fournisseursRouter from "./routes/fournisseurs.js"
+import operationsRouter from "./routes/operations.js"
 
 
 import { authMiddleware } from "./auth/auth";
