@@ -1,4 +1,4 @@
-import { hacherMotDePasse } from '../auth/password';
+import { hacherMotDePasse } from '../auth/password.js';
 import { db } from '../db/db.js';
 import { utilisateursTable } from '../db/schema.js';
 import { desc, eq } from 'drizzle-orm';
