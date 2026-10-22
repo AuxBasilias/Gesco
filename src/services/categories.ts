@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { db } from "../db/db";
-import { categories } from "../db/schema";
+import { db } from "../db/db.js";
+import { categories } from "../db/schema.js";
 import { desc, eq } from "drizzle-orm";
 
 

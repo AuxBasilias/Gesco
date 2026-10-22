@@ -7,7 +7,7 @@ import {
     createFournisseur,
     updateFournisseur,
     deleteFournisseur,
-} from "../services/fournisseurs";
+} from "../services/fournisseurs.js";
 
 const router = Router();
 

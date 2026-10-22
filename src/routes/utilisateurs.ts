@@ -5,7 +5,7 @@ import {
   getAllUtilisateurs,
   getUtilisateurById,
   updateUtilisateur,
-} from "../services/utilisateurs";
+} from "../services/utilisateurs.js";
 
 import { roleEnum } from "../db/schema";
 

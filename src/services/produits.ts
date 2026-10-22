@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { Request, Response } from "express";
-import { db } from "../db/db";
-import { categories, fournisseurs, journalActivite, mouvementsStock, produits, stocks } from "../db/schema";
+import { db } from "../db/db.js";
+import { categories, fournisseurs, journalActivite, mouvementsStock, produits, stocks } from "../db/schema.js";
 
 class InputError extends Error {}
 

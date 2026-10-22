@@ -6,7 +6,7 @@ import {
     createCategorie,
     updateCategorie,
     deleteCategorie,
-} from "../services/categories";
+} from "../services/categories.js";
 
 const router = Router();
 

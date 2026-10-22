@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import type { Request, Response } from "express";
-import { db } from "../db/db";
-import { clientsTable } from "../db/schema";
+import { db } from "../db/db.js";
+import { clientsTable } from "../db/schema.js";
 
 const champsClient = [
   "nom",

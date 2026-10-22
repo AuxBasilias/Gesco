@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, ilike, inArray, like, lte, ne, or, sql } from "drizzle-orm";
 import type { Request, RequestHandler, Response } from "express";
 import nodemailer from "nodemailer";
-import { db } from "../db/db";
+import { db } from "../db/db.js";
 import {
   categories,
   clientsTable,
@@ -28,7 +28,7 @@ import {
   stocks,
   utilisateursTable,
   ventes,
-} from "../db/schema";
+} from "../db/schema.js";
 
 class ApiError extends Error {
   constructor(

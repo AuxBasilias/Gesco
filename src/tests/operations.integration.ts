@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../db/db";
+import { db } from "../db/db.js";
 import {
   commandesFournisseurs,
   factures,

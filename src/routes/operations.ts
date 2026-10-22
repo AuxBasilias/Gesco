@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/db";
-import { factures, inventaires, lignesFacture, lignesInventaire, retoursVente, ventes } from "../db/schema";
-import { operationsHandlers as handlers } from "../services/operations";
+import { factures, inventaires, lignesFacture, lignesInventaire, retoursVente, ventes } from "../db/schema.js";
+import { operationsHandlers as handlers } from "../services/operations.js";
 
 const router = Router();
 

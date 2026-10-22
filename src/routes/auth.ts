@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware, changePassword } from "../auth/auth";
+import { authMiddleware, changePassword } from "../auth/auth.js";
 
 
 

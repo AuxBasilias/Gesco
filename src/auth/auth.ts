@@ -1,12 +1,12 @@
 import "dotenv/config";
 import { verifierMotDePasse } from "./password";
-import * as utilisateurService from "../services/utilisateurs";
+import * as utilisateurService from "../services/utilisateurs.js";
 import jwt from 'jsonwebtoken';
 import { Request, RequestHandler, Response } from "express";
 import bcrypt from "bcryptjs";
-import { utilisateursTable } from "../db/schema";
+import { utilisateursTable } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
-import { db } from "../db/db";
+import { db } from "../db/db.js";
 
 const SECRET: string = process.env.JWT_SECRET ?? "";
 if (!SECRET || SECRET.length < 32) {

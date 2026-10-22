@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { db } from "../db/db";
-import { fournisseurs, commandesFournisseurs, lignesCommande } from "../db/schema";
+import { db } from "../db/db.js";
+import { fournisseurs, commandesFournisseurs, lignesCommande } from "../db/schema.js";
 import { desc, eq, inArray } from "drizzle-orm";
 
 

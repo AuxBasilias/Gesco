@@ -1,6 +1,6 @@
 import { hacherMotDePasse } from '../auth/password';
-import { db } from '../db/db';
-import { utilisateursTable } from '../db/schema';
+import { db } from '../db/db.js';
+import { utilisateursTable } from '../db/schema.js';
 import { desc, eq } from 'drizzle-orm';
 
 type UtilisateurPublic = Omit<typeof utilisateursTable.$inferSelect, 'motDePasse'>;

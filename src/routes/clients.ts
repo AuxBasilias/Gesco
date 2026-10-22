@@ -6,7 +6,7 @@ import {
     createClient,
     updateClient,
     deleteClient
-} from "../services/clients";
+} from "../services/clients.js";
 
 const router = Router();
 

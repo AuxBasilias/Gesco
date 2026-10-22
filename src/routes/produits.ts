@@ -6,7 +6,7 @@ import {
     createProduit,
     updateProduit,
     deleteProduit,
-} from "../services/produits";
+} from "../services/produits.js";
 
 const router = Router();
 
