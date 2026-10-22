@@ -3,7 +3,7 @@ import { verifierMotDePasse } from "./password";
 import * as utilisateurService from "../services/utilisateurs";
 import jwt from 'jsonwebtoken';
 import { Request, RequestHandler, Response } from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { utilisateursTable } from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../db/db";
