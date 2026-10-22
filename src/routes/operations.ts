@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import { db } from "../db/db";
+import { db } from "../db/db.js";
 import { factures, inventaires, lignesFacture, lignesInventaire, retoursVente, ventes } from "../db/schema.js";
 import { operationsHandlers as handlers } from "../services/operations.js";
 
