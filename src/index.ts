@@ -10,8 +10,8 @@ import fournisseursRouter from "./routes/fournisseurs.js"
 import operationsRouter from "./routes/operations.js"
 
 
-import { authMiddleware } from "./auth/auth";
-import authRoutes from "./routes/auth"
+import { authMiddleware } from "./auth/auth.js";
+import authRoutes from "./routes/auth.js"
 
 const app = express();
 app.use(express.json());
