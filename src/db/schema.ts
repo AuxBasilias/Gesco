@@ -74,7 +74,6 @@ export const produits = pgTable("produits", {
     .notNull()
     .references(() => categories.id, { onDelete: "restrict", onUpdate: "cascade" }),
   description: text("description"),
-  prixAchat: money("prix_achat").notNull().default("0"),
   prixVente: money("prix_vente").notNull(),
   archive: boolean("archive").notNull().default(false),
   createdAt: createdAt(),
@@ -182,9 +181,6 @@ export const ventes = pgTable(
     id: serial("id").primaryKey(),
     reference: varchar("reference", { length: 50 }).notNull().unique(),
     idClient: integer("id_client").references(() => clientsTable.id, { onDelete: "set null" }),
-    idSessionCaisse: integer("id_session_caisse").references(() => sessionsCaisse.id, {
-      onDelete: "set null",
-    }),
     statut: varchar("statut", { length: 30 }).notNull().default("payee"),
     dateVente: timestamp("date_vente").defaultNow().notNull(),
     montantHT: money("montant_ht").notNull().default("0"),
@@ -287,50 +283,9 @@ export const paiements = pgTable("paiements", {
   modePaiement: varchar("mode_paiement", { length: 30 }).notNull(),
   datePaiement: timestamp("date_paiement").defaultNow().notNull(),
   notes: text("notes"),
-  idSessionCaisse: integer("id_session_caisse").references(() => sessionsCaisse.id, {
-    onDelete: "set null",
-  }),
   idPaiementAnnule: integer("id_paiement_annule").references((): AnyPgColumn => paiements.id, {
     onDelete: "set null",
   }),
-  idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
-    onDelete: "set null",
-  }),
-});
-
-export const sessionsCaisse = pgTable(
-  "sessions_caisse",
-  {
-    id: serial("id").primaryKey(),
-    reference: varchar("reference", { length: 50 }).notNull().unique(),
-    statut: varchar("statut", { length: 20 }).notNull().default("ouverte"),
-    dateOuverture: timestamp("date_ouverture").defaultNow().notNull(),
-    dateFermeture: timestamp("date_fermeture"),
-    fondOuverture: money("fond_ouverture").notNull().default("0"),
-    montantAttendu: money("montant_attendu").notNull().default("0"),
-    montantCompte: money("montant_compte"),
-    ecart: money("ecart"),
-    idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
-      onDelete: "set null",
-    }),
-    notes: text("notes"),
-  },
-  (table) => [index("sessions_caisse_statut_idx").on(table.statut)],
-);
-
-export const operationsCaisse = pgTable("operations_caisse", {
-  id: serial("id").primaryKey(),
-  idSessionCaisse: integer("id_session_caisse")
-    .notNull()
-    .references(() => sessionsCaisse.id, { onDelete: "restrict" }),
-  idVente: integer("id_vente").references(() => ventes.id, { onDelete: "set null" }),
-  idFacture: integer("id_facture").references(() => factures.id, { onDelete: "set null" }),
-  idPaiement: integer("id_paiement").references(() => paiements.id, { onDelete: "set null" }),
-  type: varchar("type", { length: 30 }).notNull(),
-  modePaiement: varchar("mode_paiement", { length: 30 }).notNull(),
-  montant: money("montant").notNull(),
-  motif: text("motif"),
-  createdAt: createdAt(),
   idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
     onDelete: "set null",
   }),

@@ -50,7 +50,6 @@ export async function getAllProduits(_req: Request, res: Response) {
       designation: produits.designation,
       idCategorie: produits.idCategorie,
       description: produits.description,
-      prixAchat: produits.prixAchat,
       prixVente: produits.prixVente,
       createdAt: produits.createdAt,
       updatedAt: produits.updatedAt,
@@ -69,7 +68,6 @@ export async function getAllProduits(_req: Request, res: Response) {
         designation: row.designation,
         idCategorie: row.idCategorie,
         description: row.description,
-        prixAchat: row.prixAchat,
         prixVente: row.prixVente,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -116,7 +114,6 @@ export async function createProduit(req: Request, res: Response) {
     const body = req.body as Record<string, unknown>;
     const designation = chaine(body.designation);
     const idCategorie = entierPositifOuZero(body.idCategorie, "La catégorie");
-    const prixAchat = prixValide(body.prixAchat, "Le prix d'achat");
     const prixVente = prixValide(body.prixVente, "Le prix de vente");
     const stockInitial = entierPositifOuZero(body.stockInitial ?? body.stock ?? body.quantite, "Le stock initial") ?? 0;
     const seuilMinimum = entierPositifOuZero(body.seuilMinimum, "Le seuil minimum") ?? 0;
@@ -124,8 +121,8 @@ export async function createProduit(req: Request, res: Response) {
 
     if (!designation) return res.status(400).json({ success: false, message: "La désignation est obligatoire." });
     if (!idCategorie) return res.status(400).json({ success: false, message: "La catégorie est obligatoire." });
-    if (prixAchat === null || prixVente === null) {
-      return res.status(400).json({ success: false, message: "Les prix d'achat et de vente sont obligatoires." });
+    if (prixVente === null) {
+      return res.status(400).json({ success: false, message: "Le prix de vente est obligatoire." });
     }
     const [category] = await db.select().from(categories).where(eq(categories.id, idCategorie)).limit(1);
     if (!category) return res.status(400).json({ success: false, message: "La catégorie sélectionnée n'existe pas." });
@@ -139,7 +136,6 @@ export async function createProduit(req: Request, res: Response) {
         designation,
         idCategorie,
         description: chaine(body.description),
-        prixAchat,
         prixVente,
       }).returning();
       await tx.insert(stocks).values({
@@ -184,7 +180,6 @@ export async function updateProduit(req: Request, res: Response) {
       updates.idCategorie = idCategorie;
     }
     if (body.description !== undefined) updates.description = chaine(body.description);
-    if (body.prixAchat !== undefined) updates.prixAchat = prixValide(body.prixAchat, "Le prix d'achat") ?? "0.00";
     if (body.prixVente !== undefined) {
       const price = prixValide(body.prixVente, "Le prix de vente");
       if (price === null) return res.status(400).json({ success: false, message: "Le prix de vente est obligatoire." });

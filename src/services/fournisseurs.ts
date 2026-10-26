@@ -120,7 +120,7 @@ export async function getFournisseurStats(
         const products = new Map<string, { designation: string; quantite: number; dernierPrix: number; montantTotal: number }>();
 
         // Les commandes sont triées du plus récent au plus ancien : le premier
-        // prix rencontré pour un produit correspond à son dernier prix d'achat.
+        // prix rencontré pour un produit correspond à son dernier prix unitaire commandé.
         orders.forEach((order) => {
             let count = 0;
             (linesByOrder.get(order.id) ?? []).forEach((line) => {

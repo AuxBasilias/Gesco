@@ -127,7 +127,6 @@
     if (meta) {
       const parts = [];
       if (vente.dateVente) parts.push(dateTime(vente.dateVente));
-      if (vente.idSessionCaisse) parts.push(`Caisse n°${vente.idSessionCaisse}`);
       if (vente.idUtilisateur) parts.push(vente.nomUtilisateur || vente.utilisateurNom || vente.idUtilisateur);
       meta.innerHTML = parts.join(" &middot; ");
     }

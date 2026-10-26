@@ -43,10 +43,6 @@ router.get("/ventes-retours", handlers.listReturns);
 router.post("/ventes-retours", handlers.createReturn);
 router.post("/ventes-retours/:id/statut", handlers.setReturnStatus);
 
-router.get("/caisse/sessions", handlers.listCashSessions);
-router.post("/caisse/sessions", handlers.openCashSession);
-router.post("/caisse/sessions/:id/cloture", handlers.closeCashSession);
-
 router.get("/factures/stats", handlers.factureStats);
 router.get("/factures/revenue", handlers.factureRevenue);
 router.get("/factures/impayees", handlers.listUnpaidInvoices);

@@ -13,11 +13,9 @@ import {
   lignesReception,
   lignesVente,
   mouvementsStock,
-  operationsCaisse,
   paiements,
   produits,
   receptions,
-  sessionsCaisse,
   stocks,
   fournisseurs,
   ventes,
@@ -74,7 +72,6 @@ async function removeTestSale(sale: JsonRecord | undefined): Promise<void> {
       eq(mouvementsStock.reference, sale.reference),
       inArray(mouvementsStock.type, ["vente", "annulation_vente"]),
     ));
-    await tx.delete(operationsCaisse).where(eq(operationsCaisse.idVente, sale.id));
     await tx.delete(lignesVente).where(eq(lignesVente.idVente, sale.id));
     await tx.delete(ventes).where(eq(ventes.id, sale.id));
   });
@@ -141,21 +138,17 @@ async function removeTestInventory(
 }
 
 async function main(): Promise<void> {
-  const [supplierRows, productRows, sessionRows] = await Promise.all([
+  const [supplierRows, productRows] = await Promise.all([
     db.select().from(fournisseurs).limit(1),
     db.select().from(produits).innerJoin(stocks, eq(produits.id, stocks.idProduit)),
-    db.select().from(sessionsCaisse).where(eq(sessionsCaisse.statut, "ouverte")).limit(1),
   ]);
   const supplier = supplierRows[0];
   const product = productRows.find(({ stocks: stock }) => stock.quantite >= 1);
-  const session = sessionRows[0];
   assert.ok(supplier, "Le test nécessite un fournisseur existant.");
   assert.ok(product, "Le test nécessite un produit avec au moins une unité en stock.");
-  assert.ok(session, "Le test de vente nécessite une session de caisse ouverte.");
 
   const originalStock = product.stocks.quantite;
   const originalStockRow = product.stocks;
-  const originalExpectedCash = Number(session.montantAttendu);
   const testRunId = randomUUID();
   const orderReference = `TST-CMD-${testRunId}`;
   const saleReference = `TST-VTE-${testRunId}`;
@@ -248,13 +241,13 @@ async function main(): Promise<void> {
         lignes: [{
           idProduit: product.produits.id,
           quantite: 2,
-          prixUnitaire: Number(product.produits.prixAchat),
+          prixUnitaire: Number(product.produits.prixVente),
         }],
       }),
     });
     checkStatus(orderResponse.status, 201, "Création de commande fournisseur");
     order = { ...orderResponse.data, testProductId: product.produits.id };
-    assert.equal(Number(order.montantTotal), Number(product.produits.prixAchat) * 2);
+    assert.equal(Number(order.montantTotal), Number(product.produits.prixVente) * 2);
 
     const detailResponse = await api(`/api/commandes/${order.id}`);
     checkStatus(detailResponse.status, 200, "Lecture du bon de commande");
@@ -294,7 +287,6 @@ async function main(): Promise<void> {
       method: "POST",
       body: JSON.stringify({
         reference: saleReference,
-        idSessionCaisse: session.id,
         tauxTaxe: 0,
         modePaiement: "especes",
         montantPaye: Number(product.produits.prixVente),
@@ -362,11 +354,9 @@ async function main(): Promise<void> {
       await removeTestInventory(inventory, product.produits.id, originalStock);
       await removeTestSale(sale);
       await removeTestOrder(order, originalStockRow);
-      const [restoredSession] = await db.select().from(sessionsCaisse).where(eq(sessionsCaisse.id, session.id));
-      assert.equal(Number(restoredSession.montantAttendu), originalExpectedCash, "La caisse doit retrouver son montant attendu initial.");
       const [restoredStock] = await db.select().from(stocks).where(eq(stocks.idProduit, product.produits.id));
       assert.equal(restoredStock.quantite, originalStock, "Le stock du produit doit retrouver sa quantité initiale.");
-      console.log("PASS: nettoyage du jeu d'essai et restauration du stock/de la caisse");
+      console.log("PASS: nettoyage du jeu d'essai et restauration du stock");
     } catch (error) {
       failures.push(new Error(`Échec du nettoyage : ${error instanceof Error ? error.message : String(error)}`));
     }

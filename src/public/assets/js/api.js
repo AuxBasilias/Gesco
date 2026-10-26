@@ -478,18 +478,6 @@ async function getFactures(status) {
     return request(`/ventes-retours/${id}/statut`, { method: 'POST', body: JSON.stringify({ statut }) });
   }
 
-  async function getSessionsCaisse() {
-    return request('/caisse/sessions');
-  }
-
-  async function openSessionCaisse(data) {
-    return request('/caisse/sessions', { method: 'POST', body: JSON.stringify(data) });
-  }
-
-  async function closeSessionCaisse(id, data) {
-    return request(`/caisse/sessions/${id}/cloture`, { method: 'POST', body: JSON.stringify(data) });
-  }
-
   async function getPaiements(filters = {}) {
     const params = new URLSearchParams();
     Object.entries(filters || {}).forEach(([key, value]) => {
@@ -630,9 +618,6 @@ async function getFactures(status) {
     getRetours,
     createRetour,
     setRetourStatut,
-    getSessionsCaisse,
-    openSessionCaisse,
-    closeSessionCaisse,
     getPaiements,
     createPaiement,
     getDashboard,

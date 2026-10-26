@@ -141,6 +141,13 @@
       "when": 1792598566367,
       "tag": "0019_chemical_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792686958589,
+      "tag": "0020_dry_vector",
+      "breakpoints": true
     }
   ]
 }

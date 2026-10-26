@@ -570,14 +570,6 @@ setTimeout(function () {
                 </nav>
                 <h4 class="mb-0">Terminal de vente</h4>
             </div>
-            <div class="col-auto d-flex align-items-center gap-2">
-                <span class="badge badge-light text-bg-success px-3 py-2" id="caisse-status-badge">
-                    <i class="bi bi-record-circle-fill"></i> Caisse ouverte — fond 50 000 FCFA
-                </span>
-                <button class="btn btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#modalFermerCaisse">
-                    <i class="bi bi-lock"></i> Fermer la caisse
-                </button>
-            </div>
         </div>
 
         <div class="row g-3">
@@ -740,35 +732,6 @@ setTimeout(function () {
                     <i class="bi bi-truck"></i> Bon de livraison
                 </a>
                 <button class="btn btn-theme" type="button" data-bs-dismiss="modal" id="pos-new-sale-btn">Nouvelle vente</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Fermeture de caisse -->
-<div class="modal fade" id="modalFermerCaisse" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title">Fermer la caisse ?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-secondary">Cette opération clôturera les transactions de cette session et enregistrera l'écart éventuel entre le total théorique et le total réel compté.</p>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label class="form-label small text-secondary mb-1">Total théorique</label>
-                        <input type="text" class="form-control" value="1 284 500 FCFA" disabled>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small text-secondary mb-1">Total compté</label>
-                        <input type="number" class="form-control" placeholder="Montant compté en caisse">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button class="btn btn-danger">Clôturer la caisse</button>
             </div>
         </div>
     </div>

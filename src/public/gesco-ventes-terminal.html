@@ -443,12 +443,6 @@ setTimeout(function () {
                             <span class="menu-name">Retours &amp; annulations</span>
                         </a>
                     </div>
-                    <div class="nav-item">
-                        <a href="gesco-ventes-sessions.html" class="nav-link">
-                            <i class="menu-icon bi bi-safe"></i>
-                            <span class="menu-name">Sessions de caisse</span>
-                        </a>
-                    </div>
                 </div>
             </li>
             <li class="nav-item dropdown">
@@ -581,15 +575,6 @@ setTimeout(function () {
                 </nav>
                 <h4 class="mb-0">Terminal de vente</h4>
             </div>
-            <div class="col-auto d-flex align-items-center gap-2">
-                <span class="badge badge-light text-bg-secondary px-3 py-2" id="caisse-status-badge">Chargement de la caisse…</span>
-                <button class="btn btn-outline-success d-none" type="button" id="caisse-open-btn">
-                    <i class="bi bi-unlock"></i> Ouvrir la caisse
-                </button>
-                <button class="btn btn-outline-danger d-none" type="button" id="caisse-close-btn" data-bs-toggle="modal" data-bs-target="#modalFermerCaisse">
-                    <i class="bi bi-lock"></i> Fermer la caisse
-                </button>
-            </div>
         </div>
 
         <div class="row g-3">
@@ -613,12 +598,6 @@ setTimeout(function () {
                     </div>
                 </div>
                 <div class="alert alert-danger d-none" id="pos-error" role="alert"></div>
-                <div class="alert alert-warning d-none" id="pos-session-required" role="status">
-                    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-                        <span>Aucune session de caisse n'est ouverte. Ouvrez la caisse avant d'encaisser une vente.</span>
-                        <button class="btn btn-sm btn-outline-dark" type="button" id="pos-session-open-inline">Ouvrir la caisse</button>
-                    </div>
-                </div>
 
                 <div class="row g-3" id="pos-product-grid">
                     <!-- généré en JS -->
@@ -759,54 +738,6 @@ setTimeout(function () {
                     <i class="bi bi-truck"></i> Bon de livraison
                 </a>
                 <button class="btn btn-theme" type="button" data-bs-dismiss="modal" id="pos-new-sale-btn">Nouvelle vente</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Fermeture de caisse -->
-<div class="modal fade" id="modalFermerCaisse" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title">Fermer la caisse ?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-secondary">Cette opération clôturera les transactions de cette session et enregistrera l'écart éventuel entre le total théorique et le total réel compté.</p>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label class="form-label small text-secondary mb-1">Total théorique</label>
-                        <input type="text" class="form-control" id="pos-cash-expected" value="—" disabled>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small text-secondary mb-1">Total compté</label>
-                        <input type="number" class="form-control" id="pos-counted-cash" placeholder="Montant compté en caisse" min="0" step="1">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button class="btn btn-danger" type="button" id="pos-close-session-submit">Clôturer la caisse</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalOuvrirCaisse" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title">Ouvrir une session de caisse</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label" for="pos-opening-fund">Fond d'ouverture (FCFA)</label>
-                <input type="number" class="form-control" id="pos-opening-fund" min="0" step="1" value="0">
-            </div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Annuler</button>
-                <button class="btn btn-theme" type="button" id="pos-open-session-submit">Ouvrir la caisse</button>
             </div>
         </div>
     </div>

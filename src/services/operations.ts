@@ -18,13 +18,11 @@ import {
   lignesVente,
   mouvementsStock,
   numerosSerieLivraison,
-  operationsCaisse,
   paiements,
   parametresBoutique,
   produits,
   receptions,
   retoursVente,
-  sessionsCaisse,
   stocks,
   utilisateursTable,
   ventes,
@@ -50,7 +48,6 @@ const REFERENCE_TABLES = {
   ACH: commandesFournisseurs,
   REC: receptions,
   RET: retoursVente,
-  CSE: sessionsCaisse,
   INV: inventaires,
 } as const;
 
@@ -390,38 +387,6 @@ function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-/** Un encaissement espèces alimente la session de caisse ouverte, comme pour les ventes. */
-async function attachPaymentToCashSession(
-  tx: DbTransaction,
-  req: Request,
-  payment: { id: number; reference: string; montant: number; modePaiement: string },
-  facture: { id: number; reference: string },
-  sessionId?: number | null,
-) {
-  if (payment.modePaiement !== "especes") return null;
-  const session = sessionId
-    ? (await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.id, sessionId)).for("update"))[0]
-    : (await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.statut, "ouverte")).for("update"))[0];
-  if (!session || session.statut !== "ouverte") return null;
-  await tx.update(sessionsCaisse).set({
-    montantAttendu: String(roundMoney(Number(session.montantAttendu) + payment.montant)),
-  }).where(eq(sessionsCaisse.id, session.id));
-  await tx.update(paiements).set({ idSessionCaisse: session.id }).where(eq(paiements.id, payment.id));
-  await tx.insert(operationsCaisse).values({
-    idSessionCaisse: session.id,
-    idFacture: facture.id,
-    idPaiement: payment.id,
-    type: payment.montant < 0 ? "annulation" : "encaissement_facture",
-    modePaiement: payment.modePaiement,
-    montant: String(payment.montant),
-    motif: payment.montant < 0
-      ? `Annulation du paiement ${payment.reference} — facture ${facture.reference}`
-      : `Paiement ${payment.reference} — facture ${facture.reference}`,
-    idUtilisateur: requestUserId(req) ?? null,
-  });
-  return session;
-}
-
 const listPaiements = endpoint(async (req, res) => {
   const mode = String(req.query.mode ?? "").trim();
   if (mode && !PAYMENT_MODES[mode]) throw new ApiError(400, "Mode de paiement invalide.");
@@ -447,7 +412,6 @@ const listPaiements = endpoint(async (req, res) => {
     modePaiement: paiements.modePaiement,
     datePaiement: paiements.datePaiement,
     notes: paiements.notes,
-    idSessionCaisse: paiements.idSessionCaisse,
     idPaiementAnnule: paiements.idPaiementAnnule,
     idUtilisateur: paiements.idUtilisateur,
     factureReference: factures.reference,
@@ -551,7 +515,6 @@ const createPaiement = endpoint(async (req, res) => {
       notes,
       idUtilisateur: requestUserId(req) ?? null,
     }).returning();
-    await attachPaymentToCashSession(tx, req, { ...payment, montant }, facture);
     const montantPaye = roundMoney(Number(facture.montantPaye) + montant);
     const [updated] = await tx.update(factures).set({
       montantPaye: String(montantPaye),
@@ -593,12 +556,9 @@ const cancelPaiement = endpoint(async (req, res) => {
       montant: String(montant),
       modePaiement: payment.modePaiement,
       notes: motif,
-      idSessionCaisse: payment.idSessionCaisse,
       idPaiementAnnule: payment.id,
       idUtilisateur: requestUserId(req) ?? null,
     }).returning();
-    await attachPaymentToCashSession(tx, req, { ...reversal, montant }, facture, payment.idSessionCaisse);
-
     const montantPaye = roundMoney(Number(facture.montantPaye) + montant);
     if (montantPaye < 0) throw new ApiError(409, "L'annulation rendrait le payé de la facture négatif.");
     const [updated] = await tx.update(factures).set({
@@ -885,7 +845,6 @@ const createFactureFromVente = endpoint(async (req, res) => {
 const createVente = endpoint(async (req, res) => {
   const body = record(req.body);
   const lignes = linesFrom(body.lignes ?? body.lines);
-  const idSessionCaisse = positiveId(body.idSessionCaisse, "Session de caisse");
   const idClient = body.idClient ? positiveId(body.idClient, "Client") : null;
   const modePaiement = String(body.modePaiement ?? "");
   const supportedPaymentMethods = ["especes", "mobile_money", "carte", "virement", "cheque"];
@@ -896,11 +855,6 @@ const createVente = endpoint(async (req, res) => {
   if (tauxTaxe > 100) throw new ApiError(400, "Le taux de taxe ne peut pas dépasser 100 %.");
   const tvaAppliquee = body.tvaAppliquee !== false;
   const vente = await db.transaction(async (tx) => {
-    const [session] = await tx.select().from(sessionsCaisse)
-      .where(eq(sessionsCaisse.id, idSessionCaisse)).for("update");
-    if (!session) throw new ApiError(404, "Session de caisse introuvable.");
-    if (session.statut !== "ouverte") throw new ApiError(409, "La session de caisse est clôturée.");
-
     const productRows = await tx.select().from(produits)
       .where(inArray(produits.id, lignes.map((line) => line.idProduit)))
       .for("update");
@@ -943,7 +897,6 @@ const createVente = endpoint(async (req, res) => {
     const [created] = await tx.insert(ventes).values({
       reference: String(body.reference ?? (await generateReference(tx, "VTE"))),
       idClient,
-      idSessionCaisse,
       statut: montantPaye >= montantTotal ? "payee" : "partiellement_payee",
       montantHT: String(montantHT),
       montantTaxe: String(montantTaxe),
@@ -970,17 +923,6 @@ const createVente = endpoint(async (req, res) => {
         .where(eq(stocks.idProduit, line.idProduit));
       await storeStockMovement(tx, req, line.idProduit, "vente", -line.quantite, created.reference, null);
     }
-    await tx.insert(operationsCaisse).values({
-      idSessionCaisse,
-      idVente: created.id,
-      type: "encaissement",
-      modePaiement,
-      montant: String(montantPaye),
-      idUtilisateur: requestUserId(req) ?? null,
-    });
-    await tx.update(sessionsCaisse).set({
-      montantAttendu: String(Number(session.montantAttendu) + (modePaiement === "especes" ? montantPaye : 0)),
-    }).where(eq(sessionsCaisse.id, idSessionCaisse));
     if (created.idClient) {
       const [client] = await tx.select().from(clientsTable).where(eq(clientsTable.id, created.idClient)).limit(1);
       await tx.update(clientsTable).set({
@@ -1001,12 +943,6 @@ const cancelVente = endpoint(async (req, res) => {
     const [vente] = await tx.select().from(ventes).where(eq(ventes.id, id)).for("update");
     if (!vente) throw new ApiError(404, "Vente introuvable.");
     if (vente.statut === "annulee") throw new ApiError(409, "Cette vente est déjà annulée.");
-    const [session] = vente.idSessionCaisse
-      ? await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.id, vente.idSessionCaisse)).for("update")
-      : [];
-    if (session && session.statut !== "ouverte") {
-      throw new ApiError(409, "La caisse est clôturée. Enregistrez un retour plutôt que d'annuler cette vente.");
-    }
     const lines = await tx.select().from(lignesVente).where(eq(lignesVente.idVente, id));
     for (const line of lines) {
       const [stock] = await tx.select().from(stocks).where(eq(stocks.idProduit, line.idProduit)).for("update");
@@ -1014,22 +950,6 @@ const cancelVente = endpoint(async (req, res) => {
       await tx.update(stocks).set({ quantite: stock.quantite + line.quantite, updatedAt: new Date() })
         .where(eq(stocks.id, stock.id));
       await storeStockMovement(tx, req, line.idProduit, "annulation_vente", line.quantite, vente.reference, null);
-    }
-    if (session && Number(vente.montantPaye) > 0) {
-      await tx.insert(operationsCaisse).values({
-        idSessionCaisse: session.id,
-        idVente: vente.id,
-        type: "decaissement",
-        modePaiement: vente.modePaiement ?? "especes",
-        montant: String(vente.montantPaye),
-        motif: `Remboursement de l'annulation ${vente.reference}`,
-        idUtilisateur: requestUserId(req) ?? null,
-      });
-      if (vente.modePaiement === "especes") {
-        await tx.update(sessionsCaisse).set({
-          montantAttendu: String(Number(session.montantAttendu) - Number(vente.montantPaye)),
-        }).where(eq(sessionsCaisse.id, session.id));
-      }
     }
     if (vente.idClient) {
       const [client] = await tx.select().from(clientsTable).where(eq(clientsTable.id, vente.idClient)).for("update");
@@ -1050,54 +970,11 @@ const cancelVente = endpoint(async (req, res) => {
   res.json({ success: true, data: updated });
 });
 
-const openCashSession = endpoint(async (req, res) => {
-  const body = record(req.body);
-  const fondOuverture = amount(body.fondOuverture ?? 0, "Le fond de caisse");
-  const result = await db.transaction(async (tx) => {
-    const [open] = await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.statut, "ouverte")).limit(1);
-    if (open) throw new ApiError(409, "Une session de caisse est déjà ouverte.");
-    const [session] = await tx.insert(sessionsCaisse).values({
-      reference: await generateReference(tx, "CSE"),
-      idUtilisateur: requestUserId(req) ?? null,
-      fondOuverture: String(fondOuverture),
-      montantAttendu: String(fondOuverture),
-    }).returning();
-    await logActivity(tx, req, "caisse.ouverte", { id: session.id });
-    return session;
-  });
-  res.status(201).json({ success: true, data: result });
-});
-
-const listCashSessions = endpoint(async (_req, res) => {
-  res.json(await db.select().from(sessionsCaisse).orderBy(desc(sessionsCaisse.dateOuverture)));
-});
-
-const closeCashSession = endpoint(async (req, res) => {
-  const id = idParam(req);
-  const compte = amount(record(req.body).montantCompte, "Le montant compté");
-  const result = await db.transaction(async (tx) => {
-    const [session] = await tx.select().from(sessionsCaisse).where(eq(sessionsCaisse.id, id)).for("update");
-    if (!session) throw new ApiError(404, "Session de caisse introuvable.");
-    if (session.statut !== "ouverte") throw new ApiError(409, "Cette session est déjà clôturée.");
-    const ecart = Math.round((compte - Number(session.montantAttendu)) * 100) / 100;
-    const [closed] = await tx.update(sessionsCaisse).set({
-      statut: "fermee",
-      dateFermeture: new Date(),
-      montantCompte: String(compte),
-      ecart: String(ecart),
-    }).where(eq(sessionsCaisse.id, id)).returning();
-    await logActivity(tx, req, "caisse.fermee", { id, ecart });
-    return closed;
-  });
-  res.json({ success: true, data: result });
-});
-
 const stockList = endpoint(async (_req, res) => {
   const rows = await db.select({
     id: produits.id,
     designation: produits.designation,
     idCategorie: produits.idCategorie,
-    prixAchat: produits.prixAchat,
     prixVente: produits.prixVente,
     stock: stocks.quantite,
     seuilMinimum: stocks.seuilMinimum,
@@ -1748,7 +1625,7 @@ const dashboard = endpoint(async (req, res) => {
     .slice(0, 5);
   const stockValue = stockRows.reduce((sum, stock) => {
     const product = productById.get(stock.idProduit);
-    return sum + stock.quantite * Number(product?.prixAchat ?? 0);
+    return sum + stock.quantite * Number(product?.prixVente ?? 0);
   }, 0);
   const unpaidInvoices = invoiceRows.filter((invoice) => Number(invoice.montantTotal) > Number(invoice.montantPaye));
   const returnsToday = returnRows.filter((item) => item.statut !== "annule");
@@ -1881,9 +1758,6 @@ export const operationsHandlers = {
   createFactureFromVente,
   createVente,
   cancelVente,
-  openCashSession,
-  listCashSessions,
-  closeCashSession,
   stockList,
   createStockMovement,
   listStockMovements,

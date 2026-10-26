@@ -119,7 +119,7 @@ proprement depuis leur HTML.
 
 ### Produits et stock
 
-- Le prix d'achat et le prix de vente sont stockés sur le produit.
+- Le prix de vente est stocké sur le produit ; les prix d'achat ne sont plus gérés.
 - La quantité disponible et le seuil minimum sont dans la table `stocks`.
 - Une réception fournisseur augmente le stock et écrit un mouvement de stock.
 - Une vente décrémente le stock et écrit également un mouvement.
@@ -129,7 +129,7 @@ proprement depuis leur HTML.
 
 1. L'écran `gesco-approvisionnement-commandes.html` charge la liste par l'API.
 2. « Nouvelle commande » ouvre un formulaire : fournisseur d'abord, puis lignes
-   produit, quantité et prix d'achat prérempli mais modifiable.
+   produit, quantité et prix unitaire saisi manuellement.
 3. Le total est calculé avant envoi ; le serveur recalcule et persiste la
    commande et ses lignes dans une transaction.
 4. Le bouton de consultation mène au bon de commande imprimable.
@@ -144,8 +144,8 @@ livrées.
 
 ### Ventes et factures
 
-- Le terminal enregistre une vente à partir d'une session de caisse ouverte et
-  décrémente le stock.
+- Le terminal enregistre une vente directement et décrémente le stock, sans
+  gestion de session de caisse.
 - La facture commerciale est générée à partir des informations de la vente via
   `POST /api/ventes/:id/facture`.
 - La facture possède `idVente` et ses lignes reprennent les lignes de vente.
@@ -165,9 +165,9 @@ doivent rester cohérents avec la vente source.
 ### Migrations
 
 Les migrations sont ordonnées dans `drizzle/meta/_journal.json`. Les fichiers
-SQL existants vont de `0000` à `0008`; ils couvrent le schéma métier, le stock,
-les fournisseurs, le retrait des images produit, les sessions de caisse et les
-factures liées aux ventes.
+SQL existants vont de `0000` à `0020`; ils couvrent le schéma métier, le stock,
+les fournisseurs, le retrait des images produit, les factures liées aux ventes
+et la suppression des sessions de caisse et des prix d'achat produit.
 
 Pour chaque évolution de base :
 
@@ -200,7 +200,7 @@ Principales routes (préfixe `/api`) :
 | Produits | `/produits`, `/categories` |
 | Stocks | `/stocks`, `/stocks/mouvements`, `/inventaires` |
 | Fournisseurs | `/fournisseurs`, `/commandes`, `/receptions` |
-| Ventes | `/ventes`, `/ventes-retours`, `/caisse/sessions` |
+| Ventes | `/ventes`, `/ventes-retours` |
 | Facturation | `/factures`, `/paiements` |
 | Administration | `/utilisateurs`, `/administration`, `/dashboard`, `/rapports` |
 
@@ -231,7 +231,7 @@ Utiliser une base de démonstration restaurable et contrôler les données aprè
 chaque parcours qui écrit en base.
 
 1. Créer un produit puis vérifier ses informations et son stock.
-2. Ouvrir une session de caisse, enregistrer une vente et contrôler le stock.
+2. Enregistrer une vente et contrôler le stock.
 3. Ouvrir la facture depuis le ticket ou l'historique ; comparer les lignes et
    totaux à la vente, puis vérifier l'impression PDF.
 4. Créer une commande fournisseur avec plusieurs produits ; vérifier le prix

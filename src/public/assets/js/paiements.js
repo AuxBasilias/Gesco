@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let impayes = [];
     let factures = [];
     let cashiers = new Map();
-    let openSession = null;
     let targetPaiement = null;
     let targetFacture = null;
 
@@ -190,33 +189,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         const notes = document.getElementById('paiement-notes');
         if (notes) notes.value = '';
         fillFactureOptions(factureId);
-        const info = document.getElementById('paiement-caisse-info');
-        if (info) {
-            if (openSession) {
-                info.textContent = `Session de caisse ouverte (${openSession.reference}) : un paiement en espèces y sera automatiquement rattaché.`;
-                info.classList.remove('d-none');
-            } else {
-                info.textContent = 'Aucune session de caisse ouverte : les espèces ne seront pas rattachées au journal de caisse.';
-                info.classList.remove('d-none');
-            }
-        }
         paiementModal?.show();
     }
 
     async function loadAll() {
         try {
-            const [paiementsRes, impayesRes, facturesRes, usersRes, sessionsRes] = await Promise.all([
+            const [paiementsRes, impayesRes, facturesRes, usersRes] = await Promise.all([
                 AA.getPaiements(),
                 AA.getFacturesImpayees(),
                 AA.getFactures(),
                 AA.getUtilisateurs().catch(() => []),
-                AA.getSessionsCaisse().catch(() => []),
             ]);
             paiements = unwrap(paiementsRes);
             impayes = unwrap(impayesRes);
             factures = unwrap(facturesRes).filter((facture) => !['deleted', 'brouillon'].includes(facture.statut));
             cashiers = new Map(unwrap(usersRes).map((user) => [Number(user.id), user.nomUtilisateur]));
-            openSession = unwrap(sessionsRes).find((session) => session.statut === 'ouverte') || null;
 
             paiements = paiements.map((row) => ({
                 ...row,

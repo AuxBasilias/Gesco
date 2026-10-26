@@ -283,10 +283,6 @@
       tables: [{ load: api.getRetours, columns: [["Type", "type", "returnType"], ["Référence", "reference"], ["Date", "date", "date"], ["Vente", "venteReference"], ["Motif", "motif"], ["Montant", "montant", "money"], ["Statut", "statut", "returnStatus"]] }],
       create: "retour",
     },
-    "gesco-ventes-sessions.html": {
-      tables: [{ load: api.getSessionsCaisse, columns: [["Session", "reference"], ["Ouverture", "dateOuverture", "date"], ["Clôture", "dateFermeture", "date"], ["Caissier", "idUtilisateur"], ["Fond", "fondOuverture", "money"], ["Attendu", "montantAttendu", "money"], ["Écart", "ecart", "money"], ["Statut", "statut"]] }],
-      create: "session",
-    },
     "gesco-caisse-historique.html": {
       tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut"]] }],
     },
@@ -304,7 +300,6 @@
     "gesco-administration.html": {
       tables: [
         { load: api.getUtilisateurs, columns: [["Utilisateur", "nomUtilisateur"], ["E-mail", "email"], ["Téléphone", "telephone"], ["Rôle", "role", "userRole"], ["État", "actif", "status"]] },
-        { load: api.getSessionsCaisse, columns: [["Session", "reference"], ["Caissier", "idUtilisateur"], ["Ouverture", "dateOuverture", "date"], ["Statut", "statut"]] },
         { load: api.getJournalActivite, columns: [["Date", "createdAt", "date"], ["Utilisateur", "idUtilisateur"], ["Action", "action"], ["Détails", "details"]] },
       ],
       create: "utilisateur",
@@ -319,7 +314,6 @@
         ["designation", "Désignation", "text", true],
         ["idCategorie", "Catégorie", "category", true],
         ["description", "Description", "textarea"],
-        ["prixAchat", "Prix d'achat", "number", true],
         ["prixVente", "Prix de vente", "number", true],
         ["stockInitial", "Stock initial", "number"],
         ["seuilMinimum", "Seuil minimum", "number"],
@@ -348,11 +342,6 @@
     },
     retour: {
       title: "Enregistrer un retour",
-    },
-    session: {
-      title: "Ouvrir une caisse",
-      method: api.openSessionCaisse,
-      fields: [["fondOuverture", "Fond d'ouverture", "number", true]],
     },
     facture: {
       title: "Nouvelle facture",
@@ -388,7 +377,6 @@
       commande: ["Nouvelle commande"],
       mouvement: ["Nouveau mouvement"],
       retour: ["Nouveau retour"],
-      session: ["Ouvrir une session"],
       paiement: ["Nouveau paiement"],
     };
     const labels = [title, ...(actionLabels[key] ?? [])];
@@ -794,7 +782,7 @@
       lines.push(line);
       productSelect.addEventListener("change", () => {
         const selected = productList.find((product) => Number(product.id) === Number(productSelect.value));
-        if (selected) price.value = String(Number(selected.prixAchat) || 0);
+        if (selected) price.value = "";
         updateTotal();
       });
       quantity.addEventListener("input", updateTotal);
@@ -1559,23 +1547,6 @@
         open.innerHTML = '<i class="bi bi-eye" aria-hidden="true"></i>';
         actions.append(open);
       }
-      if (target.key === "session" && row.statut === "ouverte") {
-        const close = document.createElement("button");
-        close.type = "button";
-        close.className = "btn btn-sm btn-outline-danger ms-1";
-        close.textContent = "Clôturer";
-        close.addEventListener("click", async () => {
-          const montantCompte = prompt("Montant compté en caisse :");
-          if (montantCompte === null) return;
-          try {
-            await api.closeSessionCaisse(row.id, { montantCompte: Number(montantCompte) });
-            await loadPage(target);
-          } catch (error) {
-            alert(error.message);
-          }
-        });
-        actions.append(close);
-      }
       if (target.key === "retour" && row.type === "retour" && row.statut === "en_attente" && row.id) {
         [["rembourse", "Rembourser", "btn-outline-success"], ["echange", "Échanger", "btn-outline-primary"], ["refuse", "Refuser", "btn-outline-danger"]]
           .forEach(([statut, label, variant]) => {
@@ -2145,7 +2116,7 @@
 
     const values = main?.querySelectorAll(".row.g-3.mb-4 .card-body h3");
     if (values?.length >= 4) {
-      const stockValue = products.reduce((total, item) => total + Number(item.prixAchat || 0) * Number(item.stock || 0), 0);
+      const stockValue = products.reduce((total, item) => total + Number(item.prixVente || 0) * Number(item.stock || 0), 0);
       const lowStock = products.filter((item) => Number(item.stock || 0) > 0 && Number(item.stock || 0) <= Number(item.seuilMinimum || 0)).length;
       const outOfStock = products.filter((item) => Number(item.stock || 0) <= 0).length;
       values[0].textContent = products.length.toLocaleString("fr-FR");
@@ -2474,7 +2445,7 @@
     error.setAttribute("role", "alert");
     const warning = document.createElement("p");
     warning.className = "small text-secondary";
-    warning.textContent = "L'annulation remet les produits en stock et rembourse la vente. Elle est impossible si la session de caisse est clôturée.";
+    warning.textContent = "L'annulation remet les produits en stock et rembourse la vente.";
     body.append(error, warning);
 
     const sales = list(await api.getVentes()).filter((sale) => sale.statut !== "annulee");
@@ -2543,14 +2514,13 @@
     const grid = document.getElementById("pos-product-grid");
     const cartContainer = document.getElementById("pos-cart-items");
     if (!grid || !cartContainer) return;
-    const [products, clients, categories, sessions, settings] = await Promise.all([
+    const [products, clients, categories, settings] = await Promise.all([
       api.getProduits(),
       api.getClients(),
       api.getCategories(),
-      api.getSessionsCaisse(),
       api.getParametres(),
     ]);
-    const [productRows, clientRows, categoryRows, sessionRows] = [products, clients, categories, sessions].map(list);
+    const [productRows, clientRows, categoryRows] = [products, clients, categories].map(list);
     const cart = new Map();
     const search = document.getElementById("pos-search");
     const clientSelect = document.getElementById("pos-client");
@@ -2563,19 +2533,12 @@
     const validityInput = document.getElementById("pos-validity");
     const guaranteeInput = document.getElementById("pos-guarantee");
     const paymentRadios = Array.from(document.querySelectorAll('input[name="payment"]'));
-    const closeButton = document.getElementById("caisse-close-btn");
-    const openButton = document.getElementById("caisse-open-btn");
-    const inlineOpenButton = document.getElementById("pos-session-open-inline");
-    const sessionRequired = document.getElementById("pos-session-required");
-    const closeModal = document.getElementById("modalFermerCaisse");
-    const openModal = document.getElementById("modalOuvrirCaisse");
     const currentCategory = { id: "" };
     const taxRate = Number(settings?.tauxTaxe ?? 18);
     if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100) {
       throw new Error("Le taux de taxe configuré doit être compris entre 0 et 100 %.");
     }
     const applyTaxToggle = document.getElementById("pos-apply-tax");
-    let cashSession = sessionRows.find((item) => item.statut === "ouverte") ?? null;
 
     if (clientSelect) {
       clientSelect.replaceChildren(new Option("Client comptoir", ""));
@@ -2612,23 +2575,6 @@
       const applyTax = applyTaxToggle?.checked ?? true;
       const taxe = applyTax ? roundedMoney(montantHT * taxRate / 100) : 0;
       return { subtotal, discount, montantHT, taxe, total: roundedMoney(montantHT + taxe) };
-    }
-    function updateSessionStatus() {
-      const badge = document.getElementById("caisse-status-badge");
-      if (badge) {
-        badge.className = cashSession
-          ? "badge badge-light text-bg-success px-3 py-2"
-          : "badge badge-light text-bg-warning px-3 py-2";
-        badge.textContent = cashSession
-          ? `Caisse ouverte — fond ${money(cashSession.fondOuverture)} — attendu ${money(cashSession.montantAttendu)}`
-          : "Aucune caisse ouverte";
-      }
-      if (openButton) openButton.classList.toggle("d-none", Boolean(cashSession));
-      if (closeButton) closeButton.classList.toggle("d-none", !cashSession);
-      if (checkout) checkout.disabled = !cashSession || cart.size === 0;
-      sessionRequired?.classList.toggle("d-none", Boolean(cashSession));
-      const expected = closeModal?.querySelector("#pos-cash-expected");
-      if (expected) expected.value = cashSession ? money(cashSession.montantAttendu) : "—";
     }
     function drawCategories() {
       if (!categoryContainer) return;
@@ -2748,16 +2694,14 @@
       document.getElementById("pos-cash-row")?.classList.toggle("d-none", !isCash);
       const received = Number(receivedInput?.value || 0);
       if (changeInput) changeInput.value = money(isCash ? Math.max(0, received - total) : 0);
-      if (checkout) checkout.disabled = !cashSession || count === 0 || (isCash && received < total);
+      if (checkout) checkout.disabled = count === 0 || (isCash && received < total);
       const checkoutHelp = document.getElementById("pos-checkout-help");
       if (checkoutHelp) {
-        checkoutHelp.textContent = !cashSession
-          ? "Ouvrez d'abord une session de caisse."
-          : count === 0
-            ? "Ajoutez un produit au panier pour continuer."
-            : isCash && received < total
-              ? `Saisissez au moins ${money(total)} dans « Montant reçu ».`
-              : "";
+        checkoutHelp.textContent = count === 0
+          ? "Ajoutez un produit au panier pour continuer."
+          : isCash && received < total
+            ? `Saisissez au moins ${money(total)} dans « Montant reçu ».`
+            : "";
       }
     }
     function resetSale() {
@@ -2810,8 +2754,8 @@
     document.getElementById("pos-new-sale-btn")?.addEventListener("click", resetSale);
     checkout?.addEventListener("click", async () => {
       clearError();
-      if (!cart.size || !cashSession) {
-        showError(!cashSession ? "Ouvrez une session de caisse avant d'encaisser." : "Ajoutez au moins un produit.");
+      if (!cart.size) {
+        showError("Ajoutez au moins un produit.");
         return;
       }
       const { discount, total } = totals();
@@ -2843,7 +2787,6 @@
       try {
         const response = await api.createVente({
           idClient: clientSelect?.value ? Number(clientSelect.value) : null,
-          idSessionCaisse: cashSession.id,
           tauxTaxe: taxRate,
           tvaAppliquee: applyTaxToggle?.checked ?? true,
           montantPaye: total,
@@ -2896,79 +2839,18 @@
           deliveryButton.href = `gesco-livraison-detail.html?venteId=${encodeURIComponent(sale.id)}`;
           deliveryButton.classList.remove("d-none");
         }
-        if (modePaiement === "especes") {
-          cashSession = {
-            ...cashSession,
-            montantAttendu: roundedMoney(Number(cashSession.montantAttendu) + Number(sale.montantPaye ?? total)),
-          };
-        }
         resetSale();
-        updateSessionStatus();
         drawCart();
         bootstrap.Modal.getOrCreateInstance(document.getElementById("modalTicket")).show();
       } catch (error) {
         showError(error.message || "Impossible d'enregistrer la vente.");
       } finally {
         checkout.innerHTML = buttonText;
-        updateSessionStatus();
         drawCart();
       }
-    });
-
-    const showOpenSession = () => {
-      clearError();
-      bootstrap.Modal.getOrCreateInstance(openModal).show();
-    };
-    openButton?.addEventListener("click", showOpenSession);
-    inlineOpenButton?.addEventListener("click", showOpenSession);
-    const openSessionSubmit = document.getElementById("pos-open-session-submit");
-    openSessionSubmit?.addEventListener("click", async () => {
-      const fondOuverture = Number(document.getElementById("pos-opening-fund")?.value);
-      if (!Number.isFinite(fondOuverture) || fondOuverture < 0) {
-        showError("Saisissez un fond de caisse valide.");
-        return;
-      }
-      const originalLabel = openSessionSubmit.textContent;
-      openSessionSubmit.disabled = true;
-      openSessionSubmit.textContent = "Ouverture en cours…";
-      try {
-        const response = await api.openSessionCaisse({ fondOuverture });
-        cashSession = response.data ?? response;
-        bootstrap.Modal.getOrCreateInstance(openModal).hide();
-        updateSessionStatus();
-        drawCart();
-      } catch (error) {
-        showError(error.message || "Impossible d'ouvrir la caisse.");
-        updateSessionStatus();
-      } finally {
-        openSessionSubmit.disabled = false;
-        openSessionSubmit.textContent = originalLabel;
-      }
-    });
-    document.getElementById("pos-close-session-submit")?.addEventListener("click", async () => {
-      if (!cashSession) return;
-      const montantCompte = Number(document.getElementById("pos-counted-cash")?.value);
-      if (!Number.isFinite(montantCompte) || montantCompte < 0) {
-        showError("Saisissez le montant compté dans la caisse.");
-        return;
-      }
-      try {
-        await api.closeSessionCaisse(cashSession.id, { montantCompte });
-        cashSession = null;
-        bootstrap.Modal.getOrCreateInstance(closeModal).hide();
-        updateSessionStatus();
-        drawCart();
-      } catch (error) {
-        showError(error.message || "Impossible de clôturer la caisse.");
-      }
-    });
-    closeButton?.addEventListener("click", () => {
-      const expected = closeModal?.querySelector("#pos-cash-expected");
-      if (expected && cashSession) expected.value = money(cashSession.montantAttendu);
     });
 
     drawCategories();
-    updateSessionStatus();
     drawProducts();
     drawCart();
     const preselectId = Number(new URLSearchParams(location.search).get("product"));
@@ -3024,7 +2906,6 @@
     const stock = Number(product.stock ?? 0);
     const seuil = Number(product.seuilMinimum ?? 0);
     setText("#pd-stock", String(stock));
-    setText("#pd-price-buy", money(product.prixAchat));
     setText("#pd-price-sell", money(product.prixVente));
 
     const thresholdCard = document.getElementById("pd-alert-card");
@@ -3183,7 +3064,6 @@
       setValue("product-designation", product.designation);
       categorySelect.value = product.idCategorie ?? "";
       setValue("product-description", product.description);
-      setValue("product-cost", product.prixAchat);
       setValue("product-price", product.prixVente);
       setValue("product-stock", product.stock);
       setValue("product-threshold", product.seuilMinimum);
@@ -3211,7 +3091,6 @@
           designation: document.getElementById("product-designation").value.trim(),
           idCategorie: categorySelect.value,
           description: document.getElementById("product-description").value.trim(),
-          prixAchat: document.getElementById("product-cost").value,
           prixVente: document.getElementById("product-price").value,
           seuilMinimum: document.getElementById("product-threshold").value || "0",
           idFournisseur: supplierSelect.value,
