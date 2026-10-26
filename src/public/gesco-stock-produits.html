@@ -638,24 +638,34 @@ setTimeout(function () {
 
         <div class="card adminuiux-card border-0 shadow-sm">
             <div class="card-body">
-                <div class="row gx-3 align-items-center mb-3">
+                <div class="row gx-3 gy-2 align-items-center mb-3">
                     <div class="col">
                         <h6 class="mb-0">Catalogue produits</h6>
-                        <p class="small text-secondary mb-0">8 références affichées sur 3 214</p>
+                        <p class="small text-secondary mb-0" id="products-result-count">8 références affichées sur 3 214</p>
                     </div>
                     <div class="col-auto">
                         <div class="input-group">
                             <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" placeholder="Rechercher un produit, une référence...">
+                            <input type="search" class="form-control" id="products-search" placeholder="Rechercher un produit, une référence...">
                         </div>
-                    </div><div class="col-auto"><select class="form-select"><option selected>Toutes catégories</option><option>Ordinateurs</option><option>Accessoires</option><option>Réseau</option><option>Consommables</option></select></div><div class="col-auto"><select class="form-select"><option selected>Tous les états</option><option>En stock</option><option>Stock faible</option><option>Rupture</option></select></div>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="products-category-filter"><option value="" selected>Toutes catégories</option><option>Ordinateurs</option><option>Accessoires</option><option>Réseau</option><option>Consommables</option></select>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="products-state-filter"><option value="" selected>Tous les états</option><option>En stock</option><option>Stock faible</option><option>Rupture</option></select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#exportProduits">
+                            <i class="bi bi-download"></i> Exporter
+                        </button>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
                         <thead><tr><th>Désignation</th><th>Catégorie</th><th class="text-end">Prix de vente</th><th class="text-center">Stock</th><th class="text-center">Seuil</th><th>État</th><th class="text-end">Actions</th></tr></thead>
                         <tbody>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-1042</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -673,7 +683,6 @@ setTimeout(function () {
                                 </td>
                             </tr>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-1088</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -691,7 +700,6 @@ setTimeout(function () {
                                 </td>
                             </tr>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-1103</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -709,7 +717,6 @@ setTimeout(function () {
                                 </td>
                             </tr>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-2011</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -727,7 +734,6 @@ setTimeout(function () {
                                 </td>
                             </tr>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-2034</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -745,7 +751,6 @@ setTimeout(function () {
                                 </td>
                             </tr>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-2056</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -763,7 +768,6 @@ setTimeout(function () {
                                 </td>
                             </tr>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-3007</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -781,7 +785,6 @@ setTimeout(function () {
                                 </td>
                             </tr>
                             <tr>
-                                <td><a href="gesco-stock-produit-detail.html" class="fw-medium">P-3015</a></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
@@ -800,10 +803,21 @@ setTimeout(function () {
                             </tr></tbody>
                     </table>
                 </div>
-                <div class="row gx-3 align-items-center mt-3">
-                    <div class="col"><p class="small text-secondary mb-0">Affichage de 1 à 8 sur 3 214 références</p></div>
+                <div class="row gx-3 gy-2 align-items-center mt-3">
+                    <div class="col"><p class="small text-secondary mb-0" id="products-count-footer">Affichage de 1 à 8 sur 3 214 références</p></div>
                     <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="small text-secondary mb-0" for="products-page-size">Lignes par page</label>
+                            <select class="form-select form-select-sm w-auto" id="products-page-size">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <nav id="products-pagination" aria-label="Pagination des produits"><ul class="pagination mb-0">
                             <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
                             <li class="page-item active"><a class="page-link" href="#">1</a></li>
                             <li class="page-item"><a class="page-link" href="#">2</a></li>
@@ -815,6 +829,34 @@ setTimeout(function () {
         </div>
     </div>
 </main>
+
+
+<div class="modal fade" id="exportProduits" tabindex="-1" aria-labelledby="exportProduitsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="export-produits-form">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="exportProduitsLabel">Exporter les produits</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-secondary">Les produits correspondant aux filtres actuels seront exportés.</p>
+                <div class="alert alert-danger d-none" id="export-produits-error" role="alert"></div>
+                <div class="mb-0">
+                    <label class="form-label small text-secondary mb-1" for="export-produits-format">Format</label>
+                    <select class="form-select" id="export-produits-format">
+                        <option value="xlsx" selected>Excel (.xlsx)</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+                <p class="small text-secondary mt-3 mb-0" id="export-produits-summary"></p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-theme"><i class="bi bi-download"></i> Exporter</button>
+            </div>
+        </form>
+    </div>
+</div>
 
                 </div>
                 <!-- View Product details -->

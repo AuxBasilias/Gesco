@@ -638,7 +638,7 @@ setTimeout(function () {
 
         <div class="card adminuiux-card border-0 shadow-sm">
             <div class="card-body">
-                <div class="row gx-3 align-items-center mb-3">
+                <div class="row gx-3 gy-2 align-items-center mb-3">
                     <div class="col">
                         <h6 class="mb-0">Journal des mouvements</h6>
                         <p class="small text-secondary mb-0">Toute opération modifiant le stock est tracée ici</p>
@@ -646,9 +646,27 @@ setTimeout(function () {
                     <div class="col-auto">
                         <div class="input-group">
                             <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" placeholder="Rechercher un produit...">
+                            <input type="text" class="form-control" id="mouvements-search" placeholder="Rechercher un produit...">
                         </div>
-                    </div><div class="col-auto"><select class="form-select"><option selected>Tous les types</option><option>Vente</option><option>Réception</option><option>Retour client</option><option>Casse</option><option>Perte</option><option>Vol</option><option>Ajustement</option><option>Transfert</option></select></div>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="mouvements-type-filter">
+                            <option selected>Tous les types</option>
+                            <option>Vente</option>
+                            <option>Réception</option>
+                            <option>Retour client</option>
+                            <option>Casse</option>
+                            <option>Perte</option>
+                            <option>Vol</option>
+                            <option>Ajustement</option>
+                            <option>Transfert</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#exportMouvements">
+                            <i class="bi bi-download"></i> Exporter
+                        </button>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
@@ -726,10 +744,21 @@ setTimeout(function () {
                             </tr></tbody>
                     </table>
                 </div>
-                <div class="row gx-3 align-items-center mt-3">
-                    <div class="col"><p class="small text-secondary mb-0">Affichage de 1 à 7 sur 412 mouvements</p></div>
+                <div class="row gx-3 gy-2 align-items-center mt-3">
+                    <div class="col"><p class="small text-secondary mb-0" id="mouvements-count">Affichage de 1 à 7 sur 412 mouvements</p></div>
                     <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="small text-secondary mb-0" for="mouvements-page-size">Lignes par page</label>
+                            <select class="form-select form-select-sm w-auto" id="mouvements-page-size">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <nav id="mouvements-pagination" aria-label="Pagination des mouvements"><ul class="pagination mb-0">
                             <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
                             <li class="page-item active"><a class="page-link" href="#">1</a></li>
                             <li class="page-item"><a class="page-link" href="#">2</a></li>
@@ -782,6 +811,43 @@ setTimeout(function () {
                 <button class="btn btn-danger" type="button" id="perte-enregistrer">Enregistrer la déclaration</button>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exportMouvements" tabindex="-1" aria-labelledby="exportMouvementsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="export-mouvements-form">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="exportMouvementsLabel">Exporter les mouvements</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-secondary">Les mouvements correspondant aux filtres actuels et à la période sélectionnée seront exportés.</p>
+                <div class="alert alert-danger d-none" id="export-mouvements-error" role="alert"></div>
+                <div class="row g-3">
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small text-secondary mb-1" for="export-mouvements-debut">Date de début</label>
+                        <input type="date" class="form-control" id="export-mouvements-debut" required>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small text-secondary mb-1" for="export-mouvements-fin">Date de fin</label>
+                        <input type="date" class="form-control" id="export-mouvements-fin" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small text-secondary mb-1" for="export-mouvements-format">Format</label>
+                        <select class="form-select" id="export-mouvements-format">
+                            <option value="xlsx" selected>Excel (.xlsx)</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="small text-secondary mt-3 mb-0" id="export-mouvements-summary"></p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-theme"><i class="bi bi-download"></i> Exporter</button>
+            </div>
+        </form>
     </div>
 </div>
 

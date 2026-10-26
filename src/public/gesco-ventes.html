@@ -638,7 +638,7 @@ setTimeout(function () {
 
         <div class="card adminuiux-card border-0 shadow-sm">
             <div class="card-body">
-                <div class="row gx-3 align-items-center mb-3">
+                <div class="row gx-3 gy-2 align-items-center mb-3">
                     <div class="col">
                         <h6 class="mb-0">Toutes les ventes</h6>
                         <p class="small text-secondary mb-0" id="sales-result-count">Chargement des ventes…</p>
@@ -648,7 +648,18 @@ setTimeout(function () {
                             <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
                             <input type="search" class="form-control" id="sales-search" placeholder="N° de vente, client...">
                         </div>
-                    </div><div class="col-auto"><select class="form-select" id="sales-status-filter"><option value="" selected>Tous les statuts</option><option value="payee">Payée</option><option value="partiellement_payee">Partiellement payée</option><option value="annulee">Annulée</option></select></div><div class="col-auto"><select class="form-select" id="sales-payment-filter"><option value="" selected>Tous paiements</option><option value="especes">Espèces</option><option value="mobile_money">Mobile Money</option><option value="carte">Carte</option><option value="virement">Virement</option><option value="cheque">Chèque</option></select></div>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="sales-status-filter"><option value="" selected>Tous les statuts</option><option value="payee">Payée</option><option value="partiellement_payee">Partiellement payée</option><option value="annulee">Annulée</option></select>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="sales-payment-filter"><option value="" selected>Tous paiements</option><option value="especes">Espèces</option><option value="mobile_money">Mobile Money</option><option value="carte">Carte</option><option value="virement">Virement</option><option value="cheque">Chèque</option></select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#exportVentes">
+                            <i class="bi bi-download"></i> Exporter
+                        </button>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
@@ -656,10 +667,21 @@ setTimeout(function () {
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="row gx-3 align-items-center mt-3">
+                <div class="row gx-3 gy-2 align-items-center mt-3">
                     <div class="col"><p class="small text-secondary mb-0" id="sales-result-count-footer">0 vente</p></div>
                     <div class="col-auto">
-                        <nav><ul class="pagination mb-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="small text-secondary mb-0" for="sales-page-size">Lignes par page</label>
+                            <select class="form-select form-select-sm w-auto" id="sales-page-size">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <nav id="sales-pagination" aria-label="Pagination des ventes"><ul class="pagination mb-0">
                             <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
                             <li class="page-item active"><a class="page-link" href="#">1</a></li>
                             <li class="page-item"><a class="page-link" href="#">2</a></li>
@@ -671,6 +693,44 @@ setTimeout(function () {
         </div>
     </div>
 </main>
+
+
+<div class="modal fade" id="exportVentes" tabindex="-1" aria-labelledby="exportVentesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="export-ventes-form">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="exportVentesLabel">Exporter les ventes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-secondary">Les ventes correspondant aux filtres actuels et à la période sélectionnée seront exportées.</p>
+                <div class="alert alert-danger d-none" id="export-ventes-error" role="alert"></div>
+                <div class="row g-3">
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small text-secondary mb-1" for="export-ventes-debut">Date de début</label>
+                        <input type="date" class="form-control" id="export-ventes-debut" required>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small text-secondary mb-1" for="export-ventes-fin">Date de fin</label>
+                        <input type="date" class="form-control" id="export-ventes-fin" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small text-secondary mb-1" for="export-ventes-format">Format</label>
+                        <select class="form-select" id="export-ventes-format">
+                            <option value="xlsx" selected>Excel (.xlsx)</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="small text-secondary mt-3 mb-0" id="export-ventes-summary"></p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-theme"><i class="bi bi-download"></i> Exporter</button>
+            </div>
+        </form>
+    </div>
+</div>
 
                 </div>
                 <!-- View Order details -->

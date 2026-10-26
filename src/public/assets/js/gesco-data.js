@@ -1708,65 +1708,456 @@
     }
   }
 
+  let xlsxLoader = null;
+
+  function loadXlsx() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (!xlsxLoader) {
+      xlsxLoader = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "assets/js/vendor/xlsx.full.min.js";
+        script.async = true;
+        script.onload = () => {
+          if (window.XLSX) resolve(window.XLSX);
+          else reject(new Error("Le module Excel n'a pas pu être initialisé."));
+        };
+        script.onerror = () => {
+          xlsxLoader = null;
+          reject(new Error("Impossible de charger le module Excel."));
+        };
+        document.head.appendChild(script);
+      });
+    }
+    return xlsxLoader;
+  }
+
+  const stockMovementTypeLabels = {
+    stock_initial: "Stock initial",
+    entree: "Entrée",
+    reception: "Réception",
+    retour: "Retour client",
+    vente: "Vente",
+    sortie: "Sortie",
+    perte: "Perte",
+    casse: "Casse",
+    vol: "Vol",
+    ajustement_positif: "Ajustement positif",
+    ajustement_negatif: "Ajustement négatif",
+    annulation_vente: "Annulation de vente",
+  };
+
+  const stockMovementTypeLabel = (value) => stockMovementTypeLabels[value]
+    ?? (value ? String(value).replaceAll("_", " ") : "—");
+
+  const sortStockMovements = (left, right) => {
+    const rightTime = new Date(right.createdAt).getTime();
+    const leftTime = new Date(left.createdAt).getTime();
+    return (Number.isFinite(rightTime) ? rightTime : 0) - (Number.isFinite(leftTime) ? leftTime : 0);
+  };
+
+  const padDatePart = (value) => String(value).padStart(2, "0");
+
+  function formatDateTime(date) {
+    return `${padDatePart(date.getDate())}/${padDatePart(date.getMonth() + 1)}/${date.getFullYear()} ${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}`;
+  }
+
+  function dateInputValue(date) {
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return `${parsed.getFullYear()}-${padDatePart(parsed.getMonth() + 1)}-${padDatePart(parsed.getDate())}`;
+  }
+
+  function parseDateInputValue(value, endOfDay = false) {
+    const match = String(value ?? "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const parsed = new Date(
+      +match[1],
+      +match[2] - 1,
+      +match[3],
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    );
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function dateBounds(rows, key) {
+    let min = null;
+    let max = null;
+    rows.forEach((row) => {
+      const date = new Date(row?.[key]);
+      if (Number.isNaN(date.getTime())) return;
+      if (!min || date < min) min = date;
+      if (!max || date > max) max = date;
+    });
+    const today = new Date();
+    return { min: min || today, max: max || today };
+  }
+
+  function renderListPagination(nav, page, totalPages, onPage) {
+    if (!nav) return;
+    nav.classList.remove("d-none");
+    const list = document.createElement("ul");
+    list.className = "pagination mb-0";
+    const addItem = (label, targetPage, options = {}) => {
+      const item = document.createElement("li");
+      item.className = `page-item${options.active ? " active" : ""}${options.disabled ? " disabled" : ""}`;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "page-link";
+      button.textContent = label;
+      if (options.ariaLabel) button.setAttribute("aria-label", options.ariaLabel);
+      if (options.active) button.setAttribute("aria-current", "page");
+      if (options.disabled) button.disabled = true;
+      else button.addEventListener("click", () => onPage(targetPage));
+      item.append(button);
+      list.append(item);
+    };
+    const addEllipsis = () => {
+      const item = document.createElement("li");
+      item.className = "page-item disabled";
+      const span = document.createElement("span");
+      span.className = "page-link";
+      span.textContent = "…";
+      item.append(span);
+      list.append(item);
+    };
+
+    addItem("«", page - 1, {
+      disabled: page <= 1,
+      ariaLabel: "Page précédente",
+    });
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) pages.push(pageNumber);
+    } else {
+      pages.push(1);
+      const start = Math.max(2, page - 2);
+      const end = Math.min(totalPages - 1, page + 2);
+      if (start > 2) pages.push("...");
+      for (let pageNumber = start; pageNumber <= end; pageNumber += 1) pages.push(pageNumber);
+      if (end < totalPages - 1) pages.push("...");
+      pages.push(totalPages);
+    }
+    pages.forEach((pageNumber) => {
+      if (pageNumber === "...") addEllipsis();
+      else addItem(String(pageNumber), pageNumber, { active: pageNumber === page });
+    });
+    addItem("»", page + 1, {
+      disabled: page >= totalPages,
+      ariaLabel: "Page suivante",
+    });
+    nav.replaceChildren(list);
+  }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadCsv(filename, header, rows) {
+    const escape = (value) => {
+      const text = String(value ?? "");
+      return /[";\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    };
+    const content = `\uFEFF${[header, ...rows].map((row) => row.map(escape).join(";")).join("\r\n")}`;
+    triggerDownload(new Blob([content], { type: "text/csv;charset=utf-8;" }), filename);
+  }
+
+  async function downloadExcel(filename, header, rows) {
+    const XLSX = await loadXlsx();
+    const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    worksheet["!cols"] = header.map((_, index) => ({ wch: index === 2 ? 36 : index === 4 ? 20 : 18 }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Données");
+    XLSX.writeFile(workbook, filename);
+  }
+
+  function stockMovementExportRow(row) {
+    const date = new Date(row.createdAt);
+    return [
+      Number.isNaN(date.getTime()) ? "" : formatDateTime(date),
+      stockMovementTypeLabel(row.type),
+      row.idProduitLabel ?? row.idProduit ?? "",
+      Number(row.quantite ?? 0),
+      row.reference ?? "",
+      row.motif ?? "",
+    ];
+  }
+
+  async function exportStockMovements(rows, format, start, end) {
+    const header = ["Date", "Type", "Produit", "Quantité", "Référence", "Motif"];
+    const data = rows.map(stockMovementExportRow);
+    const filename = `mouvements_${dateInputValue(start)}_${dateInputValue(end)}`;
+    if (format === "csv") {
+      downloadCsv(`${filename}.csv`, header, data);
+      return;
+    }
+    await downloadExcel(`${filename}.xlsx`, header, data);
+  }
+
+  function productExportRow(row) {
+    return [
+      row.designation ?? "",
+      row.idCategorieLabel ?? row.idCategorie ?? "",
+      Number(row.prixVente ?? 0),
+      Number(row.stock ?? 0),
+      Number(row.seuilMinimum ?? 0),
+      row.stockState ?? "",
+    ];
+  }
+
+  async function exportProducts(rows, format) {
+    const header = ["Désignation", "Catégorie", "Prix de vente", "Stock", "Seuil", "État"];
+    const data = rows.map(productExportRow);
+    const filename = `produits_${dateInputValue(new Date())}`;
+    if (format === "csv") {
+      downloadCsv(`${filename}.csv`, header, data);
+      return;
+    }
+    await downloadExcel(`${filename}.xlsx`, header, data);
+  }
+
+  function saleExportRow(row) {
+    return [
+      row.reference ?? "",
+      date(row.dateVente),
+      row.idClientLabel ?? row.idClient ?? "",
+      Number(row.articleCount ?? 0),
+      Number(row.montantTotal ?? 0),
+      normalize(row, "modePaiement", "paymentMethod"),
+      normalize(row, "statut", "saleStatus"),
+      row.invoiceReference ?? "",
+    ];
+  }
+
+  async function exportSales(rows, format, start, end) {
+    const header = ["N° vente", "Date", "Client", "Articles", "Total", "Paiement", "Statut", "Facture"];
+    const data = rows.map(saleExportRow);
+    const filename = `ventes_${dateInputValue(start)}_${dateInputValue(end)}`;
+    if (format === "csv") {
+      downloadCsv(`${filename}.csv`, header, data);
+      return;
+    }
+    await downloadExcel(`${filename}.xlsx`, header, data);
+  }
+
   function setupStockMovements(movements, config) {
     const main = document.querySelector("main");
     const table = mainTable(0);
-    const search = main?.querySelector('input[placeholder*="Rechercher"]');
-    const typeSelect = main?.querySelector("select.form-select");
+    if (!main || !table) return;
+    const search = main.querySelector("#mouvements-search") ?? main.querySelector('input[placeholder*="Rechercher"]');
+    const typeSelect = main.querySelector("#mouvements-type-filter") ?? main.querySelector("select.form-select");
+    const pageSizeSelect = main.querySelector("#mouvements-page-size");
+    const count = main.querySelector("#mouvements-count")
+      ?? main.querySelector(".row.gx-3.align-items-center.mt-3 .small.text-secondary");
+    const paginationNav = main.querySelector("#mouvements-pagination")
+      ?? main.querySelector(".pagination")?.closest("nav");
+    const exportModal = document.getElementById("exportMouvements");
+    const exportForm = document.getElementById("export-mouvements-form");
+    const exportStart = document.getElementById("export-mouvements-debut");
+    const exportEnd = document.getElementById("export-mouvements-fin");
+    const exportFormat = document.getElementById("export-mouvements-format");
+    const exportError = document.getElementById("export-mouvements-error");
+    const exportSummary = document.getElementById("export-mouvements-summary");
+    const exportSubmit = exportForm?.querySelector('button[type="submit"]');
     const columns = config.tables[0].columns;
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-    const currentMonth = movements.filter((movement) => {
-      const created = new Date(movement.createdAt);
-      return !Number.isNaN(created.getTime()) && created >= monthStart;
-    });
-    const totalEntries = currentMonth.reduce((sum, movement) => sum + Math.max(0, Number(movement.quantite || 0)), 0);
-    const totalExits = currentMonth.reduce((sum, movement) => sum + Math.max(0, -Number(movement.quantite || 0)), 0);
-    const totalLosses = currentMonth
-      .filter((movement) => ["perte", "casse", "vol"].includes(movement.type))
-      .reduce((sum, movement) => sum + Math.abs(Number(movement.quantite || 0)), 0);
-    const indicators = main?.querySelectorAll(".row.g-3.mb-4 .card-body h3");
-    if (indicators?.length >= 4) {
-      indicators[0].textContent = currentMonth.length.toLocaleString("fr-FR");
-      indicators[1].textContent = `+${totalEntries.toLocaleString("fr-FR")}`;
-      indicators[2].textContent = `−${totalExits.toLocaleString("fr-FR")}`;
-      indicators[3].textContent = `−${totalLosses.toLocaleString("fr-FR")}`;
+
+    const state = main._gescoStockState ?? {
+      page: 1,
+      pageSize: 10,
+      search: "",
+      type: "",
+      uiBound: false,
+    };
+    state.config = config;
+    state.movements = movements.slice().sort(sortStockMovements);
+    main._gescoStockState = state;
+
+    if (search) state.search = search.value;
+    if (pageSizeSelect) {
+      const optionValues = Array.from(pageSizeSelect.options).map((option) => Number(option.value));
+      if (!optionValues.includes(state.pageSize)) state.pageSize = Number(pageSizeSelect.value) || 10;
+      pageSizeSelect.value = String(state.pageSize);
     }
 
-    if (typeSelect) {
+    const refreshStats = () => {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const currentMonth = state.movements.filter((movement) => {
+        const created = new Date(movement.createdAt);
+        return !Number.isNaN(created.getTime()) && created >= monthStart;
+      });
+      const totalEntries = currentMonth.reduce((sum, movement) => sum + Math.max(0, Number(movement.quantite || 0)), 0);
+      const totalExits = currentMonth.reduce((sum, movement) => sum + Math.max(0, -Number(movement.quantite || 0)), 0);
+      const totalLosses = currentMonth
+        .filter((movement) => ["perte", "casse", "vol"].includes(movement.type))
+        .reduce((sum, movement) => sum + Math.abs(Number(movement.quantite || 0)), 0);
+      const indicators = main.querySelectorAll(".row.g-3.mb-4 .card-body h3");
+      if (indicators?.length >= 4) {
+        indicators[0].textContent = currentMonth.length.toLocaleString("fr-FR");
+        indicators[1].textContent = `+${totalEntries.toLocaleString("fr-FR")}`;
+        indicators[2].textContent = `−${totalExits.toLocaleString("fr-FR")}`;
+        indicators[3].textContent = `−${totalLosses.toLocaleString("fr-FR")}`;
+      }
+    };
+
+    const refreshTypeOptions = () => {
+      if (!typeSelect) return;
+      const previous = state.type || typeSelect.value || "";
       const labels = new Map();
-      movements.forEach((movement) => {
-        const label = normalize(movement, "type", "movementType");
-        labels.set(movement.type, label);
+      state.movements.forEach((movement) => {
+        if (movement.type) labels.set(movement.type, stockMovementTypeLabel(movement.type));
       });
       typeSelect.replaceChildren(new Option("Tous les types", ""));
       [...labels].sort((left, right) => left[1].localeCompare(right[1], "fr"))
         .forEach(([value, label]) => typeSelect.append(new Option(label, value)));
-    }
+      typeSelect.value = labels.has(previous) ? previous : "";
+      state.type = typeSelect.value;
+    };
 
-    const render = () => {
-      const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
-      const filtered = movements.filter((movement) => {
+    const getFilteredMovements = () => {
+      const query = String(state.search ?? "").trim().toLocaleLowerCase("fr");
+      return state.movements.filter((movement) => {
         const searchable = [
           movement.idProduitLabel,
-          normalize(movement, "type", "movementType"),
+          movement.idProduit,
+          stockMovementTypeLabel(movement.type),
           movement.reference,
           movement.motif,
-        ].join(" ").toLocaleLowerCase("fr");
+          movement.utilisateur,
+        ].map((value) => String(value ?? "")).join(" ").toLocaleLowerCase("fr");
         return (!query || searchable.includes(query))
-          && (!typeSelect?.value || movement.type === typeSelect.value);
+          && (!state.type || movement.type === state.type);
       });
-      renderTable(table, filtered, columns, config);
-      const count = main?.querySelector(".row.gx-3.align-items-center.mt-3 .small.text-secondary");
-      if (count) {
-        count.textContent = `Affichage de ${filtered.length} mouvement${filtered.length === 1 ? "" : "s"} sur ${movements.length}`;
-      }
     };
-    search?.addEventListener("input", render);
-    typeSelect?.addEventListener("change", render);
-    main?.querySelector(".pagination")?.closest("nav")?.classList.add("d-none");
-    render();
+
+    state.render = () => {
+      const filtered = getFilteredMovements();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+      if (state.page > totalPages) state.page = totalPages;
+      if (state.page < 1) state.page = 1;
+      const startIndex = (state.page - 1) * state.pageSize;
+      const pageRows = filtered.slice(startIndex, startIndex + state.pageSize);
+      renderTable(table, pageRows, columns, state.config);
+      const headerCount = table.tHead?.rows[0]?.cells.length ?? 0;
+      Array.from(table.tBodies[0]?.rows ?? []).forEach((row) => {
+        while (headerCount && row.cells.length > headerCount) row.lastElementChild?.remove();
+      });
+      if (count) {
+        const endIndex = Math.min(filtered.length, startIndex + pageRows.length);
+        count.textContent = filtered.length === 0
+          ? "Aucun mouvement à afficher"
+          : `Affichage de ${startIndex + 1} à ${endIndex} sur ${filtered.length} mouvement${filtered.length === 1 ? "" : "s"}`;
+      }
+      renderListPagination(paginationNav, state.page, totalPages, (targetPage) => {
+        state.page = targetPage;
+        state.render();
+      });
+    };
+
+    const showExportError = (message) => {
+      if (!exportError) return;
+      exportError.textContent = message;
+      exportError.classList.remove("d-none");
+    };
+
+    const updateExportSummary = () => {
+      if (!exportSummary) return;
+      const start = parseDateInputValue(exportStart?.value);
+      const end = parseDateInputValue(exportEnd?.value, true);
+      if (!start || !end || start > end) {
+        exportSummary.textContent = "";
+        return;
+      }
+      const total = getFilteredMovements().filter((movement) => {
+        const date = new Date(movement.createdAt);
+        return !Number.isNaN(date.getTime()) && date >= start && date <= end;
+      }).length;
+      exportSummary.textContent = `${total} mouvement${total === 1 ? "" : "s"} dans la période sélectionnée.`;
+    };
+
+    state.prepareExport = () => {
+      const bounds = dateBounds(state.movements, "createdAt");
+      if (exportStart && !exportStart.value) exportStart.value = dateInputValue(bounds.min);
+      if (exportEnd && !exportEnd.value) exportEnd.value = dateInputValue(bounds.max);
+      exportError?.classList.add("d-none");
+      updateExportSummary();
+    };
+
+    if (!state.uiBound) {
+      search?.addEventListener("input", () => {
+        state.search = search.value;
+        state.page = 1;
+        state.render();
+      });
+      typeSelect?.addEventListener("change", () => {
+        state.type = typeSelect.value;
+        state.page = 1;
+        state.render();
+      });
+      pageSizeSelect?.addEventListener("change", () => {
+        state.pageSize = Number(pageSizeSelect.value) || 10;
+        state.page = 1;
+        state.render();
+      });
+      [exportStart, exportEnd].forEach((input) => input?.addEventListener("change", updateExportSummary));
+      exportModal?.addEventListener("show.bs.modal", () => state.prepareExport());
+      exportForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        exportError?.classList.add("d-none");
+        const start = parseDateInputValue(exportStart?.value);
+        const end = parseDateInputValue(exportEnd?.value, true);
+        if (!start || !end) {
+          showExportError("Veuillez renseigner la date de début et la date de fin.");
+          return;
+        }
+        if (start > end) {
+          showExportError("La date de début doit précéder la date de fin.");
+          return;
+        }
+        const rows = getFilteredMovements().filter((movement) => {
+          const date = new Date(movement.createdAt);
+          return !Number.isNaN(date.getTime()) && date >= start && date <= end;
+        }).sort(sortStockMovements);
+        if (!rows.length) {
+          showExportError("Aucun mouvement n'est disponible sur cette période.");
+          return;
+        }
+        const originalLabel = exportSubmit?.innerHTML;
+        if (exportSubmit) {
+          exportSubmit.disabled = true;
+          exportSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Exportation...';
+        }
+        try {
+          await exportStockMovements(rows, exportFormat?.value || "xlsx", start, end);
+          window.bootstrap?.Modal?.getOrCreateInstance(exportModal)?.hide();
+        } catch (error) {
+          console.error("Export des mouvements :", error);
+          showExportError(error.message || "Impossible d'exporter les mouvements.");
+        } finally {
+          if (exportSubmit) {
+            exportSubmit.disabled = false;
+            exportSubmit.innerHTML = originalLabel;
+          }
+        }
+      });
+      state.uiBound = true;
+    }
+
+    refreshStats();
+    refreshTypeOptions();
+    if (search) search.value = state.search;
+    if (typeSelect) typeSelect.value = state.type;
+    state.render();
   }
 
   function setupInvoices(invoices, config) {
@@ -2071,11 +2462,34 @@
 
   async function setupProductCatalogue(products, config) {
     const main = document.querySelector("main");
-    const search = main?.querySelector('input[type="search"], input[placeholder*="Rechercher"]');
-    const selects = main ? Array.from(main.querySelectorAll("select.form-select")) : [];
-    const [categorySelect, stateSelect] = selects;
     const table = mainTable(0);
-    const render = (filtered) => renderTable(table, filtered, config.tables[0].columns, config);
+    if (!main || !table) return;
+    const search = main.querySelector("#products-search") ?? main.querySelector('input[type="search"], input[placeholder*="Rechercher"]');
+    const selects = Array.from(main.querySelectorAll("select.form-select"));
+    const categorySelect = main.querySelector("#products-category-filter") ?? selects[0];
+    const stateSelect = main.querySelector("#products-state-filter") ?? selects[1];
+    const pageSizeSelect = main.querySelector("#products-page-size");
+    const paginationNav = main.querySelector("#products-pagination") ?? main.querySelector(".pagination")?.closest("nav");
+    const headerCount = main.querySelector("#products-result-count");
+    const footerCount = main.querySelector("#products-count-footer");
+    const exportModal = document.getElementById("exportProduits");
+    const exportForm = document.getElementById("export-produits-form");
+    const exportFormat = document.getElementById("export-produits-format");
+    const exportError = document.getElementById("export-produits-error");
+    const exportSummary = document.getElementById("export-produits-summary");
+    const exportSubmit = exportForm?.querySelector('button[type="submit"]');
+    const columns = config.tables[0].columns;
+
+    const state = table._gescoProductsState ?? { page: 1, pageSize: 10, uiBound: false };
+    state.products = products;
+    state.config = config;
+    table._gescoProductsState = state;
+
+    if (pageSizeSelect) {
+      const optionValues = Array.from(pageSizeSelect.options).map((option) => Number(option.value));
+      if (!optionValues.includes(state.pageSize)) state.pageSize = Number(pageSizeSelect.value) || 10;
+      pageSizeSelect.value = String(state.pageSize);
+    }
 
     if (categorySelect) {
       const categories = await loadReferenceMap("idCategorie");
@@ -2091,42 +2505,114 @@
       );
     }
 
-    const update = () => {
+    const getFilteredProducts = () => {
       const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
-      const filtered = products.filter((item) => {
+      return state.products.filter((item) => {
         const matchesQuery = !query || `${item.designation ?? ""}`
           .toLocaleLowerCase("fr").includes(query);
         const matchesCategory = !categorySelect?.value || String(item.idCategorie) === categorySelect.value;
         const matchesState = !stateSelect?.value || item.stockState === stateSelect.value;
         return matchesQuery && matchesCategory && matchesState;
       });
-      render(filtered);
-      const count = main?.querySelector(".row.gx-3.align-items-center.mb-3 .small.text-secondary");
-      if (count) {
-        count.textContent = `${filtered.length} référence${filtered.length === 1 ? "" : "s"} affichée${filtered.length === 1 ? "" : "s"} sur ${products.length}`;
-      }
-      const footerCount = main?.querySelector(".row.gx-3.align-items-center.mt-3 .small.text-secondary");
-      if (footerCount) {
-        footerCount.textContent = `Affichage de ${filtered.length} résultat${filtered.length === 1 ? "" : "s"} sur ${products.length} référence${products.length === 1 ? "" : "s"}`;
-      }
     };
-    search?.addEventListener("input", update);
-    categorySelect?.addEventListener("change", update);
-    stateSelect?.addEventListener("change", update);
 
-    const values = main?.querySelectorAll(".row.g-3.mb-4 .card-body h3");
+    const render = () => {
+      const filtered = getFilteredProducts();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+      if (state.page > totalPages) state.page = totalPages;
+      if (state.page < 1) state.page = 1;
+      const startIndex = (state.page - 1) * state.pageSize;
+      const pageRows = filtered.slice(startIndex, startIndex + state.pageSize);
+      renderTable(table, pageRows, columns, config);
+      const endIndex = Math.min(filtered.length, startIndex + pageRows.length);
+      if (headerCount) {
+        headerCount.textContent = `${filtered.length} référence${filtered.length === 1 ? "" : "s"} affichée${filtered.length === 1 ? "" : "s"} sur ${state.products.length}`;
+      }
+      if (footerCount) {
+        footerCount.textContent = filtered.length === 0
+          ? "Aucun produit à afficher"
+          : `Affichage de ${startIndex + 1} à ${endIndex} sur ${filtered.length} référence${filtered.length === 1 ? "" : "s"}`;
+      }
+      renderListPagination(paginationNav, state.page, totalPages, (targetPage) => {
+        state.page = targetPage;
+        render();
+      });
+    };
+
+    const updateExportSummary = () => {
+      if (!exportSummary) return;
+      const total = getFilteredProducts().length;
+      exportSummary.textContent = `${total} produit${total === 1 ? "" : "s"} sera${total === 1 ? "" : "ont"} exporté${total === 1 ? "" : "s"}.`;
+    };
+
+    if (!state.uiBound) {
+      search?.addEventListener("input", () => {
+        state.page = 1;
+        render();
+      });
+      categorySelect?.addEventListener("change", () => {
+        state.page = 1;
+        render();
+      });
+      stateSelect?.addEventListener("change", () => {
+        state.page = 1;
+        render();
+      });
+      pageSizeSelect?.addEventListener("change", () => {
+        state.pageSize = Number(pageSizeSelect.value) || 10;
+        state.page = 1;
+        render();
+      });
+      exportModal?.addEventListener("show.bs.modal", () => {
+        exportError?.classList.add("d-none");
+        updateExportSummary();
+      });
+      exportForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        exportError?.classList.add("d-none");
+        const rows = getFilteredProducts();
+        if (!rows.length) {
+          if (exportError) {
+            exportError.textContent = "Aucun produit ne correspond aux filtres actuels.";
+            exportError.classList.remove("d-none");
+          }
+          return;
+        }
+        const originalLabel = exportSubmit?.innerHTML;
+        if (exportSubmit) {
+          exportSubmit.disabled = true;
+          exportSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Exportation...';
+        }
+        try {
+          await exportProducts(rows, exportFormat?.value || "xlsx");
+          window.bootstrap?.Modal?.getOrCreateInstance(exportModal)?.hide();
+        } catch (error) {
+          console.error("Export des produits :", error);
+          if (exportError) {
+            exportError.textContent = error.message || "Impossible d'exporter les produits.";
+            exportError.classList.remove("d-none");
+          }
+        } finally {
+          if (exportSubmit) {
+            exportSubmit.disabled = false;
+            exportSubmit.innerHTML = originalLabel;
+          }
+        }
+      });
+      state.uiBound = true;
+    }
+
+    const values = main.querySelectorAll(".row.g-3.mb-4 .card-body h3");
     if (values?.length >= 4) {
-      const stockValue = products.reduce((total, item) => total + Number(item.prixVente || 0) * Number(item.stock || 0), 0);
-      const lowStock = products.filter((item) => Number(item.stock || 0) > 0 && Number(item.stock || 0) <= Number(item.seuilMinimum || 0)).length;
-      const outOfStock = products.filter((item) => Number(item.stock || 0) <= 0).length;
-      values[0].textContent = products.length.toLocaleString("fr-FR");
+      const stockValue = state.products.reduce((total, item) => total + Number(item.prixVente || 0) * Number(item.stock || 0), 0);
+      const lowStock = state.products.filter((item) => Number(item.stock || 0) > 0 && Number(item.stock || 0) <= Number(item.seuilMinimum || 0)).length;
+      const outOfStock = state.products.filter((item) => Number(item.stock || 0) <= 0).length;
+      values[0].textContent = state.products.length.toLocaleString("fr-FR");
       values[1].textContent = `${new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 2 }).format(stockValue)} FCFA`;
       values[2].textContent = String(lowStock);
       values[3].textContent = String(outOfStock);
     }
-    const pagination = main?.querySelector(".pagination")?.closest("nav");
-    if (pagination) pagination.classList.add("d-none");
-    update();
+    render();
   }
 
   async function loadClientDetail() {
@@ -2260,16 +2746,37 @@
     const main = document.querySelector("main");
     const table = mainTable(0);
     if (!main || !table) return;
-    const state = table._gescoSalesState ?? { sales: [], config, attached: false };
-    state.sales = sales;
-    state.config = config;
-    table._gescoSalesState = state;
     const search = document.getElementById("sales-search");
     const statusFilter = document.getElementById("sales-status-filter");
     const paymentFilter = document.getElementById("sales-payment-filter");
+    const pageSizeSelect = document.getElementById("sales-page-size");
+    const paginationNav = document.getElementById("sales-pagination")
+      ?? main.querySelector(".pagination")?.closest("nav");
+    const headerCount = document.getElementById("sales-result-count");
+    const footerCount = document.getElementById("sales-result-count-footer");
+    const exportModal = document.getElementById("exportVentes");
+    const exportForm = document.getElementById("export-ventes-form");
+    const exportStart = document.getElementById("export-ventes-debut");
+    const exportEnd = document.getElementById("export-ventes-fin");
+    const exportFormat = document.getElementById("export-ventes-format");
+    const exportError = document.getElementById("export-ventes-error");
+    const exportSummary = document.getElementById("export-ventes-summary");
+    const exportSubmit = exportForm?.querySelector('button[type="submit"]');
+    const columns = config.tables[0].columns;
+
+    const state = table._gescoSalesState ?? { sales: [], page: 1, pageSize: 10, attached: false };
+    state.sales = sales;
+    state.config = config;
+    table._gescoSalesState = state;
+
+    if (pageSizeSelect) {
+      const optionValues = Array.from(pageSizeSelect.options).map((option) => Number(option.value));
+      if (!optionValues.includes(state.pageSize)) state.pageSize = Number(pageSizeSelect.value) || 10;
+      pageSizeSelect.value = String(state.pageSize);
+    }
 
     const todayKey = new Date().toLocaleDateString("fr-CA");
-    const todaySales = sales.filter((sale) => new Date(sale.dateVente).toLocaleDateString("fr-CA") === todayKey);
+    const todaySales = state.sales.filter((sale) => new Date(sale.dateVente).toLocaleDateString("fr-CA") === todayKey);
     const completedToday = todaySales.filter((sale) => sale.statut !== "annulee");
     const indicators = main.querySelectorAll(".row.g-3.mb-4 .card-body h3");
     if (indicators.length >= 4) {
@@ -2278,31 +2785,136 @@
       indicators[1].textContent = money(revenue);
       const todaySalesTotal = completedToday.reduce((sum, sale) => sum + Number(sale.montantTotal || 0), 0);
       indicators[2].textContent = money(completedToday.length ? todaySalesTotal / completedToday.length : 0);
-      indicators[3].textContent = String(sales.filter((sale) => sale.statut === "annulee").length);
+      indicators[3].textContent = String(state.sales.filter((sale) => sale.statut === "annulee").length);
     }
 
-    const render = () => {
+    const getFilteredSales = () => {
       const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
-      const filtered = state.sales.filter((sale) => {
+      return state.sales.filter((sale) => {
         const searchable = `${sale.reference} ${sale.idClientLabel} ${sale.invoiceReference ?? ""}`.toLocaleLowerCase("fr");
         return (!query || searchable.includes(query))
           && (!statusFilter?.value || sale.statut === statusFilter.value)
           && (!paymentFilter?.value || sale.modePaiement === paymentFilter.value);
       });
-      renderTable(table, filtered, state.config.tables[0].columns, state.config);
-      const count = main.querySelector("#sales-result-count");
-      const countText = `${filtered.length} vente${filtered.length === 1 ? "" : "s"} affichée${filtered.length === 1 ? "" : "s"} sur ${state.sales.length}`;
-      if (count) count.textContent = countText;
-      const footerCount = main.querySelector("#sales-result-count-footer");
-      if (footerCount) footerCount.textContent = countText;
     };
+
+    const render = () => {
+      const filtered = getFilteredSales();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+      if (state.page > totalPages) state.page = totalPages;
+      if (state.page < 1) state.page = 1;
+      const startIndex = (state.page - 1) * state.pageSize;
+      const pageRows = filtered.slice(startIndex, startIndex + state.pageSize);
+      renderTable(table, pageRows, columns, state.config);
+      const endIndex = Math.min(filtered.length, startIndex + pageRows.length);
+      const countText = filtered.length === 0
+        ? "Aucune vente à afficher"
+        : `Affichage de ${startIndex + 1} à ${endIndex} sur ${filtered.length} vente${filtered.length === 1 ? "" : "s"}`;
+      if (headerCount) headerCount.textContent = `${filtered.length} vente${filtered.length === 1 ? "" : "s"} affichée${filtered.length === 1 ? "" : "s"} sur ${state.sales.length}`;
+      if (footerCount) footerCount.textContent = countText;
+      renderListPagination(paginationNav, state.page, totalPages, (targetPage) => {
+        state.page = targetPage;
+        render();
+      });
+    };
+
+    const showExportError = (message) => {
+      if (!exportError) return;
+      exportError.textContent = message;
+      exportError.classList.remove("d-none");
+    };
+
+    const getExportRows = () => {
+      const start = parseDateInputValue(exportStart?.value);
+      const end = parseDateInputValue(exportEnd?.value, true);
+      if (!start || !end || start > end) return null;
+      return getFilteredSales().filter((sale) => {
+        const date = new Date(sale.dateVente);
+        return !Number.isNaN(date.getTime()) && date >= start && date <= end;
+      });
+    };
+
+    const updateExportSummary = () => {
+      if (!exportSummary) return;
+      const start = parseDateInputValue(exportStart?.value);
+      const end = parseDateInputValue(exportEnd?.value, true);
+      if (!start || !end || start > end) {
+        exportSummary.textContent = "";
+        return;
+      }
+      const total = getFilteredSales().filter((sale) => {
+        const date = new Date(sale.dateVente);
+        return !Number.isNaN(date.getTime()) && date >= start && date <= end;
+      }).length;
+      exportSummary.textContent = `${total} vente${total === 1 ? "" : "s"} dans la période sélectionnée.`;
+    };
+
+    state.prepareExport = () => {
+      const bounds = dateBounds(state.sales, "dateVente");
+      if (exportStart && !exportStart.value) exportStart.value = dateInputValue(bounds.min);
+      if (exportEnd && !exportEnd.value) exportEnd.value = dateInputValue(bounds.max);
+      exportError?.classList.add("d-none");
+      updateExportSummary();
+    };
+
     if (!state.attached) {
-      search?.addEventListener("input", render);
-      statusFilter?.addEventListener("change", render);
-      paymentFilter?.addEventListener("change", render);
+      search?.addEventListener("input", () => {
+        state.page = 1;
+        render();
+      });
+      statusFilter?.addEventListener("change", () => {
+        state.page = 1;
+        render();
+      });
+      paymentFilter?.addEventListener("change", () => {
+        state.page = 1;
+        render();
+      });
+      pageSizeSelect?.addEventListener("change", () => {
+        state.pageSize = Number(pageSizeSelect.value) || 10;
+        state.page = 1;
+        render();
+      });
+      [exportStart, exportEnd].forEach((input) => input?.addEventListener("change", updateExportSummary));
+      exportModal?.addEventListener("show.bs.modal", () => state.prepareExport());
+      exportForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        exportError?.classList.add("d-none");
+        const start = parseDateInputValue(exportStart?.value);
+        const end = parseDateInputValue(exportEnd?.value, true);
+        if (!start || !end) {
+          showExportError("Veuillez renseigner la date de début et la date de fin.");
+          return;
+        }
+        if (start > end) {
+          showExportError("La date de début doit précéder la date de fin.");
+          return;
+        }
+        const rows = getExportRows();
+        if (!rows?.length) {
+          showExportError("Aucune vente n'est disponible sur cette période.");
+          return;
+        }
+        const originalLabel = exportSubmit?.innerHTML;
+        if (exportSubmit) {
+          exportSubmit.disabled = true;
+          exportSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Exportation...';
+        }
+        try {
+          await exportSales(rows, exportFormat?.value || "xlsx", start, end);
+          window.bootstrap?.Modal?.getOrCreateInstance(exportModal)?.hide();
+        } catch (error) {
+          console.error("Export des ventes :", error);
+          showExportError(error.message || "Impossible d'exporter les ventes.");
+        } finally {
+          if (exportSubmit) {
+            exportSubmit.disabled = false;
+            exportSubmit.innerHTML = originalLabel;
+          }
+        }
+      });
       state.attached = true;
     }
-    main.querySelector(".pagination")?.closest("nav")?.classList.add("d-none");
     render();
   }
 
