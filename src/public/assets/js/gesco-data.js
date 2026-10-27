@@ -369,6 +369,49 @@
     return tables[index] ?? null;
   }
 
+  const TABLE_LOADER_MIN_VISIBLE_MS = 450;
+
+  function showTableLoader(table) {
+    const body = table?.tBodies?.[0];
+    if (!body) return;
+    table.dataset.gescoTableLoaderStarted = String(Date.now());
+    const columnCount = table.tHead?.rows?.[0]?.cells.length || 1;
+    const row = document.createElement("tr");
+    row.className = "gesco-table-loading";
+    const cell = document.createElement("td");
+    cell.colSpan = columnCount;
+    cell.className = "text-center py-4";
+    const content = document.createElement("div");
+    content.className = "d-inline-flex align-items-center gap-2 text-secondary";
+    content.setAttribute("role", "status");
+    const spinner = document.createElement("span");
+    spinner.className = "spinner-border spinner-border-sm";
+    spinner.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.textContent = "Chargement des données…";
+    content.append(spinner, label);
+    cell.append(content);
+    row.append(cell);
+    body.replaceChildren(row);
+    table.setAttribute("aria-busy", "true");
+  }
+
+  function waitForMinimumLoaderDuration(table) {
+    const startedAt = Number(table?.dataset.gescoTableLoaderStarted);
+    if (!startedAt) return Promise.resolve();
+    const remaining = TABLE_LOADER_MIN_VISIBLE_MS - (Date.now() - startedAt);
+    if (remaining <= 0) return Promise.resolve();
+    return new Promise((resolve) => setTimeout(resolve, remaining));
+  }
+
+  function clearTableLoader(table) {
+    table?.removeAttribute("aria-busy");
+    if (table?.dataset) delete table.dataset.gescoTableLoaderStarted;
+    const body = table?.tBodies?.[0];
+    if (!body) return;
+    body.querySelectorAll("tr.gesco-table-loading").forEach((row) => row.remove());
+  }
+
   function createButton(key, target) {
     const main = document.querySelector("main");
     if (!main) return;
@@ -1691,20 +1734,27 @@
   }
 
   async function loadPage(config) {
+    const tables = config.tables.map((_, index) => mainTable(index));
+    tables.forEach(showTableLoader);
     for (let index = 0; index < config.tables.length; index += 1) {
-      const table = mainTable(index);
+      const table = tables[index];
       const columns = config.tables[index].columns;
-      const rows = await resolveReferences(list(await config.tables[index].load()), columns);
-      renderTable(table, rows, columns, config);
-      if (page === "gesco-administration.html" && index === 0) setupUserManagement(rows);
-      if (page === "gesco-approvisionnement-commandes.html" && index === 0) setupOrderHistory(rows, config);
-      if (page === "gesco-approvisionnement-receptions.html" && index === 0) setupReceptions(rows, config);
-      if (page === "gesco-stock-produits.html" && index === 0) await setupProductCatalogue(rows, config);
-      if (page === "gesco-stock-mouvements.html" && index === 0) setupStockMovements(rows, config);
-      if (page === "gesco-stock-inventaires.html" && index === 0) setupInventories(rows, config);
-      if (page === "gesco-ventes.html" && index === 0) setupSalesHistory(rows, config);
-      if (page === "gesco-ventes-retours.html" && index === 0) await setupReturns(rows, config);
-      if (page === "gesco-facturation.html" && index === 0) setupInvoices(rows, config);
+      try {
+        const rows = await resolveReferences(list(await config.tables[index].load()), columns);
+        await waitForMinimumLoaderDuration(table);
+        renderTable(table, rows, columns, config);
+        if (page === "gesco-administration.html" && index === 0) setupUserManagement(rows);
+        if (page === "gesco-approvisionnement-commandes.html" && index === 0) setupOrderHistory(rows, config);
+        if (page === "gesco-approvisionnement-receptions.html" && index === 0) setupReceptions(rows, config);
+        if (page === "gesco-stock-produits.html" && index === 0) await setupProductCatalogue(rows, config);
+        if (page === "gesco-stock-mouvements.html" && index === 0) setupStockMovements(rows, config);
+        if (page === "gesco-stock-inventaires.html" && index === 0) setupInventories(rows, config);
+        if (page === "gesco-ventes.html" && index === 0) setupSalesHistory(rows, config);
+        if (page === "gesco-ventes-retours.html" && index === 0) await setupReturns(rows, config);
+        if (page === "gesco-facturation.html" && index === 0) setupInvoices(rows, config);
+      } finally {
+        clearTableLoader(table);
+      }
     }
   }
 

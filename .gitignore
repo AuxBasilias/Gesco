@@ -4,7 +4,7 @@ node_modules/
 jspm_packages/
 web_modules/
 perso/
-src/public/assets/img/
+# src/public/assets/img/
 drizzle/
 
 # src/tests/images/*
