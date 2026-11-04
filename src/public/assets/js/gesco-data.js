@@ -202,6 +202,7 @@
     "gesco-stock-produits.html": {
       tables: [{ load: api.getProduits, columns: [["Désignation", "designation"], ["Catégorie", "idCategorie"], ["Prix de vente", "prixVente", "money"], ["Stock", "stock"], ["Seuil", "seuilMinimum"], ["État", "stockState", "status"]] }],
       create: "produit",
+      selectable: true,
     },
     "gesco-dashboard.html": {
       tables: [{
@@ -1467,15 +1468,31 @@
     const body = table.tBodies[0];
     if (!body) return;
     const headers = Array.from(table.tHead?.rows[0]?.cells ?? []);
+    const hasSelection = Boolean(target.selectable);
+    const columnOffset = hasSelection ? 1 : 0;
     const hasActions = headers.length > 0
       && headers[headers.length - 1].textContent.toLocaleLowerCase("fr").includes("action");
-    const dataColumnCount = hasActions ? headers.length - 1 : Math.max(headers.length, columns.length);
+    const dataColumnCount = (hasActions ? headers.length - 1 : Math.max(headers.length, columns.length)) - columnOffset;
     body.replaceChildren();
     rows.forEach((row) => {
       const tr = document.createElement("tr");
+      if (hasSelection) {
+        const selectCell = document.createElement("td");
+        selectCell.className = "text-center";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "form-check-input";
+        checkbox.value = String(row.id ?? "");
+        checkbox.checked = target.selection?.isSelected?.(row) ?? false;
+        checkbox.disabled = target.selection?.isDisabled?.(row) ?? false;
+        checkbox.setAttribute("aria-label", `Sélectionner ${row.designation ?? row.reference ?? row.id ?? "la ligne"}`);
+        checkbox.addEventListener("change", () => target.selection?.onChange?.(row, checkbox.checked));
+        selectCell.append(checkbox);
+        tr.append(selectCell);
+      }
       columns.slice(0, dataColumnCount).forEach(([, key, formatter], index) => {
         const td = document.createElement("td");
-        const header = headers[index];
+        const header = headers[index + columnOffset];
         if (header?.className) td.className = header.className;
         if (formatter === "inventoryProgress") {
           const counted = Number(row.articlesComptes || 0);
@@ -1560,7 +1577,7 @@
         }
         tr.append(td);
       });
-      while (tr.cells.length < dataColumnCount) tr.append(document.createElement("td"));
+      while (tr.cells.length < dataColumnCount + columnOffset) tr.append(document.createElement("td"));
       const actions = document.createElement("td");
       actions.className = "text-end text-nowrap";
       const openPath = target.detail;
@@ -1956,16 +1973,16 @@
   function productExportRow(row) {
     return [
       row.designation ?? "",
+      row.description ?? "",
       row.idCategorieLabel ?? row.idCategorie ?? "",
       Number(row.prixVente ?? 0),
       Number(row.stock ?? 0),
       Number(row.seuilMinimum ?? 0),
-      row.stockState ?? "",
     ];
   }
 
   async function exportProducts(rows, format) {
-    const header = ["Désignation", "Catégorie", "Prix de vente", "Stock", "Seuil", "État"];
+    const header = ["Désignation", "Description", "Catégorie", "Prix de vente", "Stock", "Seuil"];
     const data = rows.map(productExportRow);
     const filename = `produits_${dateInputValue(new Date())}`;
     if (format === "csv") {
@@ -1973,6 +1990,189 @@
       return;
     }
     await downloadExcel(`${filename}.xlsx`, header, data);
+  }
+
+  const productImportColumns = {
+    designation: ["designation", "désignation", "nom", "nom du produit", "produit"],
+    idCategorie: ["categorie", "catégorie", "category", "categorie produit"],
+    prixVente: ["prix de vente", "prix vente", "prix", "prix unitaire", "price"],
+    stock: ["stock", "stock initial", "quantite", "quantité", "qte"],
+    seuilMinimum: ["seuil", "seuil minimum", "seuil min", "seuilminimum"],
+    description: ["description", "details", "détails"],
+  };
+
+  const normalizeImportLabel = (value) => String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("fr")
+    .replace(/\s+/g, " ");
+
+  const productImportFields = new Map();
+  Object.entries(productImportColumns).forEach(([field, aliases]) => {
+    aliases.forEach((alias) => productImportFields.set(normalizeImportLabel(alias), field));
+  });
+
+  function importCell(row, index) {
+    return index === undefined ? "" : row[index] ?? "";
+  }
+
+  function parseImportNumber(value) {
+    if (typeof value === "number") return Number.isFinite(value) ? value : null;
+    const text = String(value ?? "").trim();
+    if (!text) return null;
+    const cleaned = text.replace(/[^\d,.-]/g, "").replace(",", ".");
+    if (!/\d/.test(cleaned)) return null;
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function parseImportInteger(value, fallback, label) {
+    const parsed = parseImportNumber(value);
+    if (parsed === null) return fallback;
+    if (!Number.isSafeInteger(parsed) || parsed < 0) {
+      throw new Error(`${label} doit être un entier positif ou nul.`);
+    }
+    return parsed;
+  }
+
+  async function readImportRows(file) {
+    const XLSX = await loadXlsx();
+    const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: false });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) throw new Error("Le fichier ne contient aucune feuille.");
+    return XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+      header: 1,
+      raw: true,
+      blankrows: false,
+      defval: "",
+    });
+  }
+
+  function parseProductImportRows(rows) {
+    if (!rows.length) throw new Error("Le fichier est vide.");
+    const columns = {};
+    rows[0].forEach((value, index) => {
+      const field = productImportFields.get(normalizeImportLabel(value));
+      if (field && columns[field] === undefined) columns[field] = index;
+    });
+    const missing = [
+      ["designation", "Désignation"],
+    ].filter(([field]) => columns[field] === undefined).map(([, label]) => label);
+    if (missing.length) {
+      throw new Error(`Colonne${missing.length === 1 ? "" : "s"} obligatoire${missing.length === 1 ? "" : "s"} manquante${missing.length === 1 ? "" : "s"} : ${missing.join(", ")}.`);
+    }
+    const dataRows = rows.slice(1)
+      .map((row, index) => ({ row, line: index + 2 }))
+      .filter(({ row }) => row.some((value) => String(value ?? "").trim() !== ""));
+    if (!dataRows.length) throw new Error("Aucune ligne de produit à importer.");
+    return { columns, dataRows };
+  }
+
+  function resolveImportReference(value, byId, byLabel) {
+    const text = String(value ?? "").trim();
+    if (!text) return null;
+    if (/^\d+$/.test(text)) {
+      const id = Number(text);
+      if (byId.has(String(id))) return id;
+    }
+    return byLabel.get(normalizeImportLabel(text)) ?? null;
+  }
+
+  async function ensureDefaultProductCategory(categoryMap, categoryByLabel) {
+    const label = "Non classé";
+    const existing = categoryByLabel.get(normalizeImportLabel(label));
+    if (existing) return existing;
+    const result = await api.createCategorie({ label });
+    const created = result?.data ?? result;
+    const id = Number(created?.id);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      throw new Error("Impossible de créer la catégorie par défaut « Non classé ».");
+    }
+    categoryMap.set(String(id), label);
+    categoryByLabel.set(normalizeImportLabel(label), id);
+    return id;
+  }
+
+  async function importProducts(file, onProgress) {
+    const { columns, dataRows } = parseProductImportRows(await readImportRows(file));
+    const categoryMap = await loadReferenceMap("idCategorie");
+    const categoryByLabel = new Map([...categoryMap].map(([id, label]) => [normalizeImportLabel(label), Number(id)]));
+    let imported = 0;
+    let processed = 0;
+    const errors = [];
+    const notifyProgress = (payload) => {
+      try {
+        onProgress?.(payload);
+      } catch (error) {
+        console.error("Progression de l'importation :", error);
+      }
+    };
+    notifyProgress({ processed, total: dataRows.length, imported, failed: 0 });
+    for (const { row, line } of dataRows) {
+      try {
+        const designation = String(importCell(row, columns.designation)).trim();
+        if (!designation) throw new Error("La désignation est obligatoire.");
+        const categoryValue = columns.idCategorie === undefined ? "" : importCell(row, columns.idCategorie);
+        let idCategorie = resolveImportReference(categoryValue, categoryMap, categoryByLabel);
+        if (!idCategorie) {
+          if (String(categoryValue ?? "").trim()) {
+            throw new Error(`Catégorie introuvable : ${String(categoryValue).trim()}.`);
+          }
+          idCategorie = await ensureDefaultProductCategory(categoryMap, categoryByLabel);
+        }
+        const rawPrixVente = columns.prixVente === undefined ? "" : importCell(row, columns.prixVente);
+        const prixVente = String(rawPrixVente ?? "").trim() === "" ? 0 : parseImportNumber(rawPrixVente);
+        if (prixVente === null || prixVente < 0) throw new Error("Le prix de vente doit être un montant positif ou nul.");
+        const stockInitial = parseImportInteger(importCell(row, columns.stock), 0, "Le stock");
+        const seuilMinimum = parseImportInteger(importCell(row, columns.seuilMinimum), 0, "Le seuil minimum");
+        const description = columns.description === undefined
+          ? ""
+          : String(importCell(row, columns.description)).trim();
+        await api.createProduit({
+          designation,
+          idCategorie,
+          prixVente,
+          stockInitial,
+          seuilMinimum,
+          ...(description && { description }),
+        });
+        imported += 1;
+      } catch (error) {
+        errors.push({ line, message: error.message || "Ligne invalide." });
+      } finally {
+        processed += 1;
+        notifyProgress({ processed, total: dataRows.length, imported, failed: errors.length });
+      }
+    }
+    return { total: dataRows.length, imported, failed: errors.length, errors };
+  }
+
+  function renderProductImportSummary(result) {
+    const container = document.getElementById("import-produits-summary");
+    if (!container) return;
+    const alert = document.createElement("div");
+    alert.className = `alert ${result.failed ? "alert-warning" : "alert-success"} mb-0`;
+    const parts = [`${result.imported} produit${result.imported === 1 ? "" : "s"} importé${result.imported === 1 ? "" : "s"}`];
+    if (result.failed) parts.push(`${result.failed} ligne${result.failed === 1 ? "" : "s"} ignorée${result.failed === 1 ? "" : "s"}`);
+    alert.textContent = `${parts.join(" · ")} sur ${result.total} ligne${result.total === 1 ? "" : "s"}.`;
+    container.replaceChildren(alert);
+    if (result.errors.length) {
+      const listElement = document.createElement("ul");
+      listElement.className = "small text-danger mt-2 mb-0";
+      result.errors.slice(0, 10).forEach(({ line, message }) => {
+        const item = document.createElement("li");
+        item.textContent = `Ligne ${line} : ${message}`;
+        listElement.append(item);
+      });
+      if (result.errors.length > 10) {
+        const item = document.createElement("li");
+        const remaining = result.errors.length - 10;
+        item.textContent = `… et ${remaining} autre${remaining === 1 ? "" : "s"} erreur${remaining === 1 ? "" : "s"}.`;
+        listElement.append(item);
+      }
+      container.append(listElement);
+    }
   }
 
   function saleExportRow(row) {
@@ -2528,9 +2728,24 @@
     const exportError = document.getElementById("export-produits-error");
     const exportSummary = document.getElementById("export-produits-summary");
     const exportSubmit = exportForm?.querySelector('button[type="submit"]');
+    const importModal = document.getElementById("importProduits");
+    const importForm = document.getElementById("import-produits-form");
+    const importFile = document.getElementById("import-produits-file");
+    const importError = document.getElementById("import-produits-error");
+    const importSummary = document.getElementById("import-produits-summary");
+    const importProgress = document.getElementById("import-produits-progress");
+    const importProgressText = document.getElementById("import-produits-progress-text");
+    const importSubmit = importForm?.querySelector('button[type="submit"]');
+    const selectAll = document.getElementById("products-select-all");
+    const bulkDelete = document.getElementById("products-bulk-delete");
+    const bulkSpinner = document.getElementById("products-bulk-spinner");
+    const bulkIcon = document.getElementById("products-bulk-icon");
+    const bulkLabel = document.getElementById("products-bulk-label");
+    const bulkCount = document.getElementById("products-bulk-count");
     const columns = config.tables[0].columns;
 
-    const state = table._gescoProductsState ?? { page: 1, pageSize: 10, uiBound: false };
+    const state = table._gescoProductsState ?? { page: 1, pageSize: 10, uiBound: false, selectedIds: new Set() };
+    if (!(state.selectedIds instanceof Set)) state.selectedIds = new Set();
     state.products = products;
     state.config = config;
     table._gescoProductsState = state;
@@ -2566,6 +2781,23 @@
       });
     };
 
+    const updateBulkActions = () => {
+      const count = state.selectedIds.size;
+      bulkDelete?.classList.toggle("d-none", count === 0);
+      if (bulkCount) bulkCount.textContent = String(count);
+    };
+
+    config.selection = {
+      isSelected: (row) => state.selectedIds.has(Number(row.id)),
+      onChange: (row, selected) => {
+        const id = Number(row.id);
+        if (!Number.isSafeInteger(id)) return;
+        if (selected) state.selectedIds.add(id);
+        else state.selectedIds.delete(id);
+        updateBulkActions();
+      },
+    };
+
     const render = () => {
       const filtered = getFilteredProducts();
       const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
@@ -2574,6 +2806,21 @@
       const startIndex = (state.page - 1) * state.pageSize;
       const pageRows = filtered.slice(startIndex, startIndex + state.pageSize);
       renderTable(table, pageRows, columns, config);
+      const pageIds = pageRows.map((row) => Number(row.id)).filter((id) => Number.isSafeInteger(id));
+      const selectedOnPage = pageIds.filter((id) => state.selectedIds.has(id)).length;
+      if (selectAll) {
+        selectAll.disabled = pageIds.length === 0;
+        selectAll.checked = pageIds.length > 0 && selectedOnPage === pageIds.length;
+        selectAll.indeterminate = selectedOnPage > 0 && selectedOnPage < pageIds.length;
+        selectAll.onchange = () => {
+          pageIds.forEach((id) => {
+            if (selectAll.checked) state.selectedIds.add(id);
+            else state.selectedIds.delete(id);
+          });
+          render();
+        };
+      }
+      updateBulkActions();
       const endIndex = Math.min(filtered.length, startIndex + pageRows.length);
       if (headerCount) {
         headerCount.textContent = `${filtered.length} référence${filtered.length === 1 ? "" : "s"} affichée${filtered.length === 1 ? "" : "s"} sur ${state.products.length}`;
@@ -2647,6 +2894,109 @@
             exportSubmit.disabled = false;
             exportSubmit.innerHTML = originalLabel;
           }
+        }
+      });
+      importModal?.addEventListener("show.bs.modal", () => {
+        importError?.classList.add("d-none");
+        importSummary?.replaceChildren();
+        importProgress?.classList.add("d-none");
+        importProgress?.classList.remove("d-flex");
+      });
+      importFile?.addEventListener("change", () => {
+        importError?.classList.add("d-none");
+        importSummary?.replaceChildren();
+      });
+      importForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        importError?.classList.add("d-none");
+        importSummary?.replaceChildren();
+        const file = importFile?.files?.[0];
+        if (!file) {
+          if (importError) {
+            importError.textContent = "Sélectionnez un fichier à importer.";
+            importError.classList.remove("d-none");
+          }
+          return;
+        }
+        const originalLabel = importSubmit?.innerHTML;
+        const dismissButtons = Array.from(importForm?.querySelectorAll('[data-bs-dismiss="modal"], .btn-close') ?? []);
+        const showProgress = (payload) => {
+          importProgress?.classList.remove("d-none");
+          importProgress?.classList.add("d-flex");
+          if (!importProgressText) return;
+          if (!payload) {
+            importProgressText.textContent = "Lecture du fichier…";
+            return;
+          }
+          const details = [`${payload.imported} importé${payload.imported === 1 ? "" : "s"}`];
+          if (payload.failed) details.push(`${payload.failed} ignoré${payload.failed === 1 ? "" : "s"}`);
+          importProgressText.textContent = `Importation en cours… ${payload.processed}/${payload.total} ligne${payload.total === 1 ? "" : "s"} traitée${payload.total === 1 ? "" : "s"} · ${details.join(" · ")}`;
+        };
+        if (importSubmit) {
+          importSubmit.disabled = true;
+          importSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Importation en cours…';
+        }
+        if (importFile) importFile.disabled = true;
+        dismissButtons.forEach((button) => { button.disabled = true; });
+        importForm?.setAttribute("aria-busy", "true");
+        showProgress();
+        try {
+          const result = await importProducts(file, showProgress);
+          renderProductImportSummary(result);
+          if (importFile) importFile.value = "";
+          if (result.imported > 0) await loadPage(state.config);
+        } catch (error) {
+          console.error("Import des produits :", error);
+          if (importError) {
+            importError.textContent = error.message || "Impossible d'importer les produits.";
+            importError.classList.remove("d-none");
+          }
+        } finally {
+          importProgress?.classList.add("d-none");
+          importProgress?.classList.remove("d-flex");
+          importForm?.removeAttribute("aria-busy");
+          if (importFile) importFile.disabled = false;
+          dismissButtons.forEach((button) => { button.disabled = false; });
+          if (importSubmit) {
+            importSubmit.disabled = false;
+            importSubmit.innerHTML = originalLabel;
+          }
+        }
+      });
+      bulkDelete?.addEventListener("click", async () => {
+        const ids = [...state.selectedIds];
+        if (!ids.length) return;
+        if (!(await confirmAction({
+          title: "Supprimer les produits",
+          message: `${ids.length} produit${ids.length === 1 ? "" : "s"} sélectionné${ids.length === 1 ? "" : "s"} sera${ids.length === 1 ? "" : "ont"} supprimé${ids.length === 1 ? "" : "s"}. Cette action les archive et les retire de la liste.`,
+          confirmLabel: "Supprimer",
+          tone: "danger",
+        }))) return;
+        bulkDelete.disabled = true;
+        bulkDelete.setAttribute("aria-busy", "true");
+        bulkSpinner?.classList.remove("d-none");
+        bulkIcon?.classList.add("d-none");
+        if (bulkLabel) bulkLabel.textContent = "Suppression en cours…";
+        const failures = [];
+        try {
+          for (const id of ids) {
+            try {
+              await api.deleteProduit(id, { motif: "Suppression groupée depuis la liste des produits" });
+              state.selectedIds.delete(id);
+            } catch (error) {
+              failures.push(error.message || `Produit ${id}`);
+            }
+          }
+          if (failures.length) {
+            window.alert(`${failures.length} produit${failures.length === 1 ? "" : "s"} n'ont pas pu être supprimés.\n${failures.slice(0, 5).join("\n")}`);
+          }
+          await loadPage(state.config);
+        } finally {
+          bulkDelete.disabled = false;
+          bulkDelete.removeAttribute("aria-busy");
+          bulkSpinner?.classList.add("d-none");
+          bulkIcon?.classList.remove("d-none");
+          if (bulkLabel) bulkLabel.textContent = "Supprimer";
         }
       });
       state.uiBound = true;

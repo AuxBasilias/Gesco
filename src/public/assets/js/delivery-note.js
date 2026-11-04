@@ -36,7 +36,6 @@
     const quantitesLivrees = livraison?.quantites || new Map();
 
     const lignes = Array.isArray(sale.lignes) ? sale.lignes : [];
-    const totalItems = lignes.reduce((sum, line) => sum + Number(line.quantite || 0), 0);
 
     const serialsByLine = new Map();
     (serials || []).forEach((serial) => {
@@ -177,26 +176,8 @@
       </section>
     `;
 
-    const deliveryAddress = [client?.adresse, client?.ville].filter(Boolean).join(", ");
-    const addressLineHtml = deliveryAddress
-      ? `<div class="cond-line"><b>Adresse de livraison:</b>&nbsp; <span>${escapeHtml(deliveryAddress)}</span></div>`
-      : "";
-
     const settlementHtml = `
       <section class="settlement-section delivery-settlement">
-        <div class="settlement-grid">
-          <div class="conditions-col">
-            <div class="cond-title"><u>Détails de la livraison</u></div>
-            <div class="cond-line"><b>Vente de référence:</b>&nbsp; <span>${escapeHtml(sale.reference)}</span></div>
-            <div class="cond-line"><b>Date de vente:</b>&nbsp; <span>${escapeHtml(formatDate(sale.dateVente))}</span></div>
-            <div class="cond-line"><b>Nombre total d'articles:</b>&nbsp; <span>${totalItems}</span></div>
-            ${addressLineHtml}
-          </div>
-
-          <div class="totals-labels-col"></div>
-          <div class="totals-values-col"></div>
-        </div>
-
         <div class="signatures-full-row">
           <div class="acquit-tag"><u>Le Livreur</u></div>
           <div class="commercial-service-tag"><u>Reçu par le client</u></div>

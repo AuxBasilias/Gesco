@@ -655,6 +655,17 @@ setTimeout(function () {
                     <div class="col-auto">
                         <select class="form-select" id="products-state-filter"><option value="" selected>Tous les états</option><option>En stock</option><option>Stock faible</option><option>Rupture</option></select>
                     </div>
+                    <div class="col-auto" id="products-bulk-actions">
+                        <button type="button" class="btn btn-danger d-none" id="products-bulk-delete">
+                            <span class="spinner-border spinner-border-sm me-2 d-none" id="products-bulk-spinner" aria-hidden="true"></span>
+                            <i class="bi bi-trash" id="products-bulk-icon"></i> <span id="products-bulk-label">Supprimer</span> (<span id="products-bulk-count">0</span>)
+                        </button>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importProduits">
+                            <i class="bi bi-upload"></i> Importer
+                        </button>
+                    </div>
                     <div class="col-auto">
                         <button type="button" class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#exportProduits">
                             <i class="bi bi-download"></i> Exporter
@@ -663,7 +674,7 @@ setTimeout(function () {
                 </div>
                 <div class="table-responsive">
                     <table class="table adminuiux-table align-middle">
-                        <thead><tr><th>Désignation</th><th>Catégorie</th><th class="text-end">Prix de vente</th><th class="text-center">Stock</th><th class="text-center">Seuil</th><th>État</th><th class="text-end">Actions</th></tr></thead>
+                        <thead><tr><th class="text-center" style="width:40px;"><input type="checkbox" class="form-check-input" id="products-select-all" aria-label="Sélectionner les produits de la page"></th><th>Désignation</th><th>Catégorie</th><th class="text-end">Prix de vente</th><th class="text-center">Stock</th><th class="text-center">Seuil</th><th>État</th><th class="text-end">Actions</th></tr></thead>
                         <tbody>
                             <tr>
                                 <td>
@@ -840,6 +851,7 @@ setTimeout(function () {
             </div>
             <div class="modal-body">
                 <p class="small text-secondary">Les produits correspondant aux filtres actuels seront exportés.</p>
+                <p class="small text-secondary mb-0">Colonnes exportées : <strong>Désignation</strong>, <strong>Description</strong>, Catégorie, Prix de vente, Stock, Seuil.</p>
                 <div class="alert alert-danger d-none" id="export-produits-error" role="alert"></div>
                 <div class="mb-0">
                     <label class="form-label small text-secondary mb-1" for="export-produits-format">Format</label>
@@ -853,6 +865,34 @@ setTimeout(function () {
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="submit" class="btn btn-theme"><i class="bi bi-download"></i> Exporter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="importProduits" tabindex="-1" aria-labelledby="importProduitsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="import-produits-form">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="importProduitsLabel">Importer les produits</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-secondary">Importez un fichier Excel (.xlsx, .xls) ou CSV. Seule la <strong>Désignation</strong> est obligatoire. Un <strong>Prix de vente</strong> vide vaut 0 et une <strong>Catégorie</strong> vide devient « Non classé ». Colonnes optionnelles : <strong>Prix de vente</strong>, <strong>Catégorie</strong>, <strong>Stock</strong>, <strong>Seuil</strong>, <strong>Description</strong>.</p>
+                <div class="alert alert-danger d-none" id="import-produits-error" role="alert"></div>
+                <div class="mb-0">
+                    <label class="form-label small text-secondary mb-1" for="import-produits-file">Fichier</label>
+                    <input type="file" class="form-control" id="import-produits-file" accept=".xlsx,.xls,.csv" required>
+                </div>
+                <div class="d-none align-items-center gap-2 mt-3 text-secondary" id="import-produits-progress" role="status" aria-live="polite">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span id="import-produits-progress-text">Lecture du fichier…</span>
+                </div>
+                <div class="mt-3" id="import-produits-summary"></div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-theme"><i class="bi bi-upload"></i> Importer</button>
             </div>
         </form>
     </div>

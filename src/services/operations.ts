@@ -1012,7 +1012,21 @@ const createStockMovement = endpoint(async (req, res) => {
 });
 
 const listStockMovements = endpoint(async (_req, res) => {
-  res.json(await db.select().from(mouvementsStock).orderBy(desc(mouvementsStock.createdAt)));
+  const rows = await db.select({
+    id: mouvementsStock.id,
+    idProduit: mouvementsStock.idProduit,
+    type: mouvementsStock.type,
+    quantite: mouvementsStock.quantite,
+    reference: mouvementsStock.reference,
+    motif: mouvementsStock.motif,
+    idUtilisateur: mouvementsStock.idUtilisateur,
+    createdAt: mouvementsStock.createdAt,
+  })
+    .from(mouvementsStock)
+    .innerJoin(produits, eq(produits.id, mouvementsStock.idProduit))
+    .where(eq(produits.archive, false))
+    .orderBy(desc(mouvementsStock.createdAt));
+  res.json(rows);
 });
 
 const createOrder = endpoint(async (req, res) => {
@@ -1328,9 +1342,15 @@ const createInventory = endpoint(async (req, res) => {
       responsable: responsable || null,
       idUtilisateur: requestUserId(req) ?? null,
     }).returning();
-    const products = await tx.select().from(stocks);
-    if (products.length) {
-      await tx.insert(lignesInventaire).values(products.map((stock) => ({
+    const stockRows = await tx.select({
+      idProduit: stocks.idProduit,
+      quantite: stocks.quantite,
+    })
+      .from(stocks)
+      .innerJoin(produits, eq(produits.id, stocks.idProduit))
+      .where(eq(produits.archive, false));
+    if (stockRows.length) {
+      await tx.insert(lignesInventaire).values(stockRows.map((stock) => ({
         idInventaire: inventory.id,
         idProduit: stock.idProduit,
         quantiteTheorique: stock.quantite,
@@ -1504,7 +1524,14 @@ const dashboard = endpoint(async (req, res) => {
       .orderBy(desc(ventes.dateVente))
       .limit(8),
     db.select().from(factures),
-    db.select().from(stocks),
+    db.select({
+      idProduit: stocks.idProduit,
+      quantite: stocks.quantite,
+      seuilMinimum: stocks.seuilMinimum,
+    })
+      .from(stocks)
+      .innerJoin(produits, eq(produits.id, stocks.idProduit))
+      .where(eq(produits.archive, false)),
     db.select().from(retoursVente).where(and(
       gte(retoursVente.dateRetour, startOfToday),
       lte(retoursVente.dateRetour, now),
@@ -1535,6 +1562,7 @@ const dashboard = endpoint(async (req, res) => {
 
   const clientNames = new Map(clientRows.map((client) => [client.id, client.nom]));
   const productById = new Map(productRows.map((product) => [product.id, product]));
+  const activeProductCount = productRows.filter((product) => !product.archive).length;
   const categoryNames = new Map(categoryRows.map((category) => [category.id, category.label]));
   const dailyStats = new Map<string, { date: string; label: string; chiffreAffaires: number; ventes: number }>();
   for (let offset = 0; offset < days; offset += 1) {
@@ -1632,7 +1660,7 @@ const dashboard = endpoint(async (req, res) => {
 
   res.json({
     clients: clientRows.length,
-    produits: productRows.length,
+    produits: activeProductCount,
     ventesJour: salesToday.length,
     chiffreAffairesJour: revenue(salesToday),
     retoursJour: returnsToday.length,

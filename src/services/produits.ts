@@ -210,6 +210,9 @@ export async function updateProduit(req: Request, res: Response) {
         stockWasUpdated = true;
       }
       if (stockWasUpdated) {
+        const [existingStock] = await tx.select().from(stocks)
+          .where(eq(stocks.idProduit, id))
+          .for("update");
         await tx.insert(stocks).values({
           idProduit: id,
           initial: stockValues.initial ?? 0,
@@ -226,6 +229,18 @@ export async function updateProduit(req: Request, res: Response) {
             updatedAt: new Date(),
           },
         });
+        if (stockValues.quantite !== undefined) {
+          const delta = stockValues.quantite - (existingStock?.quantite ?? 0);
+          if (delta !== 0) {
+            await tx.insert(mouvementsStock).values({
+              idProduit: id,
+              type: delta > 0 ? "ajustement_positif" : "ajustement_negatif",
+              quantite: delta,
+              motif: "Modification du produit",
+              idUtilisateur: requestUserId(req) ?? null,
+            });
+          }
+        }
       }
       return updated;
     });

@@ -58,7 +58,7 @@
   vertical-align: top;
 }
 
-/* Espace de sécurité entre le tableau et les « Détails de livraison » */
+/* Espace de sécurité entre le tableau et les signatures */
 .delivery-settlement {
   margin-top: 5mm;
 }
@@ -131,15 +131,6 @@
   .serial-input::placeholder {
     color: transparent;
   }
-}
-
-/* Bloc bas : détails de livraison + signatures */
-.delivery-settlement .conditions-col {
-  grid-column: 1 / -1;
-}
-
-.delivery-settlement .settlement-grid {
-  grid-template-columns: 1fr;
 }
 
 .error {
