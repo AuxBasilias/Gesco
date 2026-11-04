@@ -2718,6 +2718,7 @@
     const selects = Array.from(main.querySelectorAll("select.form-select"));
     const categorySelect = main.querySelector("#products-category-filter") ?? selects[0];
     const stateSelect = main.querySelector("#products-state-filter") ?? selects[1];
+    const sortSelect = main.querySelector("#products-sort");
     const pageSizeSelect = main.querySelector("#products-page-size");
     const paginationNav = main.querySelector("#products-pagination") ?? main.querySelector(".pagination")?.closest("nav");
     const headerCount = main.querySelector("#products-result-count");
@@ -2746,6 +2747,7 @@
 
     const state = table._gescoProductsState ?? { page: 1, pageSize: 10, uiBound: false, selectedIds: new Set() };
     if (!(state.selectedIds instanceof Set)) state.selectedIds = new Set();
+    state.sort ??= "alpha-asc";
     state.products = products;
     state.config = config;
     table._gescoProductsState = state;
@@ -2769,15 +2771,30 @@
         new Option("Rupture", "Rupture"),
       );
     }
+    if (sortSelect) {
+      const optionValues = Array.from(sortSelect.options).map((option) => option.value);
+      if (!optionValues.includes(state.sort)) state.sort = "alpha-asc";
+      sortSelect.value = state.sort;
+    }
 
     const getFilteredProducts = () => {
       const query = String(search?.value ?? "").trim().toLocaleLowerCase("fr");
-      return state.products.filter((item) => {
+      const filtered = state.products.filter((item) => {
         const matchesQuery = !query || `${item.designation ?? ""}`
           .toLocaleLowerCase("fr").includes(query);
         const matchesCategory = !categorySelect?.value || String(item.idCategorie) === categorySelect.value;
         const matchesState = !stateSelect?.value || item.stockState === stateSelect.value;
         return matchesQuery && matchesCategory && matchesState;
+      });
+      return filtered.sort((left, right) => {
+        if (state.sort === "recent") {
+          const dateDelta = new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+          return dateDelta || Number(right.id ?? 0) - Number(left.id ?? 0);
+        }
+        const alphabetic = String(left.designation ?? "")
+          .localeCompare(String(right.designation ?? ""), "fr", { sensitivity: "base", numeric: true });
+        const result = state.sort === "alpha-desc" ? -alphabetic : alphabetic;
+        return result || Number(left.id ?? 0) - Number(right.id ?? 0);
       });
     };
 
@@ -2852,6 +2869,11 @@
         render();
       });
       stateSelect?.addEventListener("change", () => {
+        state.page = 1;
+        render();
+      });
+      sortSelect?.addEventListener("change", () => {
+        state.sort = sortSelect.value || "alpha-asc";
         state.page = 1;
         render();
       });

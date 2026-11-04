@@ -655,6 +655,13 @@ setTimeout(function () {
                     <div class="col-auto">
                         <select class="form-select" id="products-state-filter"><option value="" selected>Tous les états</option><option>En stock</option><option>Stock faible</option><option>Rupture</option></select>
                     </div>
+                    <div class="col-auto">
+                        <select class="form-select" id="products-sort" aria-label="Trier les produits">
+                            <option value="alpha-asc" selected>Désignation (A → Z)</option>
+                            <option value="alpha-desc">Désignation (Z → A)</option>
+                            <option value="recent">Plus récents</option>
+                        </select>
+                    </div>
                     <div class="col-auto" id="products-bulk-actions">
                         <button type="button" class="btn btn-danger d-none" id="products-bulk-delete">
                             <span class="spinner-border spinner-border-sm me-2 d-none" id="products-bulk-spinner" aria-hidden="true"></span>
@@ -676,142 +683,7 @@ setTimeout(function () {
                     <table class="table adminuiux-table align-middle">
                         <thead><tr><th class="text-center" style="width:40px;"><input type="checkbox" class="form-check-input" id="products-select-all" aria-label="Sélectionner les produits de la page"></th><th>Désignation</th><th>Catégorie</th><th class="text-end">Prix de vente</th><th class="text-center">Stock</th><th class="text-center">Seuil</th><th>État</th><th class="text-end">Actions</th></tr></thead>
                         <tbody>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">Ordinateur portable HP 250 G9</p>
-                                    </div>
-                                </td>
-                                <td class="small">Ordinateurs</td>
-                                <td class="text-end">385 000 FCFA</td>
-                                <td class="text-center fw-medium">12</td>
-                                <td class="text-center small text-secondary">3</td>
-                                <td><span class="badge badge-light text-bg-success">En stock</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">SSD Kingston A400 480 Go</p>
-                                    </div>
-                                </td>
-                                <td class="small">Ordinateurs</td>
-                                <td class="text-end">29 000 FCFA</td>
-                                <td class="text-center fw-medium">21</td>
-                                <td class="text-center small text-secondary">5</td>
-                                <td><span class="badge badge-light text-bg-success">En stock</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">Onduleur 650VA Infosec</p>
-                                    </div>
-                                </td>
-                                <td class="small">Ordinateurs</td>
-                                <td class="text-end">49 000 FCFA</td>
-                                <td class="text-center fw-medium">8</td>
-                                <td class="text-center small text-secondary">5</td>
-                                <td><span class="badge badge-light text-bg-warning">Stock faible</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">Souris sans fil Logitech M185</p>
-                                    </div>
-                                </td>
-                                <td class="small">Accessoires</td>
-                                <td class="text-end">13 000 FCFA</td>
-                                <td class="text-center fw-medium">42</td>
-                                <td class="text-center small text-secondary">10</td>
-                                <td><span class="badge badge-light text-bg-success">En stock</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">Clavier mécanique Redragon K552</p>
-                                    </div>
-                                </td>
-                                <td class="small">Accessoires</td>
-                                <td class="text-end">28 500 FCFA</td>
-                                <td class="text-center fw-medium">15</td>
-                                <td class="text-center small text-secondary">5</td>
-                                <td><span class="badge badge-light text-bg-success">En stock</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">Rallonge USB 3.0 5m</p>
-                                    </div>
-                                </td>
-                                <td class="small">Accessoires</td>
-                                <td class="text-end">6 500 FCFA</td>
-                                <td class="text-center fw-medium">4</td>
-                                <td class="text-center small text-secondary">5</td>
-                                <td><span class="badge badge-light text-bg-warning">Stock faible</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">Câble réseau Cat6 20m</p>
-                                    </div>
-                                </td>
-                                <td class="small">Réseau</td>
-                                <td class="text-end">3 000 FCFA</td>
-                                <td class="text-center fw-medium">0</td>
-                                <td class="text-center small text-secondary">10</td>
-                                <td><span class="badge badge-light text-bg-danger">Rupture</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-32 rounded bg-theme-1-subtle text-theme-1 d-flex align-items-center justify-content-center"><i class="bi bi-box-seam"></i></span>
-                                        <p class="mb-0 fw-medium">Routeur WiFi TP-Link AC1200</p>
-                                    </div>
-                                </td>
-                                <td class="small">Réseau</td>
-                                <td class="text-end">32 000 FCFA</td>
-                                <td class="text-center fw-medium">11</td>
-                                <td class="text-center small text-secondary">4</td>
-                                <td><span class="badge badge-light text-bg-success">En stock</span></td>
-                                <td class="text-end">
-                                    <a href="gesco-stock-produit-detail.html" class="btn btn-sm btn-square btn-link" title="Consulter"><i class="bi bi-eye"></i></a>
-                                    <button class="btn btn-sm btn-square btn-link" title="Modifier"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr></tbody>
+                           </tbody>
                     </table>
                 </div>
                 <div class="row gx-3 gy-2 align-items-center mt-3">
