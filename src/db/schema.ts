@@ -48,7 +48,7 @@ export const clientsTable = pgTable("clients", {
   dernierAchat: timestamp("dernier_achat"),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [index("clients_date_idx").on(table.createdAt)]);
 
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
@@ -65,7 +65,7 @@ export const fournisseurs = pgTable("fournisseurs", {
   nif: varchar("nif", { length: 100 }),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [index("fournisseurs_nom_idx").on(table.nom)]);
 
 export const produits = pgTable("produits", {
   id: serial("id").primaryKey(),
@@ -78,7 +78,10 @@ export const produits = pgTable("produits", {
   archive: boolean("archive").notNull().default(false),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("produits_categorie_idx").on(table.idCategorie),
+  index("produits_archive_date_idx").on(table.archive, table.createdAt),
+]);
 
 export const stocks = pgTable("stocks", {
   id: serial("id").primaryKey(),
@@ -94,7 +97,7 @@ export const stocks = pgTable("stocks", {
     onUpdate: "cascade",
   }),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [index("stocks_fournisseur_idx").on(table.idFournisseur)]);
 
 export const mouvementsStock = pgTable(
   "mouvements_stock",
@@ -112,7 +115,10 @@ export const mouvementsStock = pgTable(
     }),
     createdAt: createdAt(),
   },
-  (table) => [index("mouvements_stock_produit_date_idx").on(table.idProduit, table.createdAt)],
+  (table) => [
+    index("mouvements_stock_produit_date_idx").on(table.idProduit, table.createdAt),
+    index("mouvements_stock_date_idx").on(table.createdAt),
+  ],
 );
 
 export const commandesFournisseurs = pgTable("commandes_fournisseurs", {
@@ -133,7 +139,10 @@ export const commandesFournisseurs = pgTable("commandes_fournisseurs", {
   }),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("commandes_fournisseur_date_idx").on(table.idFournisseur, table.dateCommande),
+  index("commandes_date_idx").on(table.dateCommande),
+]);
 
 export const lignesCommande = pgTable("lignes_commande", {
   id: serial("id").primaryKey(),
@@ -148,7 +157,10 @@ export const lignesCommande = pgTable("lignes_commande", {
   quantiteRecue: integer("quantite_recue").notNull().default(0),
   prixUnitaire: money("prix_unitaire").notNull(),
   montantTotal: money("montant_total").notNull(),
-});
+}, (table) => [
+  index("lignes_commande_commande_idx").on(table.idCommande),
+  index("lignes_commande_produit_idx").on(table.idProduit),
+]);
 
 export const receptions = pgTable("receptions", {
   id: serial("id").primaryKey(),
@@ -162,7 +174,10 @@ export const receptions = pgTable("receptions", {
   idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
     onDelete: "set null",
   }),
-});
+}, (table) => [
+  index("receptions_commande_idx").on(table.idCommande),
+  index("receptions_date_idx").on(table.dateReception),
+]);
 
 export const lignesReception = pgTable("lignes_reception", {
   id: serial("id").primaryKey(),
@@ -173,7 +188,10 @@ export const lignesReception = pgTable("lignes_reception", {
     .notNull()
     .references(() => lignesCommande.id, { onDelete: "restrict" }),
   quantiteRecue: integer("quantite_recue").notNull(),
-});
+}, (table) => [
+  index("lignes_reception_reception_idx").on(table.idReception),
+  index("lignes_reception_ligne_commande_idx").on(table.idLigneCommande),
+]);
 
 export const ventes = pgTable(
   "ventes",
@@ -196,7 +214,10 @@ export const ventes = pgTable(
     }),
     createdAt: createdAt(),
   },
-  (table) => [index("ventes_date_idx").on(table.dateVente)],
+  (table) => [
+    index("ventes_date_idx").on(table.dateVente),
+    index("ventes_client_idx").on(table.idClient),
+  ],
 );
 
 export const lignesVente = pgTable("lignes_vente", {
@@ -212,7 +233,10 @@ export const lignesVente = pgTable("lignes_vente", {
   prixUnitaire: money("prix_unitaire").notNull(),
   remise: money("remise").notNull().default("0"),
   montantTotal: money("montant_total").notNull(),
-});
+}, (table) => [
+  index("lignes_vente_vente_idx").on(table.idVente),
+  index("lignes_vente_produit_idx").on(table.idProduit),
+]);
 
 export const numerosSerieLivraison = pgTable("numeros_serie_livraison", {
   id: serial("id").primaryKey(),
@@ -228,7 +252,10 @@ export const numerosSerieLivraison = pgTable("numeros_serie_livraison", {
     onDelete: "set null",
   }),
   createdAt: createdAt(),
-});
+}, (table) => [
+  index("serials_vente_idx").on(table.idVente),
+  index("serials_ligne_vente_idx").on(table.idLigneVente),
+]);
 
 export const factures = pgTable(
   "factures",
@@ -257,6 +284,7 @@ export const factures = pgTable(
   },
   (table) => [
     index("factures_client_date_idx").on(table.idClient, table.dateFacture),
+    index("factures_date_idx").on(table.dateFacture),
     uniqueIndex("factures_vente_unique_idx").on(table.idVente),
   ],
 );
@@ -271,7 +299,10 @@ export const lignesFacture = pgTable("lignes_facture", {
   quantite: integer("quantite").notNull(),
   prixUnitaire: money("prix_unitaire").notNull(),
   montantTotal: money("montant_total").notNull(),
-});
+}, (table) => [
+  index("lignes_facture_facture_idx").on(table.idFacture),
+  index("lignes_facture_produit_idx").on(table.idProduit),
+]);
 
 export const paiements = pgTable("paiements", {
   id: serial("id").primaryKey(),
@@ -289,7 +320,10 @@ export const paiements = pgTable("paiements", {
   idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
     onDelete: "set null",
   }),
-});
+}, (table) => [
+  index("paiements_facture_idx").on(table.idFacture),
+  index("paiements_date_idx").on(table.datePaiement),
+]);
 
 export const retoursVente = pgTable("retours_vente", {
   id: serial("id").primaryKey(),
@@ -304,7 +338,10 @@ export const retoursVente = pgTable("retours_vente", {
   idUtilisateur: integer("id_utilisateur").references(() => utilisateursTable.id, {
     onDelete: "set null",
   }),
-});
+}, (table) => [
+  index("retours_vente_vente_idx").on(table.idVente),
+  index("retours_vente_date_idx").on(table.dateRetour),
+]);
 
 export const lignesRetourVente = pgTable("lignes_retour_vente", {
   id: serial("id").primaryKey(),
@@ -316,7 +353,10 @@ export const lignesRetourVente = pgTable("lignes_retour_vente", {
     .references(() => lignesVente.id, { onDelete: "restrict" }),
   quantite: integer("quantite").notNull(),
   montant: money("montant").notNull(),
-});
+}, (table) => [
+  index("lignes_retour_retour_idx").on(table.idRetour),
+  index("lignes_retour_ligne_vente_idx").on(table.idLigneVente),
+]);
 
 export const inventaires = pgTable("inventaires", {
   id: serial("id").primaryKey(),
@@ -329,7 +369,7 @@ export const inventaires = pgTable("inventaires", {
     onDelete: "set null",
   }),
   createdAt: createdAt(),
-});
+}, (table) => [index("inventaires_date_idx").on(table.dateInventaire)]);
 
 export const lignesInventaire = pgTable("lignes_inventaire", {
   id: serial("id").primaryKey(),
@@ -342,7 +382,10 @@ export const lignesInventaire = pgTable("lignes_inventaire", {
   quantiteTheorique: integer("quantite_theorique").notNull(),
   quantiteComptee: integer("quantite_comptee"),
   ecart: integer("ecart"),
-});
+}, (table) => [
+  index("lignes_inventaire_inventaire_idx").on(table.idInventaire),
+  index("lignes_inventaire_produit_idx").on(table.idProduit),
+]);
 
 export const parametresBoutique = pgTable("parametres_boutique", {
   id: serial("id").primaryKey(),
@@ -380,4 +423,4 @@ export const journalActivite = pgTable("journal_activite", {
   action: varchar("action", { length: 100 }).notNull(),
   details: jsonb("details").$type<Record<string, unknown>>().notNull().default({}),
   createdAt: createdAt(),
-});
+}, (table) => [index("journal_activite_date_idx").on(table.createdAt)]);

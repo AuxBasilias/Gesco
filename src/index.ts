@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 import loginRouter from "./routes/login.js"
@@ -14,6 +15,7 @@ import { authMiddleware } from "./auth/auth.js";
 import authRoutes from "./routes/auth.js"
 
 const app = express();
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

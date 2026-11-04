@@ -370,12 +370,9 @@
     return tables[index] ?? null;
   }
 
-  const TABLE_LOADER_MIN_VISIBLE_MS = 450;
-
   function showTableLoader(table) {
     const body = table?.tBodies?.[0];
     if (!body) return;
-    table.dataset.gescoTableLoaderStarted = String(Date.now());
     const columnCount = table.tHead?.rows?.[0]?.cells.length || 1;
     const row = document.createElement("tr");
     row.className = "gesco-table-loading";
@@ -397,17 +394,8 @@
     table.setAttribute("aria-busy", "true");
   }
 
-  function waitForMinimumLoaderDuration(table) {
-    const startedAt = Number(table?.dataset.gescoTableLoaderStarted);
-    if (!startedAt) return Promise.resolve();
-    const remaining = TABLE_LOADER_MIN_VISIBLE_MS - (Date.now() - startedAt);
-    if (remaining <= 0) return Promise.resolve();
-    return new Promise((resolve) => setTimeout(resolve, remaining));
-  }
-
   function clearTableLoader(table) {
     table?.removeAttribute("aria-busy");
-    if (table?.dataset) delete table.dataset.gescoTableLoaderStarted;
     const body = table?.tBodies?.[0];
     if (!body) return;
     body.querySelectorAll("tr.gesco-table-loading").forEach((row) => row.remove());
@@ -693,47 +681,110 @@
     overlay.className = "gesco-modal-backdrop";
     overlay.setAttribute("role", "presentation");
     const panel = document.createElement("section");
-    panel.className = "card adminuiux-card gesco-form-dialog shadow";
+    panel.className = "card adminuiux-card gesco-form-dialog gesco-product-edit-dialog shadow";
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
+
     const title = document.createElement("h2");
-    title.className = "h5 mb-0";
+    title.className = "h5 mb-1";
     title.textContent = "Modifier le produit";
     title.id = "gesco-product-edit-title";
     panel.setAttribute("aria-labelledby", title.id);
+
+    const subtitle = document.createElement("p");
+    subtitle.className = "small text-secondary mb-0";
+    subtitle.textContent = "Mettez à jour les informations, le prix et le stock.";
+
+    const headingText = document.createElement("div");
+    headingText.className = "gesco-product-edit-heading";
+    headingText.append(title, subtitle);
+
+    const icon = document.createElement("span");
+    icon.className = "gesco-product-edit-icon";
+    icon.setAttribute("aria-hidden", "true");
+    const iconGlyph = document.createElement("i");
+    iconGlyph.className = "bi bi-pencil-square";
+    icon.append(iconGlyph);
+
+    const heading = document.createElement("div");
+    heading.className = "d-flex align-items-center gap-3";
+    heading.append(icon, headingText);
+
     const header = document.createElement("div");
-    header.className = "card-header d-flex align-items-center justify-content-between";
+    header.className = "card-header d-flex align-items-center justify-content-between gap-3";
+
+    let saving = false;
     const close = document.createElement("button");
     close.type = "button";
-    close.className = "btn-close";
+    close.className = "btn-close flex-shrink-0";
     close.setAttribute("aria-label", "Fermer");
-    close.addEventListener("click", () => overlay.remove());
-    header.append(title, close);
+    close.addEventListener("click", () => {
+      if (!saving) overlay.remove();
+    });
+    header.append(heading, close);
+
     const form = document.createElement("form");
     form.className = "gesco-form";
     const error = document.createElement("div");
-    error.className = "alert alert-danger d-none";
+    error.className = "alert alert-danger d-none py-2 px-3 small";
+    error.setAttribute("role", "alert");
     const body = document.createElement("div");
     body.className = "card-body";
     body.append(error);
 
-    const addField = (labelText, input) => {
-      const group = document.createElement("div");
-      group.className = "mb-3";
-      const caption = document.createElement("label");
-      caption.className = "form-label";
-      caption.htmlFor = input.id;
-      caption.textContent = labelText;
-      group.append(caption, input);
-      body.append(group);
-      return input;
+    const createSection = (headingTextValue, descriptionText) => {
+      const section = document.createElement("section");
+      section.className = "gesco-product-edit-section";
+      const sectionTitle = document.createElement("h3");
+      sectionTitle.className = "h6 mb-1";
+      sectionTitle.textContent = headingTextValue;
+      const sectionDescription = document.createElement("p");
+      sectionDescription.className = "small text-secondary mb-3";
+      sectionDescription.textContent = descriptionText;
+      const grid = document.createElement("div");
+      grid.className = "row g-3";
+      section.append(sectionTitle, sectionDescription, grid);
+      body.append(section);
+      return grid;
     };
 
-    const createInput = (id, type, value, step = "any") => {
+    const addField = (grid, labelText, control, options = {}) => {
+      const {
+        className = "col-12",
+        forId,
+        required = false,
+        help,
+      } = options;
+      const group = document.createElement("div");
+      group.className = className;
+      const caption = document.createElement("label");
+      caption.className = "form-label";
+      caption.htmlFor = forId ?? control.id;
+      caption.textContent = labelText;
+      if (required) {
+        const mark = document.createElement("span");
+        mark.className = "text-danger ms-1";
+        mark.setAttribute("aria-hidden", "true");
+        mark.textContent = "*";
+        caption.append(mark);
+      }
+      group.append(caption, control);
+      if (help) {
+        const helpElement = document.createElement("div");
+        helpElement.className = "form-text";
+        helpElement.textContent = help;
+        group.append(helpElement);
+      }
+      grid.append(group);
+      return control;
+    };
+
+    const createInput = (id, type, value, step = "any", placeholder = "") => {
       const input = document.createElement("input");
       input.id = id;
       input.type = type;
       input.className = "form-control";
+      input.placeholder = placeholder;
       if (type === "number") {
         input.min = "0";
         input.step = step;
@@ -742,21 +793,37 @@
       return input;
     };
 
-    const designation = createInput("gesco-product-edit-designation", "text", product.designation);
+    const createInputGroup = (input, suffix) => {
+      const group = document.createElement("div");
+      group.className = "input-group";
+      const suffixElement = document.createElement("span");
+      suffixElement.className = "input-group-text";
+      suffixElement.textContent = suffix;
+      group.append(input, suffixElement);
+      return group;
+    };
+
+    const designation = createInput("gesco-product-edit-designation", "text", product.designation, "any", "Nom du produit");
     designation.required = true;
+    designation.maxLength = 200;
+
     const categorySelect = document.createElement("select");
     categorySelect.id = "gesco-product-edit-category";
     categorySelect.className = "form-select";
     categorySelect.required = true;
+
     const description = document.createElement("textarea");
     description.id = "gesco-product-edit-description";
     description.className = "form-control";
     description.rows = 3;
+    description.placeholder = "Description facultative…";
     description.value = product.description ?? "";
-    const price = createInput("gesco-product-edit-price", "number", product.prixVente, "0.01");
+
+    const price = createInput("gesco-product-edit-price", "number", product.prixVente, "0.01", "0");
     price.required = true;
-    const stock = createInput("gesco-product-edit-stock", "number", product.stock ?? 0, "1");
-    const threshold = createInput("gesco-product-edit-threshold", "number", product.seuilMinimum ?? 0, "1");
+    const stock = createInput("gesco-product-edit-stock", "number", product.stock ?? 0, "1", "0");
+    const threshold = createInput("gesco-product-edit-threshold", "number", product.seuilMinimum ?? 0, "1", "0");
+
     const supplierSelect = document.createElement("select");
     supplierSelect.id = "gesco-product-edit-supplier";
     supplierSelect.className = "form-select";
@@ -777,13 +844,36 @@
       error.classList.remove("d-none");
     }
 
-    addField("Désignation", designation);
-    addField("Catégorie", categorySelect);
-    addField("Description", description);
-    addField("Prix de vente (FCFA)", price);
-    addField("Stock", stock);
-    addField("Seuil minimum", threshold);
-    addField("Fournisseur principal", supplierSelect);
+    const informationGrid = createSection(
+      "Informations générales",
+      "Identifiez le produit, sa catégorie et son fournisseur.",
+    );
+    addField(informationGrid, "Désignation", designation, { required: true });
+    addField(informationGrid, "Catégorie", categorySelect, { className: "col-md-6", required: true });
+    addField(informationGrid, "Fournisseur principal", supplierSelect, { className: "col-md-6" });
+    addField(informationGrid, "Description", description, {
+      help: "Facultatif, visible sur la fiche produit.",
+    });
+
+    const stockGrid = createSection(
+      "Prix et stock",
+      "Les modifications de stock sont automatiquement historisées.",
+    );
+    addField(stockGrid, "Prix de vente", createInputGroup(price, "FCFA"), {
+      className: "col-md-4",
+      forId: price.id,
+      required: true,
+    });
+    addField(stockGrid, "Stock disponible", createInputGroup(stock, "unités"), {
+      className: "col-md-4",
+      forId: stock.id,
+      help: "Un mouvement d'ajustement sera créé si la quantité change.",
+    });
+    addField(stockGrid, "Seuil d'alerte", createInputGroup(threshold, "unités"), {
+      className: "col-md-4",
+      forId: threshold.id,
+      help: "Alerte lorsque le stock atteint ce niveau.",
+    });
 
     const actions = document.createElement("div");
     actions.className = "card-footer d-flex justify-content-end gap-2";
@@ -791,17 +881,39 @@
     cancel.type = "button";
     cancel.className = "btn btn-outline-secondary";
     cancel.textContent = "Annuler";
-    cancel.addEventListener("click", () => overlay.remove());
+    cancel.addEventListener("click", () => {
+      if (!saving) overlay.remove();
+    });
+
     const save = document.createElement("button");
     save.type = "submit";
-    save.className = "btn btn-primary";
-    save.textContent = "Enregistrer";
+    save.className = "btn btn-primary d-inline-flex align-items-center gap-2";
+    const saveSpinner = document.createElement("span");
+    saveSpinner.className = "spinner-border spinner-border-sm d-none";
+    saveSpinner.setAttribute("aria-hidden", "true");
+    const saveIcon = document.createElement("i");
+    saveIcon.className = "bi bi-check2";
+    const saveLabel = document.createElement("span");
+    saveLabel.textContent = "Enregistrer";
+    save.append(saveSpinner, saveIcon, saveLabel);
+
+    const setSaving = (value) => {
+      saving = value;
+      save.disabled = value;
+      cancel.disabled = value;
+      close.disabled = value;
+      save.setAttribute("aria-busy", String(value));
+      saveSpinner.classList.toggle("d-none", !value);
+      saveIcon.classList.toggle("d-none", value);
+      saveLabel.textContent = value ? "Enregistrement…" : "Enregistrer";
+    };
+
     actions.append(cancel, save);
     form.append(body, actions);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       error.classList.add("d-none");
-      save.disabled = true;
+      setSaving(true);
       try {
         await api.updateProduit(product.id, {
           designation: designation.value.trim(),
@@ -815,7 +927,8 @@
       } catch (updateError) {
         error.textContent = updateError.message || "Impossible de modifier le produit.";
         error.classList.remove("d-none");
-        save.disabled = false;
+        error.scrollIntoView({ block: "nearest" });
+        setSaving(false);
         return;
       }
       overlay.remove();
@@ -828,23 +941,28 @@
         window.alert(refreshError.message || "Produit modifié, mais la liste n'a pas pu être actualisée.");
       }
       const notice = document.createElement("div");
-      notice.className = "alert alert-success shadow-sm position-fixed top-0 end-0 m-3";
+      notice.className = "alert alert-success shadow-sm position-fixed top-0 end-0 m-3 d-flex align-items-center gap-2";
       notice.style.zIndex = "1080";
       notice.setAttribute("role", "status");
-      notice.textContent = "Produit modifié.";
+      const noticeIcon = document.createElement("i");
+      noticeIcon.className = "bi bi-check-circle-fill";
+      const noticeText = document.createElement("span");
+      noticeText.textContent = "Produit modifié.";
+      notice.append(noticeIcon, noticeText);
       document.body.append(notice);
       setTimeout(() => notice.remove(), 2000);
     });
     panel.append(header, form);
     overlay.append(panel);
     overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) overlay.remove();
+      if (event.target === overlay && !saving) overlay.remove();
     });
     overlay.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") overlay.remove();
+      if (event.key === "Escape" && !saving) overlay.remove();
     });
     document.body.append(overlay);
     designation.focus();
+    designation.select();
   }
 
   async function showOrderForm(target) {
@@ -1517,8 +1635,14 @@
     return referenceCache.get(key);
   }
 
+  const referenceKeys = (columns) => [...new Set(columns.map(([, key]) => key).filter((key) => referenceSources[key]))];
+
+  async function prefetchReferences(columns) {
+    await Promise.all(referenceKeys(columns).map((key) => loadReferenceMap(key)));
+  }
+
   async function resolveReferences(rows, columns) {
-    const keys = [...new Set(columns.map(([, key]) => key).filter((key) => referenceSources[key]))];
+    const keys = referenceKeys(columns);
     const maps = await Promise.all(keys.map(async (key) => [key, await loadReferenceMap(key)]));
     const references = new Map(maps);
     return rows.map((row) => {
@@ -1926,8 +2050,11 @@
       const table = tables[index];
       const columns = config.tables[index].columns;
       try {
-        const rows = await resolveReferences(list(await config.tables[index].load()), columns);
-        await waitForMinimumLoaderDuration(table);
+        const [loadedRows] = await Promise.all([
+          config.tables[index].load(),
+          prefetchReferences(columns),
+        ]);
+        const rows = await resolveReferences(list(loadedRows), columns);
         renderTable(table, rows, columns, config);
         if (page === "gesco-administration.html" && index === 0) setupUserManagement(rows);
         if (page === "gesco-approvisionnement-commandes.html" && index === 0) setupOrderHistory(rows, config);
@@ -3154,7 +3281,10 @@
           const result = await importProducts(file, showProgress);
           renderProductImportSummary(result);
           if (importFile) importFile.value = "";
-          if (result.imported > 0) await loadPage(state.config);
+          if (result.imported > 0) {
+            if (state.refresh) await state.refresh();
+            else await loadPage(state.config);
+          }
         } catch (error) {
           console.error("Import des produits :", error);
           if (importError) {
@@ -3200,7 +3330,8 @@
           if (failures.length) {
             window.alert(`${failures.length} produit${failures.length === 1 ? "" : "s"} n'ont pas pu être supprimés.\n${failures.slice(0, 5).join("\n")}`);
           }
-          await loadPage(state.config);
+          if (state.refresh) await state.refresh();
+          else await loadPage(state.config);
         } finally {
           bulkDelete.disabled = false;
           bulkDelete.removeAttribute("aria-busy");
