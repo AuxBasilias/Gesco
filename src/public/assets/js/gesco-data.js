@@ -200,7 +200,7 @@
 
   const apiPages = {
     "gesco-stock-produits.html": {
-      tables: [{ load: api.getProduits, columns: [["Désignation", "designation"], ["Catégorie", "idCategorie"], ["Prix de vente", "prixVente", "money"], ["Stock", "stock"], ["Seuil", "seuilMinimum"], ["État", "stockState", "status"]] }],
+      tables: [{ load: api.getProduits, columns: [["Désignation", "designation"], ["Catégorie", "idCategorie"], ["Prix de vente", "prixVente", "money"], ["Stock", "stock"], ["Seuil", "seuilMinimum"]] }],
       create: "produit",
       selectable: true,
     },
@@ -686,6 +686,165 @@
     document.body.append(overlay);
     form.querySelector("input, select, textarea")?.focus();
     return form;
+  }
+
+  async function showProductEditForm(product, target) {
+    const overlay = document.createElement("div");
+    overlay.className = "gesco-modal-backdrop";
+    overlay.setAttribute("role", "presentation");
+    const panel = document.createElement("section");
+    panel.className = "card adminuiux-card gesco-form-dialog shadow";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    const title = document.createElement("h2");
+    title.className = "h5 mb-0";
+    title.textContent = "Modifier le produit";
+    title.id = "gesco-product-edit-title";
+    panel.setAttribute("aria-labelledby", title.id);
+    const header = document.createElement("div");
+    header.className = "card-header d-flex align-items-center justify-content-between";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "btn-close";
+    close.setAttribute("aria-label", "Fermer");
+    close.addEventListener("click", () => overlay.remove());
+    header.append(title, close);
+    const form = document.createElement("form");
+    form.className = "gesco-form";
+    const error = document.createElement("div");
+    error.className = "alert alert-danger d-none";
+    const body = document.createElement("div");
+    body.className = "card-body";
+    body.append(error);
+
+    const addField = (labelText, input) => {
+      const group = document.createElement("div");
+      group.className = "mb-3";
+      const caption = document.createElement("label");
+      caption.className = "form-label";
+      caption.htmlFor = input.id;
+      caption.textContent = labelText;
+      group.append(caption, input);
+      body.append(group);
+      return input;
+    };
+
+    const createInput = (id, type, value, step = "any") => {
+      const input = document.createElement("input");
+      input.id = id;
+      input.type = type;
+      input.className = "form-control";
+      if (type === "number") {
+        input.min = "0";
+        input.step = step;
+      }
+      input.value = value ?? "";
+      return input;
+    };
+
+    const designation = createInput("gesco-product-edit-designation", "text", product.designation);
+    designation.required = true;
+    const categorySelect = document.createElement("select");
+    categorySelect.id = "gesco-product-edit-category";
+    categorySelect.className = "form-select";
+    categorySelect.required = true;
+    const description = document.createElement("textarea");
+    description.id = "gesco-product-edit-description";
+    description.className = "form-control";
+    description.rows = 3;
+    description.value = product.description ?? "";
+    const price = createInput("gesco-product-edit-price", "number", product.prixVente, "0.01");
+    price.required = true;
+    const stock = createInput("gesco-product-edit-stock", "number", product.stock ?? 0, "1");
+    const threshold = createInput("gesco-product-edit-threshold", "number", product.seuilMinimum ?? 0, "1");
+    const supplierSelect = document.createElement("select");
+    supplierSelect.id = "gesco-product-edit-supplier";
+    supplierSelect.className = "form-select";
+
+    try {
+      const [categories, suppliers] = await Promise.all([
+        lookupOptions("category"),
+        lookupOptions("supplier"),
+      ]);
+      categorySelect.append(new Option("— Sélectionner —", ""));
+      categories.forEach(([id, label]) => categorySelect.append(new Option(label, id)));
+      categorySelect.value = String(product.idCategorie ?? "");
+      supplierSelect.append(new Option("Aucun fournisseur", ""));
+      suppliers.forEach(([id, label]) => supplierSelect.append(new Option(label, id)));
+      supplierSelect.value = product.idFournisseur ? String(product.idFournisseur) : "";
+    } catch (loadError) {
+      error.textContent = loadError.message || "Impossible de charger les catégories et fournisseurs.";
+      error.classList.remove("d-none");
+    }
+
+    addField("Désignation", designation);
+    addField("Catégorie", categorySelect);
+    addField("Description", description);
+    addField("Prix de vente (FCFA)", price);
+    addField("Stock", stock);
+    addField("Seuil minimum", threshold);
+    addField("Fournisseur principal", supplierSelect);
+
+    const actions = document.createElement("div");
+    actions.className = "card-footer d-flex justify-content-end gap-2";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-outline-secondary";
+    cancel.textContent = "Annuler";
+    cancel.addEventListener("click", () => overlay.remove());
+    const save = document.createElement("button");
+    save.type = "submit";
+    save.className = "btn btn-primary";
+    save.textContent = "Enregistrer";
+    actions.append(cancel, save);
+    form.append(body, actions);
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.classList.add("d-none");
+      save.disabled = true;
+      try {
+        await api.updateProduit(product.id, {
+          designation: designation.value.trim(),
+          idCategorie: categorySelect.value,
+          description: description.value.trim(),
+          prixVente: price.value,
+          stockInitial: stock.value || "0",
+          seuilMinimum: threshold.value || "0",
+          idFournisseur: supplierSelect.value,
+        });
+      } catch (updateError) {
+        error.textContent = updateError.message || "Impossible de modifier le produit.";
+        error.classList.remove("d-none");
+        save.disabled = false;
+        return;
+      }
+      overlay.remove();
+      const table = mainTable(0);
+      const productsState = table?._gescoProductsState;
+      try {
+        if (productsState?.refresh) await productsState.refresh();
+        else await loadPage(target);
+      } catch (refreshError) {
+        window.alert(refreshError.message || "Produit modifié, mais la liste n'a pas pu être actualisée.");
+      }
+      const notice = document.createElement("div");
+      notice.className = "alert alert-success shadow-sm position-fixed top-0 end-0 m-3";
+      notice.style.zIndex = "1080";
+      notice.setAttribute("role", "status");
+      notice.textContent = "Produit modifié.";
+      document.body.append(notice);
+      setTimeout(() => notice.remove(), 2000);
+    });
+    panel.append(header, form);
+    overlay.append(panel);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) overlay.remove();
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overlay.remove();
+    });
+    document.body.append(overlay);
+    designation.focus();
   }
 
   async function showOrderForm(target) {
@@ -1580,6 +1739,16 @@
       while (tr.cells.length < dataColumnCount + columnOffset) tr.append(document.createElement("td"));
       const actions = document.createElement("td");
       actions.className = "text-end text-nowrap";
+      if (target.key === "produit" && row.id) {
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "btn btn-sm btn-square btn-link me-1";
+        edit.title = "Modifier";
+        edit.setAttribute("aria-label", "Modifier");
+        edit.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i>';
+        edit.addEventListener("click", () => showProductEditForm(row, target));
+        actions.append(edit);
+      }
       const openPath = target.detail;
       if (openPath && row.id) {
         const open = document.createElement("a");
@@ -2815,6 +2984,18 @@
       },
     };
 
+    const refreshStats = () => {
+      const values = main.querySelectorAll(".row.g-3.mb-4 .card-body h3");
+      if (!values || values.length < 4) return;
+      const stockValue = state.products.reduce((total, item) => total + Number(item.prixVente || 0) * Number(item.stock || 0), 0);
+      const lowStock = state.products.filter((item) => Number(item.stock || 0) > 0 && Number(item.stock || 0) <= Number(item.seuilMinimum || 0)).length;
+      const outOfStock = state.products.filter((item) => Number(item.stock || 0) <= 0).length;
+      values[0].textContent = state.products.length.toLocaleString("fr-FR");
+      values[1].textContent = `${new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 2 }).format(stockValue)} FCFA`;
+      values[2].textContent = String(lowStock);
+      values[3].textContent = String(outOfStock);
+    };
+
     const render = () => {
       const filtered = getFilteredProducts();
       const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
@@ -2851,6 +3032,13 @@
         state.page = targetPage;
         render();
       });
+      refreshStats();
+    };
+
+    state.refresh = async () => {
+      const loaded = await config.tables[0].load();
+      state.products = list(loaded);
+      render();
     };
 
     const updateExportSummary = () => {
@@ -3024,16 +3212,6 @@
       state.uiBound = true;
     }
 
-    const values = main.querySelectorAll(".row.g-3.mb-4 .card-body h3");
-    if (values?.length >= 4) {
-      const stockValue = state.products.reduce((total, item) => total + Number(item.prixVente || 0) * Number(item.stock || 0), 0);
-      const lowStock = state.products.filter((item) => Number(item.stock || 0) > 0 && Number(item.stock || 0) <= Number(item.seuilMinimum || 0)).length;
-      const outOfStock = state.products.filter((item) => Number(item.stock || 0) <= 0).length;
-      values[0].textContent = state.products.length.toLocaleString("fr-FR");
-      values[1].textContent = `${new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 2 }).format(stockValue)} FCFA`;
-      values[2].textContent = String(lowStock);
-      values[3].textContent = String(outOfStock);
-    }
     render();
   }
 
