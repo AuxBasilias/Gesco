@@ -13,6 +13,7 @@ import operationsRouter from "./routes/operations.js"
 
 import { authMiddleware } from "./auth/auth.js";
 import authRoutes from "./routes/auth.js"
+import { htmlIncludes } from "./lib/html-includes.js";
 
 const app = express();
 app.use(compression());
@@ -22,6 +23,12 @@ app.use(express.urlencoded({ extended: true }));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// injections des partiels (header, menu, footer...) dans les pages HTML
+app.use(htmlIncludes({
+  publicDir: path.join(__dirname, "public"),
+  partialsDir: path.join(__dirname, "partials"),
+}));
 
 // fichiers statiques
 app.use(express.static(path.join(__dirname, "public"), {

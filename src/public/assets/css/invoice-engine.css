@@ -455,59 +455,109 @@ html, body {
   height: 128mm;
   border-collapse: collapse;
   table-layout: fixed;
-  border: 1.2px solid var(--line-black);
+  border: 1px solid #555555;
 }
 
 .col-ref   { width: 11%; }
-.col-qty   { width: 9%; }
-.col-desc  { width: 47%; }
-.col-pu    { width: 14%; }
-.col-rate  { width: 6%; }
-.col-amount{ width: 13%; }
+.col-qty   { width: 10%; }
+.col-desc  { width: 43%; }
+.col-pu    { width: 15%; }
+.col-rate  { width: 7%; }
+.col-amount{ width: 14%; }
 
 .items-table thead th {
-  border: 1.2px solid var(--line-black);
-  font-size: 8.6pt;
+  border: 1px solid #555555;
+  font-size: 9pt;
   font-weight: 700;
   text-align: center;
-  padding: 2.2mm 1mm;
+  padding: 2.4mm 1.4mm;
   height: 8.5mm;
   background-color: #ffffff;
 }
 
 .items-table tbody td {
-  border-left: 1.2px solid var(--line-black);
-  border-right: 1.2px solid var(--line-black);
-  border-bottom: 1.2px solid var(--line-black);
+  border-left: 1px solid #555555;
+  border-right: 1px solid #555555;
+  border-bottom: none;
   vertical-align: top;
   font-size: 8.6pt;
-  padding: 0;
+  padding: 1.6mm 2mm;
   /* La hauteur réelle de chaque ligne est calculée dynamiquement en JS
      (128mm répartis entre le nombre d'articles de la page) et appliquée
      en style inline sur chaque <tr> — cette valeur n'est qu'un repli. */
   height: 119.5mm;
 }
 
-/* Une seule ligne : pas de trait de séparation en bas de celle-ci (le cadre
-   du tableau reste tracé par la ligne de remplissage / la bordure externe). */
-.items-table.single-row tbody tr:first-child td {
-  border-bottom: none;
+/* Ligne de titre de section (comme sur tableau.html) */
+.items-table .titre-section td {
+  padding: 0;
+  height: 8mm;
+  background: none;
 }
 
-.order-banner-row {
+.items-table .titre-section td.jaune {
+  background: #f5b800;
   text-align: center;
+  vertical-align: middle;
   font-weight: 700;
-  font-size: 8.8pt;
-  padding: 1.8mm 1mm;
-  margin-bottom: 3.5mm;
-  background: #ffffff;
+  padding: 0 2mm;
+}
+
+/* Le titre de section est modifiable directement dans le document. */
+.items-table .titre-section td.jaune[contenteditable="true"] {
+  cursor: text;
+}
+
+.items-table .titre-section td.jaune[contenteditable="true"]:focus {
+  outline: 2px solid #555555;
+  outline-offset: -2px;
+}
+
+.product-desc-cell {
+  position: relative;
 }
 
 .product-item-wrap {
-  padding-left: 4mm;
-  padding-top: 5mm;
+  padding: 0;
   font-size: 8.6pt;
-  line-height: 1.42;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.product-image-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 2mm;
+}
+
+.product-image-wrap img {
+  display: block;
+  max-width: 40mm;
+  max-height: 28mm;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.add-product-image {
+  position: absolute;
+  right: 1mm;
+  bottom: 1mm;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1c3b68;
+  font-size: 7pt;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.payment-condition-value {
+  color: #b00020;
+  font-weight: 700;
+}
+
+.product-item-wrap > div:first-child {
   font-weight: 700;
 }
 
@@ -515,14 +565,14 @@ html, body {
   text-align: center;
   font-weight: 700;
   font-size: 8.8pt;
-  padding-top: 9mm;
+  padding: 0;
 }
 
 .cell-pad-amount {
-  text-align: center;
+  text-align: right;
   font-weight: 700;
   font-size: 8.8pt;
-  padding-top: 9mm;
+  padding: 0;
 }
 
 /* ==========================================================================
@@ -596,9 +646,9 @@ html, body {
 
 .tot-val-box {
   height: 6.8mm;
-  border: 1.8px solid var(--line-black);
-  border-top: 1.8px solid var(--line-black);
-  margin-top: -1.8px;
+  border: 1px solid #555555;
+  border-top: 1px solid #555555;
+  margin-top: -1px;
   padding: 1mm 2.2mm;
   text-align: right;
   font-size: 8.6pt;
@@ -1007,30 +1057,22 @@ html, body {
 
   .items-table {
     width: 100% !important;
-    border: 1.2px solid #000000 !important;
+    border: 1px solid #555555 !important;
   }
 
   .items-table thead th {
-    border: 1.2px solid #000000 !important;
+    border: 1px solid #555555 !important;
     background-color: #ffffff !important;
   }
 
   .items-table tbody td {
-    border-left: 1.2px solid #000000 !important;
-    border-right: 1.2px solid #000000 !important;
-    border-bottom: 1.2px solid #000000 !important;
-  }
-
-  /* Une seule ligne : le trait de séparation sous la ligne est déjà supprimé
-     à l'écran (cf. .items-table.single-row). Sans cette neutralisation, le
-     `border-bottom: ... !important` ci-dessus le réimprimait et une ligne
-     apparaissait sur le papier mais pas dans l'aperçu. */
-  .items-table.single-row tbody tr:first-child td {
+    border-left: 1px solid #555555 !important;
+    border-right: 1px solid #555555 !important;
     border-bottom: none !important;
   }
 
   .tot-val-box {
-    border: 1.8px solid #000000 !important;
+    border: 1px solid #555555 !important;
   }
 
   .footer-rules .rule-solid-heavy {

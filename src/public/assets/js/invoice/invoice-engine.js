@@ -15,6 +15,7 @@ let currentInvoice = {
   phone: '',
   email: '',
   client: { id: '', name: '', line1: '', line2: '', line3: '' },
+  sectionTitle: 'Fournitures des équipements informatiques',
   orderBanner: '',
   vatRate: 0,
   items: [],
@@ -57,6 +58,7 @@ function documentDataFromInvoice(invoice, client, settings, products) {
       line3: document.clientLine3 ?? client?.ville ?? ''
     },
     orderBanner: document.orderBanner || '',
+    sectionTitle: document.sectionTitle || 'Fournitures des équipements informatiques',
     vatRate: Number(document.tauxTaxe ?? (invoiceTotalHT > 0
       ? Number(invoice.montantTaxe) / invoiceTotalHT * 100
       : settings?.tauxTaxe ?? 0)),
@@ -66,12 +68,20 @@ function documentDataFromInvoice(invoice, client, settings, products) {
       const discount = gross > 0
         ? Math.max(0, Math.min(100, (gross - Number(line.montantTotal)) / gross * 100))
         : 0;
+      const designation = String(line.designation || '').trim();
+      const productDescription = product?.description
+        ? String(product.description)
+            .split(/\r?\n/)
+            .map((value) => value.trim())
+            .filter((value) => value && value !== designation)
+        : [];
       return {
         idProduit: line.idProduit,
         qty: Number(line.quantite),
-        description: [line.designation],
+        description: [designation, ...productDescription].filter(Boolean),
         unitPrice: Number(line.prixUnitaire),
-        discount: discount ? String(discount) : ''
+        discount: discount ? String(discount) : '',
+        imageDataUrl: ''
       };
     }),
     conditions: {
@@ -234,20 +244,25 @@ const INVOICE_LAST_PAGE_MM = 128;  // page avec section Conditions/Totaux dessou
 const INVOICE_OTHER_PAGE_MM = 168; // page sans section Conditions/Totaux : plus de place
 const INVOICE_ROW_BASE_MM = 16;    // hauteur naturelle d'une ligne à 1 ligne de description
 const INVOICE_ROW_LINE_MM = 4;     // hauteur ajoutée par ligne de description supplémentaire
-const INVOICE_BANNER_MM = 10;      // espace pris par la bannière "Suivant COMMANDE N°"
+const INVOICE_BANNER_MM = 10;      // espace pris par la ligne de titre de section
+const INVOICE_ITEM_IMAGE_MM = 30;  // espace ajouté lorsqu'une image est insérée dans la ligne
 
 function invoiceItemHeightMm(item) {
   const descLines = Array.isArray(item.description) ? item.description : (item.description || '').split('\n');
-  const validLines = descLines.filter(l => l.trim() !== '').length;
-  return INVOICE_ROW_BASE_MM + Math.max(0, validLines - 1) * INVOICE_ROW_LINE_MM;
+  const visualLines = descLines
+    .map(line => line.trim())
+    .filter(Boolean)
+    .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 55)), 0);
+  const imageMm = item.imageDataUrl ? INVOICE_ITEM_IMAGE_MM : 0;
+  return INVOICE_ROW_BASE_MM + Math.max(0, visualLines - 1) * INVOICE_ROW_LINE_MM + imageMm;
 }
 
-function paginateItems(items, hasOrderBanner) {
+function paginateItems(items, hasSectionTitle) {
   const lastPageBudget = INVOICE_LAST_PAGE_MM - INVOICE_HEADER_MM;
   const otherPageBudget = INVOICE_OTHER_PAGE_MM - INVOICE_HEADER_MM;
 
   // Tout tient sur une seule page (donc la dernière, avec le budget réduit) ?
-  let totalMm = hasOrderBanner ? INVOICE_BANNER_MM : 0;
+  let totalMm = hasSectionTitle ? INVOICE_BANNER_MM : 0;
   items.forEach(it => { totalMm += invoiceItemHeightMm(it); });
   if (totalMm <= lastPageBudget) {
     return [items];
@@ -260,7 +275,7 @@ function paginateItems(items, hasOrderBanner) {
   let used = 0;
   items.forEach((item, index) => {
     let h = invoiceItemHeightMm(item);
-    if (index === 0 && hasOrderBanner) h += INVOICE_BANNER_MM;
+    if (index === 0 && hasSectionTitle) h += INVOICE_BANNER_MM;
     if (used + h > otherPageBudget && current.length > 0) {
       pages.push(current);
       current = [item];
@@ -323,8 +338,8 @@ function renderInvoice() {
     amountInWords = generateAmountWords(globalTotalTTC);
   }
   
-  const hasOrderBanner = Boolean(currentInvoice.orderBanner && currentInvoice.orderBanner.trim() !== '');
-  const pagesData = paginateItems(currentInvoice.items, hasOrderBanner);
+  const sectionTitle = (currentInvoice.sectionTitle || '').trim() || 'Fournitures des équipements informatiques';
+  const pagesData = paginateItems(currentInvoice.items, true);
   const totalPages = pagesData.length;
   
   pagesData.forEach((pageItems, pageIdx) => {
@@ -397,10 +412,19 @@ function renderInvoice() {
     `;
     
     // 3. Tableau des articles
-    let tableRowsHtml = '';
-    const bannerHtml = (isFirstPage && hasOrderBanner) 
-      ? `<div class="order-banner-row">${escapeHtml(currentInvoice.orderBanner)}</div>` 
+    const sectionTitleHtml = isFirstPage
+      ? `
+        <tr class="titre-section">
+          <td style="height:${INVOICE_BANNER_MM.toFixed(2)}mm"></td>
+          <td style="height:${INVOICE_BANNER_MM.toFixed(2)}mm"></td>
+          <td class="jaune" style="height:${INVOICE_BANNER_MM.toFixed(2)}mm" contenteditable="true" spellcheck="false" data-section-title title="Cliquer pour modifier le titre de la section">${escapeHtml(sectionTitle)}</td>
+          <td style="height:${INVOICE_BANNER_MM.toFixed(2)}mm"></td>
+          <td style="height:${INVOICE_BANNER_MM.toFixed(2)}mm"></td>
+          <td style="height:${INVOICE_BANNER_MM.toFixed(2)}mm"></td>
+        </tr>
+      `
       : '';
+    let tableRowsHtml = sectionTitleHtml;
     
     // Hauteur de chaque ligne calculée dynamiquement : 128mm (hauteur fixe du
     // tableau) moins l'en-tête du tableau (8.5mm + bordures ≈ 9mm), répartis
@@ -414,7 +438,8 @@ function renderInvoice() {
     // sans jamais la dépasser.
     const pageBudgetMm = (isLastPage ? INVOICE_LAST_PAGE_MM : INVOICE_OTHER_PAGE_MM) - INVOICE_HEADER_MM;
 
-    pageItems.forEach((item, itemIdx) => {
+    pageItems.forEach((item) => {
+      const itemIndex = currentInvoice.items.indexOf(item);
       const qty = Number(item.qty) || 0;
       const pu = Number(item.unitPrice) || 0;
       const disc = Number(item.discount) || 0;
@@ -430,16 +455,20 @@ function renderInvoice() {
         .join('');
 
       const rowHeightMm = invoiceItemHeightMm(item).toFixed(2);
+      const imageHtml = item.imageDataUrl
+        ? `<div class="product-image-wrap"><img src="${item.imageDataUrl}" alt=""></div>`
+        : '';
       
       tableRowsHtml += `
         <tr>
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"></div></td>
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"><b>${qty > 0 ? qty : ''}</b></div></td>
-          <td style="height:${rowHeightMm}mm">
-            ${(itemIdx === 0 && isFirstPage) ? bannerHtml : ''}
+          <td class="product-desc-cell" style="height:${rowHeightMm}mm">
             <div class="product-item-wrap">
               ${descHtml}
             </div>
+            ${imageHtml}
+            <button type="button" class="add-product-image no-print" data-add-product-image="${itemIndex}" title="${item.imageDataUrl ? "Changer l'image" : "Ajouter une image dans cette cellule"}">${item.imageDataUrl ? "Changer l'image" : "+ Image"}</button>
           </td>
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-amount">${pu > 0 ? formatMoney(pu) : ''}</div></td>
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-center">${disc > 0 ? disc : ''}</div></td>
@@ -451,7 +480,7 @@ function renderInvoice() {
     // Ligne de remplissage : comble l'espace non utilisé par les articles
     // pour que le tableau atteigne toujours sa hauteur prévue (comme sur la
     // facture de référence, où l'espace vide reste à l'intérieur du cadre).
-    let usedMm = (isFirstPage && hasOrderBanner) ? INVOICE_BANNER_MM : 0;
+    let usedMm = isFirstPage ? INVOICE_BANNER_MM : 0;
     pageItems.forEach(it => { usedMm += invoiceItemHeightMm(it); });
     const fillerMm = pageBudgetMm - usedMm;
     if (fillerMm > 2) {
@@ -460,18 +489,18 @@ function renderInvoice() {
         <tr>
           <td style="height:${fh}mm"></td>
           <td style="height:${fh}mm"></td>
-          <td style="height:${fh}mm">${(pageItems.length === 0) ? bannerHtml : ''}</td>
+          <td style="height:${fh}mm"></td>
           <td style="height:${fh}mm"></td><td style="height:${fh}mm"></td><td style="height:${fh}mm"></td>
         </tr>
       `;
     }
     
     if (pageItems.length === 0) {
-      tableRowsHtml = `
+      tableRowsHtml = sectionTitleHtml + `
         <tr>
           <td></td>
           <td></td>
-          <td>${bannerHtml}</td>
+          <td></td>
           <td></td><td></td><td></td>
         </tr>
       `;
@@ -516,7 +545,7 @@ function renderInvoice() {
               <div class="cond-title"><u>Conditions Générales</u></div>
               <div class="cond-line"><b>Validité:</b>&nbsp; <span>${escapeHtml(currentInvoice.conditions.validity || '')}</span></div>
               <div class="cond-line"><b>Délai de livraison:</b>&nbsp; <span>${escapeHtml(currentInvoice.conditions.deliveryTime || '')}</span></div>
-              <div class="cond-line"><b>Condition de paiement:</b>&nbsp;&nbsp; <span>${escapeHtml(currentInvoice.conditions.paymentCondition || '')}</span></div>
+              <div class="cond-line cond-payment-line"><b>Condition de paiement:</b>&nbsp;&nbsp; <span class="payment-condition-value">${escapeHtml(currentInvoice.conditions.paymentCondition || '')}</span></div>
               <div class="cond-line cond-guarantee"><b>Garantie:</b>&nbsp; <span>${escapeHtml(currentInvoice.conditions.guarantee || '')}</span></div>
               <div class="cond-line cond-words-line">
                 <b>Arrêtée la présente facture à la somme de:</b>&nbsp;&nbsp;
@@ -574,6 +603,38 @@ function renderInvoice() {
     `;
     
     sheetDiv.innerHTML = headerHtml + metaHtml + tableHtml + settlementHtml + footerHtml;
+    const sectionTitleCell = sheetDiv.querySelector('[data-section-title]');
+    if (sectionTitleCell) {
+      sectionTitleCell.addEventListener('input', () => {
+        currentInvoice.sectionTitle = sectionTitleCell.textContent.trim();
+      });
+    }
+    sheetDiv.querySelectorAll('[data-add-product-image]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const item = currentInvoice.items[Number(button.getAttribute('data-add-product-image'))];
+        if (!item) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.addEventListener('change', () => {
+          const file = input.files?.[0];
+          if (!file) {
+            input.remove();
+            return;
+          }
+          const reader = new FileReader();
+          reader.addEventListener('load', () => {
+            item.imageDataUrl = String(reader.result || '');
+            input.remove();
+            renderInvoice();
+          });
+          reader.readAsDataURL(file);
+        });
+        input.click();
+      });
+    });
     container.appendChild(sheetDiv);
   });
   

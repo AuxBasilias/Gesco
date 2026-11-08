@@ -1,0 +1,254 @@
+<!-- full-screen search modal -->
+<div class="modal fade" tabindex="-1" id="searchmodalfull" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-none border-0">
+            <div class="modal-body z-index-1">
+                <div class="input-group input-group-md w-100 rounded search-wrap mb-3 mb-lg-4">
+                    <span class="input-group-text border-0 bg-none">
+                        <i data-feather="search"></i>
+                    </span>
+                    <input class="form-control form-control-lg pe-0 border-0 bg-none" type="search" placeholder="Type something here..." id="searchglobal">
+                    <div class="dropdown input-group-text border-0 px-2">
+                        <button class="dropdown-toggle btn btn-link btn-square no-caret" type="button" id="searchfilter" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i data-feather="sliders"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-dontclose width-300" aria-labelledby="searchfilter">
+                            <ul class="nav adminuiux-nav" id="searchtab" role="tablist">
+                                <li class="nav-item" role="presentation"><button class="nav-link active" id="searchall-tab" data-bs-toggle="tab" data-bs-target="#searchall" type="button" role="tab" aria-controls="searchall" aria-selected="true">Tous</button></li>
+                                <li class="nav-item" role="presentation"><button class="nav-link" id="searchorders-tab" data-bs-toggle="tab" data-bs-target="#searchorders" type="button" role="tab" aria-controls="searchorders" aria-selected="false" tabindex="-1">Ventes</button></li>
+                                <li class="nav-item" role="presentation"><button class="nav-link" id="searchcontacts-tab" data-bs-toggle="tab" data-bs-target="#searchcontacts" type="button" role="tab" aria-controls="searchcontacts" aria-selected="false" tabindex="-1">Contacts</button></li>
+                            </ul>
+                            <div class="tab-content py-3" id="searchtabContent">
+                                <div class="tab-pane fade active show" id="searchall" role="tabpanel" aria-labelledby="searchall-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Rechercher</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch1"> <label class="form-check-label" for="isearchswitch1"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Inclure les pages</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch2" checked=""> <label class="form-check-label" for="isearchswitch2"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Ressource internet</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch3" checked=""> <label class="form-check-label" for="isearchswitch3"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Actualités</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch4"> <label class="form-check-label" for="isearchswitch4"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="searchorders" role="tabpanel" aria-labelledby="searchorders-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Afficher le n° de commande</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch5"> <label class="form-check-label" for="isearchswitch5"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Commande internationale</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch6" checked=""> <label class="form-check-label" for="isearchswitch6"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Produit taxable</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch7" checked=""> <label class="form-check-label" for="isearchswitch7"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Produit publié</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch8"> <label class="form-check-label" for="isearchswitch8"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="searchcontacts" role="tabpanel" aria-labelledby="searchcontacts-tab">
+                                    <ul class="list-group adminuiux-list-group list-group-flush bg-none show">
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Avec adresse email</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch9"> <label class="form-check-label" for="isearchswitch9"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Avec numéro de téléphone</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch10" checked=""> <label class="form-check-label" for="isearchswitch10"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Photo disponible</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch11" checked=""> <label class="form-check-label" for="isearchswitch11"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <div class="row">
+                                                <div class="col">Parrainage</div>
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="isearchswitch12"> <label class="form-check-label" for="isearchswitch12"></label></div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="">
+                                <div class="row">
+                                    <div class="col"><button class="btn btn-link">Réinitialiser</button></div>
+                                    <div class="col-auto"><button class="btn btn-theme">Appliquer</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- products -->
+                <div class="row gx-3 align-items-center mb-3">
+                    <div class="col">
+                        <h6 class="text-white">Results in Products (3)</h6>
+                    </div>
+                    <div class="col-auto">
+                        <a href="gesco-stock-produits.html" class="btn btn-sm btn-link text-white">Tout voir</a>
+                    </div>
+                </div>
+                <div class="row gx-3">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-5.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Souris sans fil Logitech M185</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></p>
+                                        <p class="small text-secondary">4.8 (15 reviews)</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h6 class="mb-0">65 FCFA</h6>
+                                        <p class="small text-secondary">10% OFF</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">6 Item in stock</p>
+                                        <p class="small text-secondary">In 36 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-6.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Clavier mécanique Redragon K552</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></p>
+                                        <p class="small text-secondary">4.5 (10 reviews)</p>
+                                    </div>
+                                    <div class="col-auto text-end">
+                                        <h6 class="mb-0">152 FCFA</h6>
+                                        <p class="small text-secondary">Bank Offer</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">3 Item in stock</p>
+                                        <p class="small text-secondary">In 2 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card adminuiux-card mb-3 mb-lg-4">
+                            <a href="gesco-stock-produit-detail.html" class="rounded coverimg height-150 mb-2 m-1">
+                                <img src="assets/img/ecommerce/image-7.jpg" alt="">
+                            </a>
+                            <div class="card-body pt-1">
+                                <a href="gesco-stock-produit-detail.html" class="style-none">
+                                    <h6 class="text-theme-1 text-truncated mb-2">Tapis de souris XL</h6>
+                                </a>
+                                <div class="row gx-3 align-items-center mb-3">
+                                    <div class="col">
+                                        <p class="text-warning mb-0"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></p>
+                                        <p class="small text-secondary">4.3 (12 reviews)</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h6 class="mb-0">8 FCFA</h6>
+                                        <p class="small text-secondary">10% OFF</p>
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 align-items-center">
+                                    <div class="col">
+                                        <p class="mb-0">25 Item in stock</p>
+                                        <p class="small text-secondary">In 21 wishlist</p>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="gesco-stock-produit-detail.html" class="btn btn-square btn-link"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-link text-white" data-bs-dismiss="modal">Annuler la recherche</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
