@@ -140,7 +140,7 @@
     if (tbC) {
       const rows = topC.map(([id,total])=>{
         const c = clientsList.find(x=>String(x.id)===String(id));
-        const name = c?.nom || (id==='comptoir'?'Client comptoir':`Client ${id}`);
+        const name = c?.nom || (id==='comptoir'?'Client non renseigné':`Client ${id}`);
         const achats = salesList.filter(s=>!s.statut||s.statut!=='annulee' ? String(s.idClient)===String(id):false).length;
         const f = facturesList.filter(fa=>String(fa.idClient)===String(id));
         const solde = f.reduce((a,fa)=>a + Math.max(0, Number(fa.solde ?? (Number(fa.montantTotal||0)-Number(fa.montantPaye||0)))), 0);

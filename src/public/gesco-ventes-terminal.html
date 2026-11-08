@@ -509,6 +509,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures</span>
                         </a>
                     </div>
+                    <div class="nav-item">
+                        <a href="gesco-facturation.html?type=proforma" class="nav-link">
+                            <i class="menu-icon bi bi-file-earmark-ruled"></i>
+                            <span class="menu-name">Factures proforma</span>
+                        </a>
+                    </div>
                     <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
@@ -611,9 +617,14 @@ setTimeout(function () {
                     <div class="card-body p-3 d-flex flex-column h-100">
                         <div class="mb-3">
                             <label class="form-label small text-secondary mb-1">Client</label>
-                            <select class="form-select" id="pos-client">
-                                <option value="" selected>Client comptoir</option>
-                            </select>
+                            <div class="input-group">
+                                <select class="form-select" id="pos-client" required>
+                                    <option value="" selected>Sélectionner un client</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" id="pos-add-client" title="Ajouter un nouveau client">
+                                    <i class="bi bi-person-plus"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <h6 class="mb-2 d-flex align-items-center justify-content-between">
@@ -724,7 +735,7 @@ setTimeout(function () {
                 </div>
                 <div class="d-flex justify-content-between small">
                     <span class="text-secondary">Client</span>
-                    <span id="ticket-client">Client de passage</span>
+                    <span id="ticket-client">—</span>
                 </div>
                 <p class="small text-end mt-2 mb-0 d-none" id="ticket-cash-detail"></p>
                 <hr>
@@ -739,6 +750,60 @@ setTimeout(function () {
                 </a>
                 <button class="btn btn-theme" type="button" data-bs-dismiss="modal" id="pos-new-sale-btn">Nouvelle vente</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Création rapide d'un client depuis le terminal -->
+<div class="modal fade" id="modalNouveauClient" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form id="pos-new-client-form">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> Nouveau client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="pos-new-client-error" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-type">Type de client</label>
+                            <select class="form-select" id="pos-new-client-type">
+                                <option value="particulier" selected>Particulier</option>
+                                <option value="entreprise">Entreprise</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-nom">Nom complet / Raison sociale</label>
+                            <input type="text" class="form-control" id="pos-new-client-nom" placeholder="Ex : Ets Kponou" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-nif">NIF (si entreprise)</label>
+                            <input type="text" class="form-control" id="pos-new-client-nif" placeholder="Optionnel">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-telephone">Téléphone</label>
+                            <input type="text" class="form-control" id="pos-new-client-telephone" placeholder="90 00 00 00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-email">Email</label>
+                            <input type="email" class="form-control" id="pos-new-client-email" placeholder="client@email.tg">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-ville">Ville</label>
+                            <input type="text" class="form-control" id="pos-new-client-ville" placeholder="Lomé">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-adresse">Adresse</label>
+                            <input type="text" class="form-control" id="pos-new-client-adresse" placeholder="Quartier, rue...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-theme" id="pos-new-client-submit">Créer le client</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

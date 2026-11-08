@@ -223,8 +223,8 @@
           link.classList.remove("disabled");
         }
       } else {
-        if (nameEl) nameEl.textContent = "Client comptoir";
-        if (typeEl) typeEl.textContent = "Comptoir";
+        if (nameEl) nameEl.textContent = "Client non renseigné";
+        if (typeEl) typeEl.textContent = "Non identifié";
         if (avatar) avatar.textContent = "CC";
         if (link) {
           link.href = "#";

@@ -1684,7 +1684,7 @@ const dashboard = endpoint(async (req, res) => {
     stocksFaibles: lowStockProducts,
     ventesRecentes: recentSalesRows.map((sale) => ({
         ...sale,
-        nomClient: sale.idClient ? clientNames.get(sale.idClient) ?? `Client ${sale.idClient}` : "Client comptoir",
+        nomClient: sale.idClient ? clientNames.get(sale.idClient) ?? `Client ${sale.idClient}` : "Client non renseigné",
     })),
   });
 });

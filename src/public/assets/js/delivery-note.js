@@ -26,7 +26,7 @@
     const phone = doc.phone || "90 45 51 05";
     const email = doc.email || "fredbank@solutechtic.com";
     const deliveryDate = formatDate(sale.dateVente);
-    const clientName = client?.nom || doc.clientName || (sale.idClient ? `Client ${sale.idClient}` : "Client comptoir");
+    const clientName = client?.nom || doc.clientName || (sale.idClient ? `Client ${sale.idClient}` : "Client non renseigné");
     const clientEmail = doc.clientEmail ?? client?.email ?? "";
     const clientLine1 = doc.clientLine1 ?? client?.adresse ?? "";
     const clientLine2 = doc.clientLine2 || "";

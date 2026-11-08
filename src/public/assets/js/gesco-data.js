@@ -37,7 +37,7 @@
       const invoice = invoiceRefs.get(sale.id);
       return {
         ...sale,
-        idClientLabel: clientNames.get(sale.idClient) ?? (sale.idClient ? `Client ${sale.idClient}` : "Client comptoir"),
+        idClientLabel: clientNames.get(sale.idClient) ?? (sale.idClient ? `Client ${sale.idClient}` : "Client non renseigné"),
         articleCount: Number(sale.articleCount ?? 0),
         invoiceReference: invoice?.reference ?? "Créer la facture",
         idFacture: invoice?.id ?? null,
@@ -288,7 +288,7 @@
       tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut"]] }],
     },
     "gesco-facturation.html": {
-      tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total TTC", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut"]] }],
+      tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total TTC", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut", "invoiceStatus"]] }],
       create: "facture",
     },
     "gesco-facturation-paiements.html": {
@@ -348,6 +348,11 @@
       title: "Nouvelle facture",
       method: api.createFacture,
       fields: [["idClient", "Client", "client", true], ["dateEcheance", "Échéance", "date"], ["lignes", "Lignes (JSON : designation, quantite, prixUnitaire; idProduit facultatif)", "textarea", true]],
+    },
+    facture_proforma: {
+      title: "Nouvelle facture proforma",
+      method: (data) => api.createFacture({ ...data, statut: "proforma" }),
+      fields: [["idClient", "Client", "client", true], ["dateEcheance", "Validité jusqu'au", "date"], ["lignes", "Lignes (JSON : designation, quantite, prixUnitaire; idProduit facultatif)", "textarea", true]],
     },
     paiement: {
       title: "Enregistrer un paiement",
@@ -462,7 +467,7 @@
     if (kind === "invoice") {
       return list(await api.getFactures())
         .map((item) => ({ item, solde: invoiceBalance(item) }))
-        .filter(({ item, solde }) => solde > 0 && !["deleted", "annulee"].includes(String(item.statut)))
+        .filter(({ item, solde }) => solde > 0 && !["deleted", "annulee", "proforma"].includes(String(item.statut)))
         .map(({ item, solde }) => [item.id, `${item.reference} — reste ${money(solde)}`]);
     }
     return [];
@@ -1409,7 +1414,7 @@
     saleSelect.append(new Option("Sélectionner une vente", ""));
     sales.forEach((sale) => {
       const date = sale.dateVente ? new Date(sale.dateVente).toLocaleDateString("fr-FR") : "";
-      const client = sale.idClient ? (clientNames.get(Number(sale.idClient)) ?? "Client comptoir") : "Client comptoir";
+      const client = sale.idClient ? (clientNames.get(Number(sale.idClient)) ?? "Client non renseigné") : "Client non renseigné";
       saleSelect.append(new Option(`${sale.reference} — ${client} — ${date} — ${money(sale.montantTotal)}`, sale.id));
     });
     const saleLabel = document.createElement("label");
@@ -1665,7 +1670,7 @@
     let value = record[key];
     if (referenceSources[key]) value = record[`${key}Label`] ?? value;
     if (key === "solde") value = Number(record.montantTotal || 0) - Number(record.montantPaye || 0);
-    if (key === "idClient") value = record.idClientLabel ?? value ?? "Client comptoir";
+    if (key === "idClient") value = record.idClientLabel ?? value ?? "Client non renseigné";
     if (key === "actif") value = value ? "Actif" : "Inactif";
     if (key === "details" && value && typeof value === "object") value = JSON.stringify(value);
     if (formatter === "money") return money(value);
@@ -1682,6 +1687,7 @@
     if (formatter === "status") {
       return ({
         brouillon: "Brouillon",
+        proforma: "Proforma",
         envoyee: "Envoyée",
         partielle: "Partiellement reçue",
         recue: "Reçue",
@@ -1698,6 +1704,17 @@
         payee: "Payée",
         partiellement_payee: "Partiellement payée",
         annulee: "Annulée",
+      })[value] ?? (value ? esc(value) : "—");
+    }
+    if (formatter === "invoiceStatus") {
+      return ({
+        brouillon: "Brouillon",
+        proforma: "Proforma",
+        payee: "Payée",
+        partiellement_payee: "Partiellement payée",
+        impayee: "Impayée",
+        annulee: "Annulée",
+        deleted: "Supprimée",
       })[value] ?? (value ? esc(value) : "—");
     }
     if (formatter === "returnType") {
@@ -1783,7 +1800,7 @@
           td.classList.add("text-center");
           td.textContent = `${counted} / ${total}`;
           td.setAttribute("aria-label", `${counted} article${counted === 1 ? "" : "s"} compté${counted === 1 ? "" : "s"} sur ${total}`);
-        } else if (formatter === "status" || formatter === "movementType" || formatter === "saleStatus" || formatter === "returnStatus" || formatter === "receptionStatus" || formatter === "inventoryStatus") {
+        } else if (formatter === "status" || formatter === "movementType" || formatter === "saleStatus" || formatter === "invoiceStatus" || formatter === "returnStatus" || formatter === "receptionStatus" || formatter === "inventoryStatus") {
           const badge = document.createElement("span");
           const statusClasses = {
             "En stock": "text-bg-success",
@@ -1808,8 +1825,11 @@
             "Annulation de vente": "text-bg-info",
             "Payée": "text-bg-success",
             "Partiellement payée": "text-bg-warning",
+            "Impayée": "text-bg-danger",
+            "Supprimée": "text-bg-secondary",
             "Annulée": "text-bg-danger",
             "Brouillon": "text-bg-secondary",
+            "Proforma": "text-bg-info",
             "Envoyée": "text-bg-primary",
             "Partiellement reçue": "text-bg-warning",
             "Reçue": "text-bg-success",
@@ -3884,8 +3904,13 @@
     const applyTaxToggle = document.getElementById("pos-apply-tax");
 
     if (clientSelect) {
-      clientSelect.replaceChildren(new Option("Client comptoir", ""));
+      clientSelect.replaceChildren();
       clientRows.forEach((client) => clientSelect.append(new Option(client.nom, client.id)));
+      if (!clientRows.length) {
+        clientSelect.append(new Option("Aucun client — créez-en un", ""));
+      } else {
+        clientSelect.value = String(clientRows[0].id);
+      }
     }
     function showError(message) {
       if (!errorBox) {
@@ -3900,6 +3925,78 @@
       errorBox.textContent = "";
       errorBox.classList.add("d-none");
     }
+    const addClientButton = document.getElementById("pos-add-client");
+    const newClientModal = document.getElementById("modalNouveauClient");
+    const newClientForm = document.getElementById("pos-new-client-form");
+    const newClientError = document.getElementById("pos-new-client-error");
+    function clearNewClientError() {
+      if (!newClientError) return;
+      newClientError.textContent = "";
+      newClientError.classList.add("d-none");
+    }
+    addClientButton?.addEventListener("click", () => {
+      clearNewClientError();
+      newClientForm?.reset();
+      if (newClientModal && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(newClientModal).show();
+      }
+    });
+    newClientForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearNewClientError();
+      const nom = document.getElementById("pos-new-client-nom")?.value.trim() ?? "";
+      if (!nom) {
+        if (newClientError) {
+          newClientError.textContent = "Veuillez renseigner le nom du client.";
+          newClientError.classList.remove("d-none");
+        }
+        return;
+      }
+      const submit = document.getElementById("pos-new-client-submit");
+      const originalLabel = submit?.innerHTML;
+      if (submit) {
+        submit.disabled = true;
+        submit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Création…';
+      }
+      try {
+        const payload = {
+          nom,
+          type: document.getElementById("pos-new-client-type")?.value || "particulier",
+          nif: document.getElementById("pos-new-client-nif")?.value.trim() || null,
+          tel: document.getElementById("pos-new-client-telephone")?.value.trim() || null,
+          email: document.getElementById("pos-new-client-email")?.value.trim() || null,
+          adresse: document.getElementById("pos-new-client-adresse")?.value.trim() || null,
+          ville: document.getElementById("pos-new-client-ville")?.value.trim() || null,
+        };
+        const response = await api.createClient(payload);
+        const created = response?.client ?? response?.data ?? response;
+        if (!created?.id) {
+          throw new Error(response?.message || "Le client n'a pas pu être créé.");
+        }
+        if (clientSelect) {
+          const emptyOption = Array.from(clientSelect.options).find((option) => !option.value);
+          if (emptyOption) emptyOption.remove();
+          clientSelect.append(new Option(created.nom, created.id));
+          clientSelect.value = String(created.id);
+        }
+        newClientForm.reset();
+        if (newClientModal && window.bootstrap?.Modal) {
+          window.bootstrap.Modal.getOrCreateInstance(newClientModal).hide();
+        }
+        clearError();
+        drawCart();
+      } catch (submitError) {
+        if (newClientError) {
+          newClientError.textContent = submitError.message || "Impossible de créer le client.";
+          newClientError.classList.remove("d-none");
+        }
+      } finally {
+        if (submit) {
+          submit.disabled = false;
+          submit.innerHTML = originalLabel;
+        }
+      }
+    });
     function paymentMethod() {
       if (document.getElementById("pay-momo")?.checked) return "mobile_money";
       if (document.getElementById("pay-card")?.checked) return "carte";
@@ -4034,17 +4131,20 @@
       const taxApplied = applyTaxToggle?.checked ?? true;
       document.getElementById("pos-tax-label").textContent = taxApplied ? `TVA (${taxRate}%)` : "TVA — non appliquée";
       const isCash = paymentMethod() === "especes";
+      const hasClient = Boolean(clientSelect?.value);
       document.getElementById("pos-cash-row")?.classList.toggle("d-none", !isCash);
       const received = Number(receivedInput?.value || 0);
       if (changeInput) changeInput.value = money(isCash ? Math.max(0, received - total) : 0);
-      if (checkout) checkout.disabled = count === 0 || (isCash && received < total);
+      if (checkout) checkout.disabled = count === 0 || !hasClient || (isCash && received < total);
       const checkoutHelp = document.getElementById("pos-checkout-help");
       if (checkoutHelp) {
         checkoutHelp.textContent = count === 0
           ? "Ajoutez un produit au panier pour continuer."
-          : isCash && received < total
-            ? `Saisissez au moins ${money(total)} dans « Montant reçu ».`
-            : "";
+          : !hasClient
+            ? "Sélectionnez ou créez un client pour continuer."
+            : isCash && received < total
+              ? `Saisissez au moins ${money(total)} dans « Montant reçu ».`
+              : "";
       }
     }
     function resetSale() {
@@ -4082,6 +4182,7 @@
     });
     receivedInput?.addEventListener("input", drawCart);
     applyTaxToggle?.addEventListener("change", drawCart);
+    clientSelect?.addEventListener("change", drawCart);
     paymentRadios.forEach((radio) => radio.addEventListener("change", drawCart));
     categoryContainer?.addEventListener("click", (event) => {
       const button = event.target.closest(".category-pill");
@@ -4099,6 +4200,10 @@
       clearError();
       if (!cart.size) {
         showError("Ajoutez au moins un produit.");
+        return;
+      }
+      if (!clientSelect?.value) {
+        showError("Sélectionnez ou créez un client avant d'encaisser.");
         return;
       }
       const { discount, total } = totals();
@@ -4150,7 +4255,7 @@
           mobile_money: "Mobile Money",
           carte: "Carte",
         })[modePaiement];
-        document.getElementById("ticket-client").textContent = clientSelect?.selectedOptions[0]?.text ?? "Client comptoir";
+        document.getElementById("ticket-client").textContent = clientSelect?.selectedOptions[0]?.text ?? "—";
         const cashDetail = document.getElementById("ticket-cash-detail");
         if (cashDetail) {
           cashDetail.classList.toggle("d-none", modePaiement !== "especes");
@@ -4458,10 +4563,34 @@
     });
   }
 
+  function setupProformaPage() {
+    document.title = "GESCO — Factures proforma | SOLUTECH";
+    const main = document.querySelector("main");
+    if (!main) return;
+    const activeBreadcrumb = main.querySelector(".breadcrumb-item.active");
+    if (activeBreadcrumb) activeBreadcrumb.textContent = "Factures proforma";
+    const heading = main.querySelector("h4");
+    if (heading) heading.textContent = "Factures proforma";
+    const actionLink = main.querySelector(".container-fluid > .row a.btn.btn-theme");
+    if (actionLink) actionLink.innerHTML = '<i class="bi bi-plus-lg"></i> Nouvelle facture proforma';
+    const listHeader = main.querySelector(".card-body > .row.gx-3.align-items-center.mb-3 h6");
+    if (listHeader) listHeader.textContent = "Factures proforma";
+    const listSubtitle = listHeader?.parentElement?.querySelector("p");
+    if (listSubtitle) listSubtitle.textContent = "Liste des factures proforma";
+  }
+
   async function init() {
     try {
+      const isProforma = page === "gesco-facturation.html"
+        && new URLSearchParams(location.search).get("type") === "proforma";
       const config = apiPages[page];
       if (config) {
+        if (isProforma) {
+          config.create = "facture_proforma";
+          config.key = "facture_proforma";
+          config.tables = [{ ...config.tables[0], load: () => api.getFactures("proforma") }];
+          setupProformaPage();
+        }
         config.key = config.create ?? config.key;
         config.detail = {
           "gesco-stock-produits.html": "gesco-stock-produit-detail.html",

@@ -50,7 +50,7 @@ function documentDataFromInvoice(invoice, client, settings, products) {
     email: document.email || 'fredbank@solutechtic.com',
     client: {
       id: client?.id ?? invoice.idClient ?? '',
-      name: client?.nom || document.clientName || (invoice.idClient ? `Client ${invoice.idClient}` : 'Client comptoir'),
+      name: client?.nom || document.clientName || (invoice.idClient ? `Client ${invoice.idClient}` : 'Client non renseigné'),
       email: document.clientEmail ?? client?.email ?? '',
       line1: document.clientLine1 ?? client?.adresse ?? '',
       line2: document.clientLine2 || '',

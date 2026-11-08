@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <td class="fw-medium">${esc(row.reference)}</td>
                         <td class="small">${date(row.datePaiement)}</td>
                         <td class="small">${row.factureReference ? `<a href="gesco-facturation-detail.html?id=${row.idFacture}">${esc(row.factureReference)}</a>` : '—'}</td>
-                        <td class="small">${esc(row.clientNom || 'Client comptoir')}</td>
+                        <td class="small">${esc(row.clientNom || 'Client non renseigné')}</td>
                         <td class="text-end fw-medium ${amountClass}">${sign}${money(row.montant)}</td>
                         <td class="small">${esc(row.modeLabel || row.modePaiement)}</td>
                         <td class="small text-secondary">${esc(row.agentNom || '—')}</td>
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             impayesBody.innerHTML = impayes.map((row) => `
                 <tr>
                     <td><a href="gesco-facturation-detail.html?id=${row.id}" class="fw-medium">${esc(row.reference)}</a></td>
-                    <td class="small">${esc(row.clientNom || 'Client comptoir')}</td>
+                    <td class="small">${esc(row.clientNom || 'Client non renseigné')}</td>
                     <td class="text-end fw-medium text-danger">${money(row.solde)}</td>
                     <td class="small">${date(row.dateEcheance)}</td>
                     <td>${row.enRetard
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (motif) motif.value = '';
         showAlert('annulation-alerte', '');
         setText('annulation-sous-titre', targetPaiement
-            ? `${targetPaiement.reference} · ${money(targetPaiement.montant)} · ${targetPaiement.clientNom || 'Client comptoir'}`
+            ? `${targetPaiement.reference} · ${money(targetPaiement.montant)} · ${targetPaiement.clientNom || 'Client non renseigné'}`
             : '');
         annulationModal?.show();
     }
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (message) message.value = '';
         showAlert('relance-alerte', '');
         setText('relance-sous-titre', targetFacture
-            ? `${targetFacture.reference} · ${targetFacture.clientNom || 'Client comptoir'} · solde ${money(targetFacture.solde)}`
+            ? `${targetFacture.reference} · ${targetFacture.clientNom || 'Client non renseigné'} · solde ${money(targetFacture.solde)}`
             : '');
         if (targetFacture && !targetFacture.clientEmail) {
             showAlert('relance-alerte', "Ce client n'a pas d'adresse e-mail : complétez sa fiche client avant de relancer.");

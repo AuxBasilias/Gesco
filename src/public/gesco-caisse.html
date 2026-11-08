@@ -512,6 +512,12 @@ setTimeout(function () {
                             <span class="menu-name">Factures &amp; devis</span>
                         </a>
                     </div>
+                    <div class="nav-item">
+                        <a href="gesco-facturation.html?type=proforma" class="nav-link">
+                            <i class="menu-icon bi bi-file-earmark-ruled"></i>
+                            <span class="menu-name">Factures proforma</span>
+                        </a>
+                    </div>
                     <!--<div class="nav-item">
                         <a href="gesco-facturation-paiements.html" class="nav-link">
                             <i class="menu-icon bi bi-credit-card"></i>
@@ -610,7 +616,7 @@ setTimeout(function () {
                         <div class="mb-3">
                             <label class="form-label small text-secondary mb-1">Client</label>
                             <select class="form-select" id="pos-client">
-                                <option value="passage" selected>Client de passage</option>
+                                <option value="passage" selected>Client non renseigné</option>
                                 <option value="c1">Ets Kponou</option>
                                 <option value="c2">Bureau Moderne SARL</option>
                                 <option value="c3">Amévi Togbé</option>
@@ -719,7 +725,7 @@ setTimeout(function () {
                 </div>
                 <div class="d-flex justify-content-between small">
                     <span class="text-secondary">Client</span>
-                    <span id="ticket-client">Client de passage</span>
+                    <span id="ticket-client">Client non renseigné</span>
                 </div>
                 <hr>
                 <p class="small text-center mb-0" id="pos-tracking-note">—</p>
