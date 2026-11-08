@@ -77,7 +77,7 @@ function documentDataFromInvoice(invoice, client, settings, products) {
     conditions: {
       validity: document.validity || '',
       deliveryTime: document.deliveryTime || '',
-      paymentCondition: document.paymentCondition || "60% à l'accordai et 40% à la livraison",
+      paymentCondition: document.paymentCondition || "60% à l'accord et 40% à la livraison",
       guarantee: document.guarantee || '',
       amountWords: document.amountWords || ''
     }

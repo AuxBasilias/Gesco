@@ -815,7 +815,7 @@ const createFactureFromVente = endpoint(async (req, res) => {
         tauxTaxe: vente.tvaAppliquee && montantHT > 0 ? Number(vente.montantTaxe) / montantHT * 100 : 0,
         orderBanner: `Vente ${vente.reference}`,
         paymentCondition: (vente.donneesDocument as Record<string, unknown> | null)?.paymentCondition
-          || "60% à l'accordai et 40% à la livraison",
+          || "60% à l'accord et 40% à la livraison",
       },
       notes: vente.notes,
       idUtilisateur: requestUserId(req) ?? vente.idUtilisateur,
