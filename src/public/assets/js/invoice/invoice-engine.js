@@ -32,6 +32,7 @@ let currentInvoice = {
   }
 };
 let currentZoom = 100;
+let convertProformaBusy = false;
 
 function unwrapResponse(response) {
   return response?.data ?? response;
@@ -680,43 +681,139 @@ function updateZoom(newZoom) {
   document.getElementById('zoomValue').textContent = Math.round(currentZoom) + '%';
 }
 
+function invoiceTotalTTC() {
+  let totalHT = 0;
+  currentInvoice.items.forEach(item => {
+    const qty = Number(item.qty) || 0;
+    const unitPrice = Number(item.unitPrice) || 0;
+    const discount = Number(item.discount) || 0;
+    let lineAmount = qty * unitPrice;
+    if (discount > 0) lineAmount *= 1 - discount / 100;
+    totalHT += lineAmount;
+  });
+  const vatRate = Number(currentInvoice.vatRate) || 0;
+  const totalVAT = Math.round((totalHT * vatRate) / 100);
+  return totalHT + totalVAT;
+}
+
+function setConvertProformaBusy(busy) {
+  convertProformaBusy = busy;
+  const confirm = document.getElementById('btnConfirmConvertProforma');
+  const cancel = document.getElementById('btnCancelConvertProforma');
+  const close = document.getElementById('btnCloseConvertProforma');
+  if (confirm) {
+    confirm.disabled = busy;
+    confirm.innerHTML = busy
+      ? '<span class="btn-spinner"></span>Conversion en cours…'
+      : 'Confirmer la conversion';
+  }
+  if (cancel) cancel.disabled = busy;
+  if (close) close.disabled = busy;
+}
+
+function openConvertProformaModal() {
+  const modal = document.getElementById('convertProformaModal');
+  if (!modal) {
+    if (window.confirm('Convertir cette facture proforma en facture réelle ? Une vente sera créée et le stock sera mis à jour.')) {
+      void convertCurrentProforma();
+    }
+    return;
+  }
+
+  const setText = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  };
+  setText('convert-proforma-reference', currentInvoice.invoiceNumber || '—');
+  setText('convert-proforma-client', currentInvoice.client?.name || 'Client non renseigné');
+  setText('convert-proforma-lines', String(currentInvoice.items.length));
+  setText('convert-proforma-total', `${formatMoney(invoiceTotalTTC())} FCFA`);
+
+  const error = document.getElementById('convertProformaError');
+  if (error) {
+    error.textContent = '';
+    error.hidden = true;
+  }
+
+  setConvertProformaBusy(false);
+  modal.hidden = false;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  setTimeout(() => document.getElementById('btnConfirmConvertProforma')?.focus(), 50);
+}
+
+function closeConvertProformaModal(force = false) {
+  if (convertProformaBusy && !force) return;
+  const modal = document.getElementById('convertProformaModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+async function convertCurrentProforma() {
+  if (convertProformaBusy || !currentInvoice.id) return;
+  const error = document.getElementById('convertProformaError');
+  if (error) {
+    error.textContent = '';
+    error.hidden = true;
+  }
+  setConvertProformaBusy(true);
+
+  try {
+    const response = await AA.convertProforma(currentInvoice.id, {});
+    const invoice = unwrapResponse(response);
+    if (invoice?.id) {
+      history.replaceState(null, '', `${location.pathname}?id=${encodeURIComponent(invoice.id)}`);
+    }
+    setConvertProformaBusy(false);
+    closeConvertProformaModal(true);
+    await loadInvoiceFromApi();
+    renderInvoice();
+    setupConversionButton();
+  } catch (conversionError) {
+    setConvertProformaBusy(false);
+    const message = conversionError.message || 'Impossible de convertir la proforma.';
+    if (error) {
+      error.textContent = message;
+      error.hidden = false;
+    } else {
+      window.alert(message);
+    }
+  }
+}
+
 function setupConversionButton() {
   const button = document.getElementById('btnConvertProforma');
   if (!button) return;
   const canConvert = currentInvoice.statut === 'proforma' && !currentInvoice.idVente;
   button.hidden = !canConvert;
+  button.style.display = canConvert ? '' : 'none';
   if (!canConvert) {
     button.onclick = null;
     return;
   }
-  button.onclick = async () => {
-    if (!window.confirm('Convertir cette facture proforma en facture réelle ? Une vente sera créée et le stock sera mis à jour.')) {
-      return;
-    }
-    button.disabled = true;
-    button.textContent = 'Conversion…';
-    try {
-      const response = await AA.convertProforma(currentInvoice.id, {});
-      const invoice = unwrapResponse(response);
-      if (invoice?.id) {
-        history.replaceState(null, '', `${location.pathname}?id=${encodeURIComponent(invoice.id)}`);
-      }
-      await loadInvoiceFromApi();
-      renderInvoice();
-      setupConversionButton();
-    } catch (error) {
-      alert(error.message || 'Impossible de convertir la proforma.');
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Convertir en facture';
-    }
-  };
+  button.textContent = 'Convertir en facture';
+  button.onclick = () => openConvertProformaModal();
 }
 
 // ==========================================================================
 // INITIALISATION & GESTIONNAIRES D'ÉVÉNEMENTS
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  const convertModal = document.getElementById('convertProformaModal');
+  if (convertModal) {
+    document.getElementById('btnCloseConvertProforma')?.addEventListener('click', () => closeConvertProformaModal());
+    document.getElementById('btnCancelConvertProforma')?.addEventListener('click', () => closeConvertProformaModal());
+    document.getElementById('btnConfirmConvertProforma')?.addEventListener('click', convertCurrentProforma);
+    convertModal.addEventListener('click', (event) => {
+      if (event.target === convertModal) closeConvertProformaModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && convertModal.classList.contains('open')) closeConvertProformaModal();
+    });
+  }
+
   const container = document.getElementById('pageContainer');
   container.textContent = 'Chargement de la facture…';
   loadInvoiceFromApi().then(() => {

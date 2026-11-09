@@ -109,6 +109,67 @@
     window.location.href = `${base}&type=partielle&q=${encodeURIComponent(parts.join(","))}`;
   }
 
+  function showCancelError(message) {
+    const errorEl = document.getElementById("annuler-vente-error");
+    if (!errorEl) return;
+    if (message) {
+      errorEl.textContent = message;
+      errorEl.classList.remove("d-none");
+    } else {
+      errorEl.textContent = "";
+      errorEl.classList.add("d-none");
+    }
+  }
+
+  function openCancelVenteModal(vente) {
+    if (!vente) return;
+    const modalEl = document.getElementById("annulerVente");
+    if (!modalEl) return;
+
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    setText("annuler-vente-reference", vente.reference || "—");
+    setText("annuler-vente-client", vente.clientNom || vente.nomClient || (vente.idClient ? `Client ${vente.idClient}` : "Client non renseigné"));
+    setText("annuler-vente-total", money(vente.montantTotal));
+    showCancelError("");
+
+    const confirm = document.getElementById("annuler-vente-confirmer");
+    if (confirm) {
+      confirm.disabled = false;
+      confirm.classList.remove("disabled");
+      confirm.innerHTML = '<i class="bi bi-x-circle"></i> Confirmer l’annulation';
+    }
+
+    if (window.bootstrap?.Modal) {
+      window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    } else {
+      modalEl.classList.add("show");
+    }
+  }
+
+  async function confirmCancelVente() {
+    if (!currentVente) return;
+    const confirm = document.getElementById("annuler-vente-confirmer");
+    if (confirm) {
+      confirm.disabled = true;
+      confirm.classList.add("disabled");
+      confirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Annulation…';
+    }
+    try {
+      await api.cancelVente(currentVente.id);
+      window.location.reload();
+    } catch (e) {
+      showCancelError(e.message || "Impossible d'annuler la vente.");
+      if (confirm) {
+        confirm.disabled = false;
+        confirm.classList.remove("disabled");
+        confirm.innerHTML = '<i class="bi bi-x-circle"></i> Confirmer l’annulation';
+      }
+    }
+  }
+
   async function hydrate(vente) {
     if (!vente) return;
 
@@ -152,26 +213,11 @@
       if (vente.statut === "annulee") {
         cancelBtn.classList.add("disabled");
         cancelBtn.setAttribute("disabled", "disabled");
+        cancelBtn.onclick = null;
       } else {
         cancelBtn.classList.remove("disabled");
         cancelBtn.removeAttribute("disabled");
-        cancelBtn.onclick = async () => {
-          const confirmed = await (window.confirmAction ? window.confirmAction({
-            title: "Annuler cette vente ?",
-            message: "Les articles seront remis en stock automatiquement et un mouvement de type 'Annulation de vente' sera enregistré. Cette action est tracée.",
-            confirmLabel: "Confirmer l'annulation",
-            tone: "danger",
-          }) : window.confirm("Annuler cette vente ?"));
-          if (!confirmed) return;
-          cancelBtn.disabled = true;
-          try {
-            await api.cancelVente(vente.id);
-            window.location.reload();
-          } catch (e) {
-            cancelBtn.disabled = false;
-            window.alert(e.message || "Impossible d'annuler la vente.");
-          }
-        };
+        cancelBtn.onclick = () => openCancelVenteModal(vente);
       }
     }
 
@@ -221,6 +267,9 @@
         if (link) {
           link.href = `gesco-clients-detail.html?id=${encodeURIComponent(vente.idClient)}`;
           link.classList.remove("disabled");
+          link.removeAttribute("aria-disabled");
+          link.style.pointerEvents = "";
+          link.style.opacity = "";
         }
       } else {
         if (nameEl) nameEl.textContent = "Client non renseigné";
@@ -257,6 +306,7 @@
       btn.addEventListener("click", () => selectLivraisonType(btn.dataset.livraisonType));
     });
     document.getElementById("btn-livraison-valider")?.addEventListener("click", submitLivraison);
+    document.getElementById("annuler-vente-confirmer")?.addEventListener("click", confirmCancelVente);
 
     const id = getId();
     if (!id) return;

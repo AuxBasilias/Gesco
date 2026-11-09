@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, like, lte, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, ilike, inArray, like, lte, ne, or, sql } from "drizzle-orm";
 import type { Request, RequestHandler, Response } from "express";
 import nodemailer from "nodemailer";
 import { db } from "../db/db.js";
@@ -749,7 +749,16 @@ const listVentes = endpoint(async (_req, res) => {
 
 const getVente = endpoint(async (req, res) => {
   const id = idParam(req);
-  const [vente] = await db.select().from(ventes).where(eq(ventes.id, id)).limit(1);
+  const [vente] = await db.select({
+    ...getTableColumns(ventes),
+    clientNom: clientsTable.nom,
+    clientType: clientsTable.type,
+    clientEmail: clientsTable.email,
+    clientTel: clientsTable.tel,
+  }).from(ventes)
+    .leftJoin(clientsTable, eq(clientsTable.id, ventes.idClient))
+    .where(eq(ventes.id, id))
+    .limit(1);
   if (!vente) throw new ApiError(404, "Vente introuvable.");
   const lignes = await db.select().from(lignesVente).where(eq(lignesVente.idVente, id));
   res.json({ ...vente, lignes });

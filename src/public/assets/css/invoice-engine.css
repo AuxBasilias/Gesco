@@ -127,6 +127,10 @@ html, body {
   background: #4b5563;
 }
 
+.tool-btn[hidden] {
+  display: none !important;
+}
+
 .tool-btn.icon-only {
   padding: 4px 8px;
   font-size: 14px;
@@ -841,6 +845,7 @@ html, body {
 
 .words-strong {
   font-weight: 700;
+  color: var(--primary-blue);
 }
 
 /* --- Colonne Milieu (20% : Prix Unitaire + R%) : Labels Totaux --- */
@@ -1016,6 +1021,109 @@ html, body {
   flex-direction: column;
   overflow: hidden;
   animation: modalIn 0.2s ease-out;
+}
+
+.modal-window--compact {
+  max-width: 560px;
+}
+
+.convert-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 4px 14px;
+  margin-bottom: 16px;
+}
+
+.convert-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 12.5px;
+}
+
+.convert-summary-row:last-child {
+  border-bottom: none;
+}
+
+.convert-summary-row span {
+  color: #64748b;
+}
+
+.convert-summary-row strong {
+  color: #1e293b;
+  text-align: right;
+}
+
+.convert-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #9a3412;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.convert-notice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fed7aa;
+  color: #9a3412;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.convert-notice strong {
+  display: block;
+  color: #9a3412;
+}
+
+.convert-notice p {
+  margin: 2px 0 0;
+  color: #b45309;
+}
+
+.convert-error {
+  margin-top: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #b91c1c;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.btn-action:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: btnSpin 0.7s linear infinite;
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes modalIn {

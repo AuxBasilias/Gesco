@@ -4319,13 +4319,13 @@
             : '<i class="bi bi-file-earmark-text"></i> Voir la facture';
           invoiceButton.classList.remove("d-none");
         }
-        const deliveryButton = document.getElementById("pos-view-delivery-btn");
-        if (deliveryButton) {
+        const generateDeliveryButton = document.getElementById("pos-generate-delivery-btn");
+        if (generateDeliveryButton) {
           if (isProforma) {
-            deliveryButton.classList.add("d-none");
+            generateDeliveryButton.classList.add("d-none");
           } else {
-            deliveryButton.href = `gesco-livraison-detail.html?venteId=${encodeURIComponent(saved.id)}`;
-            deliveryButton.classList.remove("d-none");
+            generateDeliveryButton.href = `gesco-ventes-detail.html?id=${encodeURIComponent(saved.id)}`;
+            generateDeliveryButton.classList.remove("d-none");
           }
         }
         const newSaleButton = document.getElementById("pos-new-sale-btn");

@@ -175,6 +175,50 @@
     </div>
   </div>
 
+  <div class="modal-overlay no-print" id="convertProformaModal" hidden aria-hidden="true">
+    <div class="modal-window modal-window--compact" role="dialog" aria-modal="true" aria-labelledby="convertProformaTitle">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="convertProformaTitle">Convertir la proforma en facture</h3>
+          <p>Vérifiez les informations avant de créer la facture définitive.</p>
+        </div>
+        <button type="button" class="btn-modal-close" id="btnCloseConvertProforma" aria-label="Fermer">&times;</button>
+      </div>
+      <div class="modal-content">
+        <div class="convert-summary">
+          <div class="convert-summary-row">
+            <span>Proforma</span>
+            <strong id="convert-proforma-reference">—</strong>
+          </div>
+          <div class="convert-summary-row">
+            <span>Client</span>
+            <strong id="convert-proforma-client">—</strong>
+          </div>
+          <div class="convert-summary-row">
+            <span>Articles</span>
+            <strong id="convert-proforma-lines">—</strong>
+          </div>
+          <div class="convert-summary-row">
+            <span>Total TTC</span>
+            <strong id="convert-proforma-total">—</strong>
+          </div>
+        </div>
+        <div class="convert-notice">
+          <span class="convert-notice-icon">!</span>
+          <div>
+            <strong>Cette action est définitive.</strong>
+            <p>Une vente sera créée, le stock sera mis à jour et la proforma sera transformée en facture réelle.</p>
+          </div>
+        </div>
+        <div class="convert-error" id="convertProformaError" hidden></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-action btn-cancel" id="btnCancelConvertProforma">Conserver la proforma</button>
+        <button type="button" class="btn-action btn-save" id="btnConfirmConvertProforma">Confirmer la conversion</button>
+      </div>
+    </div>
+  </div>
+
   <script src="assets/js/api.js"></script>
   <script src="assets/js/auth-guard.js"></script>
   <script src="assets/js/invoice/invoice-engine.js"></script>

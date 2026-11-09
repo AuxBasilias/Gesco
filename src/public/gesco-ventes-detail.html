@@ -149,7 +149,47 @@ setTimeout(function () {
     </div>
 </main>
 
-<div class="modal fade" id="annulerVente" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="annulerVente" tabindex="-1" aria-labelledby="annulerVenteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger-subtle text-danger flex-shrink-0" style="width:52px;height:52px;font-size:1.35rem;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title mb-1" id="annulerVenteLabel">Annuler la vente</h5>
+                        <p class="small text-secondary mb-0">Cette action est définitive et sera tracée dans le journal d’activité.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <div class="rounded-3 border bg-light p-3 mb-3">
+                    <div class="d-flex justify-content-between gap-3 small mb-2">
+                        <span class="text-secondary">Vente</span>
+                        <span class="fw-semibold text-end" id="annuler-vente-reference">—</span>
+                    </div>
+                    <div class="d-flex justify-content-between gap-3 small mb-2">
+                        <span class="text-secondary">Client</span>
+                        <span class="fw-semibold text-end" id="annuler-vente-client">—</span>
+                    </div>
+                    <div class="d-flex justify-content-between gap-3 small">
+                        <span class="text-secondary">Montant total</span>
+                        <span class="fw-semibold text-end" id="annuler-vente-total">—</span>
+                    </div>
+                </div>
+                <div class="alert alert-warning small mb-0" role="alert">
+                    <i class="bi bi-arrow-counterclockwise"></i> Les articles seront remis en stock et la facture liée sera annulée.
+                </div>
+                <div class="alert alert-danger d-none mb-0 mt-3" id="annuler-vente-error" role="alert"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Conserver la vente</button>
+                <button type="button" class="btn btn-danger" id="annuler-vente-confirmer"><i class="bi bi-x-circle"></i> Confirmer l’annulation</button>
+            </div>
+        </div>
+    </div>
 </div>
 
                 </div>
