@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!-- dir="rtl"-->
+
+<head>
+    <!-- Required meta tags  -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta name="application-name" content="smartUIUX">
+    <meta name="apple-mobile-web-app-title" content="smartUIUX">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="white">
+    <link rel="apple-touch-icon" href="assets/img/logo-512.png">
+
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>GESCO — Facture proforma | SOLUTECH</title>
+    <meta name="description" content="Liste des Factures proforma dans GESCO.">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Poppins:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --adminuiux-content-font: "Open Sans", serif;
+            --adminuiux-content-font-weight: 400;
+            --adminuiux-title-font: "Poppins", serif;
+            --adminuiux-title-font-weight: 600;
+        }
+    </style>
+<script defer src="assets/js/app13a2.js?5242d2f600103545528d"></script><link href="assets/css/app13a2.css?5242d2f600103545528d" rel="stylesheet"><link href="assets/css/solutech-theme.css" rel="stylesheet"><script>
+// Filet de sécurité : si l'écran de chargement ne se masque pas naturellement
+// (ex: police externe lente/bloquée sur réseau mobile), on le force à disparaître
+// après 2.5s pour ne jamais bloquer l'interface.
+setTimeout(function () {
+    var loader = document.querySelector('.pageloader');
+    if (loader && loader.style.display !== 'none') { loader.style.display = 'none'; }
+}, 2500);
+</script>
+</head>
+
+    <body class="main-bg main-bg-opac main-bg-blur roundedui adminuiux-header-standard adminuiux-sidebar-standard adminuiux-mobile-footer-fill-theme adminuiux-header-transparent adminuiux-sidebar-fill-none scrollup" data-theme="light" data-sidebarfill="adminuiux-sidebar-fill-none" data-bs-spy="scroll" data-bs-target="#list-example" data-bs-smooth-scroll="true" tabindex="0" data-sidebarlayout="adminuiux-sidebar-standard"
+        data-headerlayout="adminuiux-header-standard" data-headerfill="adminuiux-header-transparent" data-bggradient="bg-r-gradient" style="">
+        <!-- Pageloader -->
+<div class="pageloader">
+    <div class="container h-100">
+        <div class="row justify-content-center align-items-center text-center h-100 pb-ios">
+            <div class="col-12 mb-auto pt-4"></div>
+            <div class="col-auto">
+                <img src="assets/img/logo.svg" alt="" class="height-80 mb-3">
+                <p class="h2 mb-0 text-theme-accent-1">SOLUTECH</p>
+                <p class="display-3 text-theme-1 fw-bold mb-4">GESCO</p>
+                <div class="loader12 mb-2 mx-auto"></div>
+            </div>
+            <div class="col-12 mt-auto pb-4">
+                <p class="small text-secondary">Veuillez patienter, préparation en cours...</p>
+            </div>
+        </div>
+    </div>
+</div>
+            <!-- standard header -->
+<!-- include:header -->
+
+<!-- include:search-modal -->
+                <div class="adminuiux-wrap">
+                    <!-- Standard sidebar -->
+                    <!-- Standard sidebar -->
+<!-- include:sidebar -->
+                        <main class="adminuiux-content has-sidebar">
+    <div class="container-fluid mt-3">
+        <div class="row gx-1 align-items-center mb-3">
+            <div class="col">
+                <nav aria-label="breadcrumb" class="mb-1">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
+                        <li class="breadcrumb-item">Facturation</li>
+                        <li class="breadcrumb-item active" aria-current="page">Factures proforma</li>
+                    </ol>
+                </nav>
+                <h4 class="mb-0">Factures proforma</h4>
+            </div>
+            <div class="col-auto">
+                <a href="gesco-facturation-proforma.html" class="btn btn-theme">
+                    <i class="bi bi-plus-lg"></i> Nouvelle Facture proforma
+                </a>
+            </div>
+        </div>
+
+        <div class="card adminuiux-card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row gx-3 align-items-center mb-3">
+                    <div class="col">
+                        <h6 class="mb-0">Facture proforma</h6>
+                        <p class="small text-secondary mb-0">Liste des Factures proforma</p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="input-group">
+                            <span class="input-group-text bg-none"><i class="bi bi-search"></i></span>
+                            <input id="factures-search" type="search" class="form-control" placeholder="Rechercher (n°, client...)">
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table adminuiux-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Référence</th>
+                                <th>Date</th>
+                                <th>Client</th>
+                                <th class="text-end">Total TTC</th>
+                                <th>Statut</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="row gx-3 align-items-center mt-3">
+                    <div class="col"><p id="factures-count" class="small text-secondary mb-0">—</p></div>
+                    <div class="col-auto">
+                        <nav class="d-none"><ul class="pagination mb-0"></ul></nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+    </div>
+
+    <!-- include:footer-compact -->
+
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/profile.js"></script>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
+</html>

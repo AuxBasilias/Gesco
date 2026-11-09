@@ -6,6 +6,7 @@ import {
   categories,
   clientsTable,
   commandesFournisseurs,
+  compteursDocuments,
   factures,
   fournisseurs,
   inventaires,
@@ -68,6 +69,39 @@ async function generateReference(
   const lastNumber = last ? Number.parseInt(last.reference.slice(base.length), 10) : 0;
   const next = Number.isFinite(lastNumber) ? lastNumber + 1 : 1;
   return `${base}${String(next).padStart(3, "0")}`;
+}
+
+// Numérotation annuelle :
+// - ventes / factures : SI 26/0069 (4 chiffres) ;
+// - proformas : SI 26/084 (3 chiffres), avec une séquence séparée.
+async function generateDocumentReference(
+  tx: DbTransaction,
+  prefix: "facture" | "proforma",
+  digits: number,
+  date = new Date(),
+): Promise<string> {
+  const year = date.getFullYear();
+  const key = `${prefix}:${year}`;
+  await tx.insert(compteursDocuments)
+    .values({ cle: key, valeur: 0 })
+    .onConflictDoNothing();
+  const [counter] = await tx.select()
+    .from(compteursDocuments)
+    .where(eq(compteursDocuments.cle, key))
+    .for("update");
+  const next = Number(counter?.valeur ?? 0) + 1;
+  await tx.update(compteursDocuments)
+    .set({ valeur: next, updatedAt: new Date() })
+    .where(eq(compteursDocuments.cle, key));
+  return `SI ${String(year).slice(-2)}/${String(next).padStart(digits, "0")}`;
+}
+
+async function generateFactureReference(tx: DbTransaction, date = new Date()): Promise<string> {
+  return generateDocumentReference(tx, "facture", 4, date);
+}
+
+async function generateProformaReference(tx: DbTransaction, date = new Date()): Promise<string> {
+  return generateDocumentReference(tx, "proforma", 3, date);
 }
 
 function endpoint(
@@ -230,12 +264,29 @@ const createFacture = endpoint(async (req, res) => {
   const tvaAppliquee = body.tvaAppliquee !== false;
   const montantTaxe = tvaAppliquee ? Math.round(montantHT * tauxTaxe) / 100 : 0;
   const montantTotal = montantHT + montantTaxe;
+  const dateFacture = body.dateFacture ? new Date(String(body.dateFacture)) : new Date();
+  if (Number.isNaN(dateFacture.getTime())) throw new ApiError(400, "Date de facture invalide.");
+  const statut = String(body.statut ?? "brouillon");
+  if (statut === "proforma" && lignes.some((line) => !line.idProduit)) {
+    throw new ApiError(400, "Chaque ligne de la proforma doit être liée à un produit pour permettre la conversion.");
+  }
+  const providedReference = String(body.reference ?? "").trim();
   const [result] = await db.transaction(async (tx) => {
+    if (statut === "proforma") {
+      const productIds = [...new Set(lignes.map((line) => Number(line.idProduit)))];
+      const productRows = await tx.select({ id: produits.id }).from(produits)
+        .where(inArray(produits.id, productIds));
+      if (productRows.length !== productIds.length) {
+        throw new ApiError(404, "Un produit de la proforma est introuvable.");
+      }
+    }
     const [facture] = await tx.insert(factures).values({
-      reference: String(body.reference || (await generateReference(tx, "FAC"))),
+      reference: providedReference || (statut === "proforma"
+        ? await generateProformaReference(tx, dateFacture)
+        : await generateFactureReference(tx, dateFacture)),
       idClient,
-      statut: String(body.statut ?? "brouillon"),
-      dateFacture: body.dateFacture ? new Date(String(body.dateFacture)) : new Date(),
+      statut,
+      dateFacture,
       dateEcheance: body.dateEcheance ? new Date(String(body.dateEcheance)) : null,
       montantHT: String(montantHT),
       montantTaxe: String(montantTaxe),
@@ -347,7 +398,7 @@ const cleanupFactures = endpoint(async (_req, res) => {
 
 const factureStats = endpoint(async (_req, res) => {
   const rows = await db.select().from(factures);
-  const active = rows.filter((row) => row.statut !== "deleted");
+  const active = rows.filter((row) => row.statut !== "deleted" && row.statut !== "proforma");
   res.json({
     total: active.length,
     montantTotal: active.reduce((sum, row) => sum + Number(row.montantTotal), 0),
@@ -442,6 +493,7 @@ const listUnpaidInvoices = endpoint(async (req, res) => {
   const query = String(req.query.q ?? req.query.search ?? "").trim();
   const filters = [
     ne(factures.statut, "deleted"),
+    ne(factures.statut, "proforma"),
     ne(factures.statut, "brouillon"),
     sql<number>`${factures.montantTotal} - ${factures.montantPaye} > 0`,
   ];
@@ -798,7 +850,7 @@ const createFactureFromVente = endpoint(async (req, res) => {
 
     const montantHT = Number(vente.montantHT);
     const [facture] = await tx.insert(factures).values({
-      reference: await generateReference(tx, "FAC"),
+      reference: vente.reference,
       idClient: vente.idClient,
       idVente: vente.id,
       statut: vente.statut === "annulee"
@@ -840,6 +892,141 @@ const createFactureFromVente = endpoint(async (req, res) => {
     success: true,
     data: { ...result.facture, lignes: result.lignes },
   });
+});
+
+const convertProforma = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const body = record(req.body);
+  const requestedMode = body.modePaiement ? String(body.modePaiement).trim() : "";
+  if (requestedMode && !PAYMENT_MODES[requestedMode]) {
+    throw new ApiError(400, `Mode de paiement invalide. Valeurs attendues : ${Object.keys(PAYMENT_MODES).join(", ")}.`);
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [proforma] = await tx.select().from(factures).where(eq(factures.id, id)).for("update");
+    if (!proforma) throw new ApiError(404, "Facture proforma introuvable.");
+    if (proforma.statut !== "proforma") throw new ApiError(409, "Cette facture n'est pas une proforma.");
+    if (proforma.idVente) throw new ApiError(409, "Cette proforma est déjà convertie en vente.");
+
+    const proformaLignes = await tx.select().from(lignesFacture).where(eq(lignesFacture.idFacture, id));
+    if (proformaLignes.length === 0) throw new ApiError(409, "Ajoutez au moins une ligne à la proforma.");
+    if (proformaLignes.some((line) => !line.idProduit)) {
+      throw new ApiError(409, "Chaque ligne de la proforma doit être liée à un produit pour créer la vente.");
+    }
+
+    const montantTotal = Number(proforma.montantTotal);
+    const montantPaye = amount(body.montantPaye ?? 0, "Montant payé");
+    if (montantPaye > montantTotal) throw new ApiError(400, "Le paiement dépasse le montant de la proforma.");
+    if (montantPaye > 0 && !requestedMode) throw new ApiError(400, "Indiquez le mode de paiement.");
+
+    const productIds = [...new Set(proformaLignes.map((line) => Number(line.idProduit)))];
+    const productRows = await tx.select().from(produits)
+      .where(inArray(produits.id, productIds))
+      .for("update");
+    if (productRows.length !== productIds.length) throw new ApiError(404, "Un produit de la proforma est introuvable.");
+    const stockRows = await tx.select().from(stocks)
+      .where(inArray(stocks.idProduit, productIds))
+      .for("update");
+    const disponible = new Map(stockRows.map((row) => [row.idProduit, row.quantite]));
+    for (const line of proformaLignes) {
+      const idProduit = Number(line.idProduit);
+      const stock = disponible.get(idProduit);
+      if (stock === undefined) throw new ApiError(409, `Stock du produit ${idProduit} introuvable.`);
+      const reste = stock - Number(line.quantite);
+      if (reste < 0) throw new ApiError(409, `Stock insuffisant pour le produit ${idProduit}.`);
+      disponible.set(idProduit, reste);
+    }
+
+    const invoiceReference = await generateFactureReference(tx);
+    const [existingSale] = await tx.select({ id: ventes.id }).from(ventes)
+      .where(eq(ventes.reference, invoiceReference)).limit(1);
+    if (existingSale) throw new ApiError(409, "Une vente utilise déjà ce numéro de document.");
+    const conversionData = {
+      ...(proforma.donneesDocument ?? {}),
+      proformaReference: proforma.reference,
+      orderBanner: `Vente ${invoiceReference}`,
+    };
+    const statut = montantPaye >= montantTotal ? "payee" : "partiellement_payee";
+    const [sale] = await tx.insert(ventes).values({
+      reference: invoiceReference,
+      idClient: proforma.idClient,
+      statut,
+      montantHT: proforma.montantHT,
+      montantTaxe: proforma.montantTaxe,
+      tvaAppliquee: proforma.tvaAppliquee,
+      montantTotal: proforma.montantTotal,
+      montantPaye: String(montantPaye),
+      modePaiement: requestedMode || null,
+      notes: proforma.notes,
+      donneesDocument: conversionData,
+      idUtilisateur: requestUserId(req) ?? proforma.idUtilisateur,
+    }).returning();
+
+    await tx.insert(lignesVente).values(proformaLignes.map((line) => {
+      const quantite = Number(line.quantite);
+      const prixUnitaire = Number(line.prixUnitaire);
+      return {
+        idVente: sale.id,
+        idProduit: Number(line.idProduit),
+        designation: line.designation,
+        quantite,
+        prixUnitaire: line.prixUnitaire,
+        remise: String(Math.max(0, roundMoney(prixUnitaire * quantite - Number(line.montantTotal)))),
+        montantTotal: line.montantTotal,
+      };
+    }));
+
+    for (const line of proformaLignes) {
+      const idProduit = Number(line.idProduit);
+      await tx.update(stocks)
+        .set({ quantite: disponible.get(idProduit)!, updatedAt: new Date() })
+        .where(eq(stocks.idProduit, idProduit));
+      await storeStockMovement(tx, req, idProduit, "vente", -Number(line.quantite), sale.reference, null);
+    }
+
+    if (sale.idClient) {
+      const [client] = await tx.select().from(clientsTable)
+        .where(eq(clientsTable.id, sale.idClient))
+        .for("update");
+      if (client) {
+        await tx.update(clientsTable).set({
+          totalAchats: String(Number(client.totalAchats) + montantTotal),
+          soldeDu: String(Number(client.soldeDu) + montantTotal - montantPaye),
+          dernierAchat: new Date(),
+        }).where(eq(clientsTable.id, sale.idClient));
+      }
+    }
+
+    if (montantPaye > 0) {
+      await tx.insert(paiements).values({
+        reference: await generateReference(tx, "PAY"),
+        idFacture: id,
+        montant: String(montantPaye),
+        modePaiement: requestedMode,
+        idUtilisateur: requestUserId(req) ?? null,
+      });
+    }
+
+    const [invoice] = await tx.update(factures).set({
+      reference: invoiceReference,
+      idVente: sale.id,
+      statut,
+      dateFacture: new Date(),
+      montantPaye: String(montantPaye),
+      donneesDocument: conversionData,
+      updatedAt: new Date(),
+    }).where(eq(factures.id, id)).returning();
+
+    await logActivity(tx, req, "facture.proforma_convertie", {
+      id: invoice.id,
+      reference: invoice.reference,
+      proformaReference: proforma.reference,
+      idVente: sale.id,
+    });
+    return { facture: invoice, lignes: proformaLignes, vente: sale };
+  });
+
+  res.json({ success: true, data: { ...result.facture, lignes: result.lignes, vente: result.vente } });
 });
 
 const createVente = endpoint(async (req, res) => {
@@ -895,7 +1082,7 @@ const createVente = endpoint(async (req, res) => {
       if (montantRecu < montantPaye) throw new ApiError(400, "Le montant reçu est inférieur au montant payé.");
     }
     const [created] = await tx.insert(ventes).values({
-      reference: String(body.reference ?? (await generateReference(tx, "VTE"))),
+      reference: String(body.reference ?? (await generateFactureReference(tx))),
       idClient,
       statut: montantPaye >= montantTotal ? "payee" : "partiellement_payee",
       montantHT: String(montantHT),
@@ -1655,7 +1842,10 @@ const dashboard = endpoint(async (req, res) => {
     const product = productById.get(stock.idProduit);
     return sum + stock.quantite * Number(product?.prixVente ?? 0);
   }, 0);
-  const unpaidInvoices = invoiceRows.filter((invoice) => Number(invoice.montantTotal) > Number(invoice.montantPaye));
+  const unpaidInvoices = invoiceRows.filter((invoice) =>
+    !["deleted", "proforma"].includes(invoice.statut)
+    && Number(invoice.montantTotal) > Number(invoice.montantPaye),
+  );
   const returnsToday = returnRows.filter((item) => item.statut !== "annule");
 
   res.json({
@@ -1759,7 +1949,7 @@ const listClientStats = endpoint(async (req, res) => {
     totalAchats: client.totalAchats,
     soldeDu: client.soldeDu,
     nombreVentes: clientSales.length,
-    nombreFactures: clientInvoices.length,
+    nombreFactures: clientInvoices.filter((invoice) => invoice.statut !== "proforma").length,
     dernierAchat: client.dernierAchat,
   });
 });
@@ -1768,6 +1958,7 @@ export const operationsHandlers = {
   getFactures,
   getFacture,
   createFacture,
+  convertProforma,
   updateFacture,
   deleteFacture,
   cleanupFactures,

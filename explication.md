@@ -290,3 +290,100 @@ Dans `src/public/assets/css/invoice-engine.css` :
 ## Remarque
 
 Les images ne sont pas persistées : elles sont perdues au rechargement de la page, conformément à la demande (« juste sur la facture pour l'impression, pas dans le serveur »).
+
+---
+
+# Mise à jour — correction du chevauchement et nouvel en-tête de facture
+
+## 1. Chevauchement des totaux avec le grand tableau
+
+Le tableau des articles avait une hauteur figée (128 mm) alors que son contenu pouvait dépasser cette hauteur, notamment à cause des descriptions produits ou des images ajoutées. Le bloc Conditions/Totaux, placé juste après, se retrouvait alors recouvert par les dernières lignes du tableau.
+
+Correction apportée dans `src/public/assets/css/invoice-engine.css` :
+
+- ajout de la classe `invoice-sheet` sur chaque feuille de facture, dans `src/public/assets/js/invoice/invoice-engine.js` ;
+- pour cette classe uniquement, le tableau et sa section passent de `height: 128mm` à `height: auto; min-height: 128mm` ;
+- même logique pour les pages intermédiaires avec `min-height: 168mm`.
+
+Ainsi, le tableau peut grandir si une ligne est plus haute que prévu, et le bloc Conditions/Totaux est repoussé vers le bas au lieu d'être chevauché. Les bons de livraison et bons de commande, qui partagent le même gabarit, ne sont pas impactés car les surcharges sont limitées à `.invoice-sheet`.
+
+## 2. Nouvel en-tête inspiré de `entete-facture.html`
+
+La partie haute de la facture (sous l'en-tête de l'entreprise, qui reste inchangé) a été restructurée dans `src/public/assets/js/invoice/invoice-engine.js` et `src/public/assets/css/invoice-engine.css` :
+
+- grille à trois colonnes avec les proportions `1.35fr / 1fr / 1.15fr` et un espacement de 6 mm ;
+- cadre Client avec bordure rose `#a8595c`, coins arrondis et titre « Client » centré qui coupe la bordure supérieure ;
+- nom du client en gras, ville en bleu souligné `#1a3b8f` en bas à gauche du cadre ;
+- bloc central « FACTURE » + numéro, avec le texte gris `#444444` et un espacement de lettres proche du modèle ;
+- cadre Date / Dossier suivi avec bordure rose, date soulignée, nom du suivi souligné et contacts en bleu souligné ;
+- ajout du bloc `Svt PF N° <numéro du devis>` sous le numéro de facture ; la valeur est dynamique et reprend la référence `SI 26/XXX` du devis proforma d'origine lorsqu'elle existe.
+
+Les couleurs du modèle sont respectées : bordure `#a8595c`, liens et ville `#1a3b8f`, référence `#555555`, titres `#444444`, texte `#222222`.
+
+## Vérifications effectuées
+
+- `node --check src/public/assets/js/invoice/invoice-engine.js` : syntaxe JavaScript valide.
+- `npm run typecheck` : aucune erreur.
+- Les styles ajoutés sont limités à `.invoice-sheet` pour ne pas casser les autres documents.
+- Le tableau peut désormais s'agrandir sans recouvrir les totaux.
+
+---
+
+# Mise à jour — numérotation des factures et des devis proforma
+
+## 1. Deux séquences distinctes
+
+- Ventes et factures : `SI 26/XXXX` (4 chiffres), compteur `facture:2026`.
+- Devis / factures proforma : `SI 26/XXX` (3 chiffres), compteur `proforma:2026`.
+- Les deux compteurs sont stockés dans `compteurs_documents` et incrémentés dans la transaction de création avec un verrou `FOR UPDATE`.
+- `createVente` et les factures directes utilisent `generateFactureReference`.
+- `createFacture` utilise `generateProformaReference` lorsque le statut est `proforma`.
+- Une facture liée à une vente reprend la référence de la vente.
+- La migration `drizzle/0022_facture_numbering.sql` a créé la table et initialisé `facture:2026` à `68`.
+- La migration `drizzle/0023_proforma_numbering.sql` initialise `proforma:2026` à `84` (prochain devis : `SI 26/085`).
+
+## 2. Proformas
+
+- Le statut `proforma` est exclu des statistiques de factures, des impayés, du tableau de bord et du nombre de factures client.
+- Le document affiche `FACTURE PROFORMA`, la mention « Arrêtée la présente facture proforma… » et masque « Pour Acquit ».
+- Un bouton « Convertir en facture » est disponible sur le détail d'une proforma.
+- `POST /api/factures/:id/convertir` :
+  - vérifie que la facture est bien une proforma non déjà convertie ;
+  - génère un nouveau numéro de facture `SI 26/XXXX` et crée la vente avec cette référence ;
+  - conserve le numéro du devis dans `donneesDocument.proformaReference` ;
+  - copie les lignes, décrémente le stock et crée les mouvements de stock ;
+  - met à jour les totaux du client ;
+  - enregistre un paiement si `montantPaye` est fourni ;
+  - passe la facture en `partiellement_payee` ou `payee`, conserve le lien `idVente` ;
+  - refuse une seconde conversion avec un statut HTTP `409`.
+
+## 3. Affichage `Svt PF N°`
+
+- Sur une facture convertie depuis un devis, le bloc affiche le numéro du devis d'origine : `Svt PF N° SI 26/XXX`.
+- Le bloc est masqué sur le devis proforma lui-même et sur les factures sans devis d'origine.
+- La valeur n'est plus statique.
+
+## 4. Interface de création et liste des devis
+
+- Nouvelle page de création sans JSON : `gesco-facturation-proforma.html`.
+  - reprend l'interface du terminal de vente ;
+  - autorise les produits en rupture de stock ;
+  - masque le paiement et le montant reçu ;
+  - appelle `POST /api/factures` avec `statut: "proforma"` ;
+  - permet d'ouvrir le détail du devis après enregistrement ;
+  - n'écrit ni stock, ni mouvement, ni total client.
+- Nouvelle page de liste dédiée : `gesco-facturation-proformas.html`.
+  - charge uniquement les documents `proforma` ;
+  - recherche par numéro ou client ;
+  - lien direct vers le détail et la conversion.
+- L'ancien lien `gesco-facturation.html?type=proforma` redirige vers la nouvelle liste.
+- Le menu Facturation pointe désormais vers « Devis proforma » et « Nouveau devis proforma ».
+
+## Vérifications effectuées
+
+- `npm run typecheck` : aucune erreur.
+- `node --check` sur `invoice-engine.js`, `api.js` et `gesco-data.js` : syntaxe valide.
+- Les pages `gesco-facturation-proforma.html` et `gesco-facturation-proformas.html` répondent en HTTP `200` et les partiels header/sidebar/footer sont bien injectés.
+- Le lien `gesco-facturation.html?type=proforma` redirige côté client vers `gesco-facturation-proformas.html`.
+- Migration appliquée et contrôlée en base : ventes `SI 26/0065` à `SI 26/0068`, factures liées, mouvements de stock et compteur `68`.
+- Test API manuel validé : création d'un devis proforma `SI 26/085`, conversion en vente/facture `SI 26/0069`, décrémentation du stock, mise à jour du client, rejet d'une double conversion en `409`, puis nettoyage du jeu d'essai et restauration des compteurs à `68` et `84`.

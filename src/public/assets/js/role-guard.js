@@ -8,6 +8,7 @@
     "gesco-ventes-terminal.html",
     "gesco-caisse.html",
     "ca.html",
+    "gesco-facturation-proforma.html",
     "gesco-stock-produit-detail.html",
     "gesco-administration.html",
   ];

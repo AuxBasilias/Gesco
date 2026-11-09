@@ -289,6 +289,12 @@ export const factures = pgTable(
   ],
 );
 
+export const compteursDocuments = pgTable("compteurs_documents", {
+  cle: varchar("cle", { length: 80 }).primaryKey(),
+  valeur: integer("valeur").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const lignesFacture = pgTable("lignes_facture", {
   id: serial("id").primaryKey(),
   idFacture: integer("id_facture")

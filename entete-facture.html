@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>En-tête de facture</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 20px;
+    background: #e9e9e9;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #222;
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px 20px;
+  }
+
+  .entete {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr 1.15fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  /* Cadres arrondis */
+  .cadre {
+    position: relative;
+    border: 1px solid #a8595c;
+    border-radius: 8px;
+    min-height: 118px;
+  }
+
+  /* --- Bloc client --- */
+  .client .titre {
+    position: absolute;
+    top: -9px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    line-height: 16px;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  /* Le mot "Client" coupe la bordure haute, avec des tirets de part et d'autre */
+  .client .titre span {
+    background: #fff;
+    padding: 0 18px;
+  }
+  .client .nom {
+    padding: 34px 14px 0;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .client .nom span { margin-left: 14px; }
+  .client .ville {
+    position: absolute;
+    left: 10px;
+    bottom: 4px;
+    font-size: 13px;
+    color: #1a3b8f;
+    text-decoration: underline;
+  }
+
+  /* --- Bloc central --- */
+  .centre {
+    text-align: center;
+    padding-top: 22px;
+  }
+  .centre .facture {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    line-height: 1.5;
+    color: #444;
+  }
+  .centre .ref {
+    margin-top: 28px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #555;
+  }
+
+  /* --- Bloc date / dossier --- */
+  .infos { padding: 14px 16px 8px; font-size: 13px; }
+  .infos .ligne {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .infos .date .valeur {
+    display: inline-block;
+    min-width: 115px;
+    text-align: center;
+    border-bottom: 1px solid #222;
+    padding-bottom: 2px;
+    margin-right: 6px;
+    font-size: 14px;
+  }
+  .infos .suivi .valeur {
+    font-weight: bold;
+    text-decoration: underline;
+    margin-right: 14px;
+  }
+  .infos .contact {
+    justify-content: space-around;
+    margin-bottom: 0;
+  }
+  .infos .contact a {
+    font-size: 11px;
+    color: #1a3b8f;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 700px) {
+    .entete { grid-template-columns: 1fr; }
+    .centre { padding: 0; }
+    .centre .ref { margin-top: 8px; }
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="entete">
+
+    <!-- Client -->
+    <div class="cadre client">
+      <div class="titre"><span>Client</span></div>
+      <div class="nom">Client: <span>EPL /UNIVERSITE DE LOME</span></div>
+      <div class="ville">Lomé -Togo</div>
+    </div>
+
+    <!-- Numéro de facture -->
+    <div class="centre">
+      <div class="facture">FACTURE<br>SI 26/0068</div>
+      <div class="ref">Svt PF N° SI 26/084</div>
+    </div>
+
+    <!-- Date et dossier -->
+    <div class="cadre infos">
+      <div class="ligne date">
+        <span>Date</span>
+        <span class="valeur">23/07/2026</span>
+      </div>
+      <div class="ligne suivi">
+        <span>Dossier suivi par:</span>
+        <span class="valeur">M. BANQUE</span>
+      </div>
+      <div class="ligne contact">
+        <span>90 45 51 05</span>
+        <a href="mailto:fredbank@solutechtic.com">fredbank@solutechtic.com</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

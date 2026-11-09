@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!-- dir="rtl"-->
+
+<head>
+    <!-- Required meta tags  -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta name="application-name" content="smartUIUX">
+    <meta name="apple-mobile-web-app-title" content="smartUIUX">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="white">
+    <link rel="apple-touch-icon" href="assets/img/logo-512.png">
+
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>GESCO — Facture proforma — Terminal | SOLUTECH</title>
+    <meta name="description" content="Création d'une Facture proforma dans GESCO.">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Poppins:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --adminuiux-content-font: "Open Sans", serif;
+            --adminuiux-content-font-weight: 400;
+            --adminuiux-title-font: "Poppins", serif;
+            --adminuiux-title-font-weight: 600;
+        }
+    </style>
+<script defer src="assets/js/app13a2.js?5242d2f600103545528d"></script><link href="assets/css/app13a2.css?5242d2f600103545528d" rel="stylesheet"><link href="assets/css/solutech-theme.css" rel="stylesheet"><script>
+// Filet de sécurité : si l'écran de chargement ne se masque pas naturellement
+// (ex: police externe lente/bloquée sur réseau mobile), on le force à disparaître
+// après 2.5s pour ne jamais bloquer l'interface.
+setTimeout(function () {
+    var loader = document.querySelector('.pageloader');
+    if (loader && loader.style.display !== 'none') { loader.style.display = 'none'; }
+}, 2500);
+</script>
+</head>
+
+    <body class="main-bg main-bg-opac main-bg-blur roundedui adminuiux-header-standard adminuiux-sidebar-standard adminuiux-mobile-footer-fill-theme adminuiux-header-transparent adminuiux-sidebar-fill-none scrollup" data-theme="light" data-sidebarfill="adminuiux-sidebar-fill-none" data-bs-spy="scroll" data-bs-target="#list-example" data-bs-smooth-scroll="true" tabindex="0" data-sidebarlayout="adminuiux-sidebar-standard"
+        data-headerlayout="adminuiux-header-standard" data-headerfill="adminuiux-header-transparent" data-bggradient="bg-r-gradient" data-pos-mode="proforma" style="">
+        <!-- Pageloader -->
+<div class="pageloader">
+    <div class="container h-100">
+        <div class="row justify-content-center align-items-center text-center h-100 pb-ios">
+            <div class="col-12 mb-auto pt-4"></div>
+            <div class="col-auto">
+                <img src="assets/img/logo.svg" alt="" class="height-80 mb-3">
+                <p class="h2 mb-0 text-theme-accent-1">SOLUTECH</p>
+                <p class="display-3 text-theme-1 fw-bold mb-4">GESCO</p>
+                <div class="loader12 mb-2 mx-auto"></div>
+            </div>
+            <div class="col-12 mt-auto pb-4">
+                <p class="small text-secondary">Veuillez patienter, préparation en cours...</p>
+            </div>
+        </div>
+    </div>
+</div>
+            <!-- standard header -->
+<!-- include:header -->
+
+<!-- include:search-modal -->
+                <div class="adminuiux-wrap">
+                    <!-- Standard sidebar -->
+                    <!-- Standard sidebar -->
+<!-- include:sidebar -->
+                        <main class="adminuiux-content has-sidebar">
+    <div class="container-fluid mt-3">
+        <div class="row gx-1 align-items-center mb-3">
+            <div class="col col-sm mb-3 mb-md-0">
+                <nav aria-label="breadcrumb" class="mb-1">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="gesco-dashboard.html"><i class="bi bi-house-door"></i> Accueil</a></li>
+                        <li class="breadcrumb-item"><a href="gesco-facturation-proformas.html">Facture proforma</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Nouvelle Facture proforma</li>
+                    </ol>
+                </nav>
+                <h4 class="mb-0">Nouvelle Facture proforma</h4>
+            </div>
+            <div class="col-auto">
+                <a href="gesco-facturation-proformas.html" class="btn btn-outline-secondary">
+                    <i class="bi bi-list-ul"></i> Liste des Factures proforma
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Colonne gauche : recherche + catalogue -->
+            <div class="col-lg-8">
+                <div class="card adminuiux-card border-0 shadow-sm mb-3">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-7">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-none"><i class="bi bi-upc-scan"></i></span>
+                                    <input type="text" class="form-control" id="pos-search" placeholder="Rechercher un produit...">
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="d-flex flex-wrap gap-1" id="pos-categories">
+                                    <button class="btn btn-sm btn-theme category-pill active" data-cat="tous">Tous</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-danger d-none" id="pos-error" role="alert"></div>
+
+                <div class="row g-3" id="pos-product-grid">
+                    <!-- généré en JS -->
+                </div>
+                <p class="text-secondary text-center py-4 d-none" id="pos-empty-catalog">Aucun produit ne correspond à votre recherche.</p>
+            </div>
+
+            <!-- Colonne droite : devis -->
+            <div class="col-lg-4">
+                <div class="card adminuiux-card border-0 shadow-sm pos-cart-card">
+                    <div class="card-body p-3 d-flex flex-column h-100">
+                        <div class="mb-3">
+                            <label class="form-label small text-secondary mb-1">Client</label>
+                            <div class="input-group">
+                                <select class="form-select" id="pos-client" required>
+                                    <option value="" selected>Sélectionner un client</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" id="pos-add-client" title="Ajouter un nouveau client">
+                                    <i class="bi bi-person-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-2 d-flex align-items-center justify-content-between">
+                            Articles du devis
+                            <span class="badge badge-light text-bg-theme-1" id="pos-cart-count">0</span>
+                        </h6>
+
+                        <div class="pos-cart-items flex-grow-1" id="pos-cart-items">
+                            <p class="text-secondary small text-center py-4" id="pos-cart-empty">
+                                <i class="bi bi-file-earmark-ruled display-6 d-block mb-2 opacity-50"></i>
+                                Devis vide — sélectionnez un produit
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-secondary">Sous-total</span>
+                            <span id="pos-subtotal">0 FCFA</span>
+                        </div>
+                        <div class="d-flex justify-content-between small mb-1 align-items-center">
+                            <span class="text-secondary">Remise <small class="text-secondary" id="pos-discount-amount"></small></span>
+                            <div class="input-group input-group-sm" style="width:110px">
+                                <input type="number" class="form-control text-end" id="pos-discount" value="0" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="pos-apply-tax" checked>
+                                <label class="form-check-label text-secondary" for="pos-apply-tax" id="pos-tax-label">TVA</label>
+                            </div>
+                            <span id="pos-tax">0 FCFA</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold">Total</span>
+                            <span class="fw-bold fs-4" id="pos-total">0 FCFA</span>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small text-secondary mb-1">Validité</label>
+                                <input type="text" class="form-control form-control-sm" id="pos-validity" placeholder="Ex : 30 jours">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-secondary mb-1">Garantie</label>
+                                <input type="text" class="form-control form-control-sm" id="pos-guarantee" placeholder="Ex : 1 an">
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info small py-2" role="note">
+                            <i class="bi bi-info-circle"></i>
+                            Le devis n'affecte ni le stock ni les totaux du client.
+                        </div>
+
+                        <button class="btn btn-theme btn-lg w-100" id="pos-checkout-btn" disabled>
+                            <i class="bi bi-file-earmark-plus"></i> Enregistrer le devis
+                        </button>
+                        <p class="small text-secondary text-center mt-2 mb-0" id="pos-checkout-help" aria-live="polite"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Confirmation après enregistrement du devis -->
+<div class="modal fade" id="modalTicket" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-check text-success"></i> Facture proforma enregistré</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <p class="text-secondary mb-0">Facture proforma</p>
+                    <h5 class="mb-0" id="ticket-number">—</h5>
+                    <p class="small text-secondary" id="ticket-date"></p>
+                </div>
+                <ul class="list-group list-group-flush mb-3" id="ticket-lines"></ul>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-secondary">Total</span>
+                    <span class="fw-bold" id="ticket-total">0 FCFA</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1 small">
+                    <span class="text-secondary" id="ticket-payment-label">Validité</span>
+                    <span id="ticket-payment">—</span>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span class="text-secondary">Client</span>
+                    <span id="ticket-client">—</span>
+                </div>
+                <p class="small text-end mt-2 mb-0 d-none" id="ticket-cash-detail"></p>
+                <hr>
+                <p class="small text-center mb-0" id="pos-tracking-note">—</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <a href="gesco-facturation-detail.html" class="btn btn-outline-secondary d-none" id="pos-view-invoice-btn">
+                    <i class="bi bi-file-earmark-ruled"></i> Voir la Facture proforma
+                </a>
+                <button class="btn btn-theme" type="button" data-bs-dismiss="modal" id="pos-new-sale-btn">
+                    <i class="bi bi-plus-lg"></i> Nouveau devis
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Création rapide d'un client depuis le terminal -->
+<div class="modal fade" id="modalNouveauClient" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form id="pos-new-client-form">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> Nouveau client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="pos-new-client-error" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-type">Type de client</label>
+                            <select class="form-select" id="pos-new-client-type">
+                                <option value="particulier" selected>Particulier</option>
+                                <option value="entreprise">Entreprise</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-nom">Nom complet / Raison sociale</label>
+                            <input type="text" class="form-control" id="pos-new-client-nom" placeholder="Ex : Ets Kponou" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-nif">NIF (si entreprise)</label>
+                            <input type="text" class="form-control" id="pos-new-client-nif" placeholder="Optionnel">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-telephone">Téléphone</label>
+                            <input type="text" class="form-control" id="pos-new-client-telephone" placeholder="90 00 00 00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-email">Email</label>
+                            <input type="email" class="form-control" id="pos-new-client-email" placeholder="client@email.tg">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-ville">Ville</label>
+                            <input type="text" class="form-control" id="pos-new-client-ville" placeholder="Lomé">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-secondary mb-1" for="pos-new-client-adresse">Adresse</label>
+                            <input type="text" class="form-control" id="pos-new-client-adresse" placeholder="Quartier, rue...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-theme" id="pos-new-client-submit">Créer le client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    </div>
+
+    <!-- include:footer-compact -->
+
+    <style>
+.pos-product-card { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+.pos-product-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -8px rgba(0,0,0,.15); }
+.pos-product-card.out-of-stock { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.pos-cart-card { min-height: 640px; }
+.pos-cart-items { max-height: 260px; overflow-y: auto; }
+.category-pill.active { color: #fff; }
+.pos-cart-line-name { max-width: 130px; }
+</style>
+
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/profile.js"></script>
+        <script src="assets/js/role-guard.js"></script>
+        <script src="assets/js/auth-guard.js"></script>
+</body>
+</html>

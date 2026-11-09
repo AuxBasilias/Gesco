@@ -22,15 +22,8 @@
 
   function renderDelivery(sale, client, settings, serials, livraison) {
     const doc = sale.donneesDocument || {};
-    const followedBy = doc.followedBy || "M. BANQUE";
-    const phone = doc.phone || "90 45 51 05";
-    const email = doc.email || "fredbank@solutechtic.com";
     const deliveryDate = formatDate(sale.dateVente);
     const clientName = client?.nom || doc.clientName || (sale.idClient ? `Client ${sale.idClient}` : "Client non renseigné");
-    const clientEmail = doc.clientEmail ?? client?.email ?? "";
-    const clientLine1 = doc.clientLine1 ?? client?.adresse ?? "";
-    const clientLine2 = doc.clientLine2 || "";
-    const clientLine3 = doc.clientLine3 ?? client?.ville ?? "";
 
     const isPartielle = livraison?.type === "partielle";
     const quantitesLivrees = livraison?.quantites || new Map();
@@ -60,48 +53,20 @@
     `;
 
     const metaHtml = `
-      <section class="meta-section">
-        <div class="client-card">
-          <div class="client-header-title">Client</div>
-          <div class="client-content-body">
-            <div class="client-row">
-              <span class="c-label">Client:</span>&nbsp;<span class="c-name">${escapeHtml(clientName)}</span>
-            </div>
-            <div class="client-row client-email">${clientEmail ? '<a href="mailto:' + escapeHtml(clientEmail) + '" class="client-email-val">' + escapeHtml(clientEmail) + '</a>' : ''}</div>
-            <div class="client-row">${escapeHtml(clientLine1)}</div>
-            <div class="client-row">${escapeHtml(clientLine2)}</div>
-            <div class="client-row client-location">${clientLine3 ? '<u>' + escapeHtml(clientLine3) + '</u>' : ''}</div>
-          </div>
+      <section class="delivery-body">
+        <div class="delivery-client">
+          <span class="delivery-label">Client :</span>
+          <span class="delivery-client-name">${escapeHtml(clientName)}</span>
         </div>
 
-        <div class="invoice-number-card">
-          <div class="inv-title">BON DE LIVRAISON</div>
-          <div class="inv-code">${escapeHtml(sale.reference)}</div>
+        <div class="delivery-date">
+          <strong>Date de Livraison :</strong> ${escapeHtml(deliveryDate)}
         </div>
 
-        <div class="tracking-card">
-          <div class="tracking-top-row">
-            <span class="date-lbl">Date</span>
-            <span class="date-underline-val">${escapeHtml(deliveryDate)}</span>
-          </div>
-          <div class="tracking-subline-row">
-            <div class="tracking-subline"></div>
-          </div>
-          <div class="tracking-mid-row">
-            <span class="follow-lbl">Dossier suivi par:</span>
-            <span class="follow-name">${escapeHtml(followedBy)}</span>
-          </div>
-          <div class="tracking-bot-row">
-            <span class="phone-val">${escapeHtml(phone)}</span>
-            <a href="mailto:${escapeHtml(email)}" class="email-val"><u>${escapeHtml(email)}</u></a>
-          </div>
-        </div>
-      </section>
+        <h1 class="delivery-title">Bordereau de livraison N° ${escapeHtml(sale.reference)}</h1>
     `;
 
-    const DELIVERY_TABLE_BUDGET_MM = 119;
-    const DELIVERY_ROW_BASE_MM = 16;
-    let usedMm = 0;
+    const DELIVERY_ROW_BASE_MM = 12.4;
     let tableRowsHtml = "";
     lignes.forEach((line) => {
       const quantite = Number(line.quantite) || 0;
@@ -118,70 +83,61 @@
           `<input type="text" class="serial-input" data-id-ligne="${escapeHtml(line.id ?? "")}" value="${escapeHtml(value)}" placeholder="N° de série ${unit + 1}">`,
         );
       }
-      const rowHeightMm = Math.max(DELIVERY_ROW_BASE_MM, rowUnits * 4 + 8);
-      usedMm += rowHeightMm;
+      const rowHeightMm = Math.max(DELIVERY_ROW_BASE_MM, rowUnits * 3.5 + 5);
       const qtyCells = isPartielle
-        ? `<td><div class="cell-pad-center"><b>${quantiteLivree}</b></div></td>
-           <td><div class="cell-pad-center cell-reste">${reste}</div></td>`
-        : `<td><div class="cell-pad-center"><b>${quantite > 0 ? quantite : ""}</b></div></td>`;
+        ? `<td class="qte"><div class="cell-pad-center"><b>${quantiteLivree}</b></div></td>
+           <td class="qte"><div class="cell-pad-center cell-reste">${reste}</div></td>`
+        : `<td class="qte"><div class="cell-pad-center"><b>${quantite > 0 ? quantite : ""}</b></div></td>`;
       tableRowsHtml += `
         <tr style="height:${rowHeightMm.toFixed(2)}mm">
-          <td><div class="cell-serial">${serialInputs.join("")}</div></td>
+          <td class="ref"><div class="cell-serial">${serialInputs.join("")}</div></td>
+          <td class="designation"><div class="product-item-wrap">${escapeHtml(line.designation)}</div></td>
           ${qtyCells}
-          <td><div class="product-item-wrap">${escapeHtml(line.designation)}</div></td>
-          <td><div class="cell-serial"><input type="text" class="serial-input" data-observation="${escapeHtml(line.id ?? "")}" placeholder="Observation"></div></td>
         </tr>
       `;
     });
     if (lignes.length === 0) {
       tableRowsHtml = `
         <tr style="height:${DELIVERY_ROW_BASE_MM.toFixed(2)}mm">
-          <td></td><td></td>${isPartielle ? "<td></td>" : ""}
-          <td><div class="product-item-wrap">Aucun article à livrer.</div></td>
-          <td></td>
+          <td class="ref"></td>
+          <td class="designation"><div class="product-item-wrap">Aucun article à livrer.</div></td>
+          <td class="qte"></td>
+          ${isPartielle ? '<td class="qte"></td>' : ""}
         </tr>
       `;
     }
-    const fillerMm = DELIVERY_TABLE_BUDGET_MM - usedMm;
-    const fillerRowHtml = fillerMm > 2
-      ? `<tr class="delivery-filler-row" style="height:${fillerMm.toFixed(2)}mm">${isPartielle ? "<td></td><td></td><td></td><td></td><td></td>" : "<td></td><td></td><td></td><td></td>"}</tr>`
-      : "";
-
     const qtyHeaderHtml = isPartielle
       ? `<th class="th-qty-livree"><span class="th-line-1">Quantité</span><span class="th-line-2">livrée</span></th><th>Reste</th>`
-      : `<th>Quantité</th>`;
+      : `<th class="qte">Quantités</th>`;
     const colgroupHtml = isPartielle
-      ? `<col class="col-ref"><col class="col-qty col-qty-partial"><col class="col-reste"><col class="col-desc col-desc-partial"><col class="col-amount">`
-      : `<col class="col-ref"><col class="col-qty"><col class="col-desc"><col class="col-amount">`;
+      ? `<col class="col-ref"><col class="col-desc col-desc-partial"><col class="col-qty col-qty-partial"><col class="col-reste">`
+      : `<col class="col-ref"><col class="col-desc"><col class="col-qty">`;
 
     const tableHtml = `
-      <section class="table-section">
+      <section class="table-section delivery-table-section">
         <table class="items-table delivery-table${lignes.length === 1 ? " single-row" : ""}${isPartielle ? " is-partielle" : ""}">
           <colgroup>
             ${colgroupHtml}
           </colgroup>
           <thead>
             <tr>
-              <th>Numéro de série</th>
+              <th class="ref">Réf.</th>
+              <th>Désignation</th>
               ${qtyHeaderHtml}
-              <th>Désignation / produit</th>
-              <th>Observation</th>
             </tr>
           </thead>
           <tbody>
             ${tableRowsHtml}
-            ${fillerRowHtml}
           </tbody>
         </table>
       </section>
     `;
 
     const settlementHtml = `
-      <section class="settlement-section delivery-settlement">
-        <div class="signatures-full-row">
-          <div class="acquit-tag"><u>Le Livreur</u></div>
-          <div class="commercial-service-tag"><u>Reçu par le client</u></div>
-        </div>
+      <div class="delivery-signatures">
+        <span>La réception</span>
+        <span>Le fournisseur</span>
+      </div>
       </section>
     `;
 

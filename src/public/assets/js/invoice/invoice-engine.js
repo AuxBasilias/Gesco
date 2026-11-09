@@ -9,6 +9,10 @@
  */
 
 let currentInvoice = {
+  id: null,
+  statut: '',
+  idVente: null,
+  proformaReference: '',
   invoiceNumber: '',
   invoiceDate: '',
   followedBy: '',
@@ -44,6 +48,10 @@ function documentDataFromInvoice(invoice, client, settings, products) {
   const productById = new Map(products.map(product => [Number(product.id), product]));
   const invoiceTotalHT = Number(invoice.montantHT) || 0;
   return {
+    id: invoice.id ?? null,
+    statut: invoice.statut || '',
+    idVente: invoice.idVente ?? null,
+    proformaReference: document.proformaReference || '',
     invoiceNumber: invoice.reference || '',
     invoiceDate: invoiceDate(invoice.dateFacture),
     followedBy: document.followedBy || 'M. BANQUE',
@@ -62,7 +70,7 @@ function documentDataFromInvoice(invoice, client, settings, products) {
     vatRate: Number(document.tauxTaxe ?? (invoiceTotalHT > 0
       ? Number(invoice.montantTaxe) / invoiceTotalHT * 100
       : settings?.tauxTaxe ?? 0)),
-    items: (invoice.lignes || []).map(line => {
+    items: (invoice.lignes || []).map((line, index) => {
       const product = productById.get(Number(line.idProduit));
       const gross = Number(line.quantite) * Number(line.prixUnitaire);
       const discount = gross > 0
@@ -77,6 +85,7 @@ function documentDataFromInvoice(invoice, client, settings, products) {
         : [];
       return {
         idProduit: line.idProduit,
+        reference: document.references?.[line.id] ?? document.references?.[index] ?? '',
         qty: Number(line.quantite),
         description: [designation, ...productDescription].filter(Boolean),
         unitPrice: Number(line.prixUnitaire),
@@ -126,6 +135,12 @@ async function loadInvoiceFromApi() {
   if (!invoice || invoice.statut === 'deleted') throw new Error('Facture introuvable.');
   const client = clients.find(item => Number(item.id) === Number(invoice.idClient));
   currentInvoice = documentDataFromInvoice(invoice, client, settings, products);
+  const backLink = document.getElementById('backToList');
+  if (backLink) {
+    const isProforma = invoice.statut === 'proforma';
+    backLink.href = isProforma ? 'gesco-facturation-proformas.html' : 'gesco-facturation.html';
+    backLink.textContent = isProforma ? '← Retour aux Factures proforma' : '← Retour à GESCO';
+  }
 }
 
 // Formatage monétaire FCFA (ex: 560 000)
@@ -252,7 +267,7 @@ function invoiceItemHeightMm(item) {
   const visualLines = descLines
     .map(line => line.trim())
     .filter(Boolean)
-    .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 55)), 0);
+    .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 45)), 0);
   const imageMm = item.imageDataUrl ? INVOICE_ITEM_IMAGE_MM : 0;
   return INVOICE_ROW_BASE_MM + Math.max(0, visualLines - 1) * INVOICE_ROW_LINE_MM + imageMm;
 }
@@ -338,7 +353,11 @@ function renderInvoice() {
     amountInWords = generateAmountWords(globalTotalTTC);
   }
   
-  const sectionTitle = (currentInvoice.sectionTitle || '').trim() || 'Fournitures des équipements informatiques';
+  const isProforma = currentInvoice.statut === 'proforma';
+  const documentTitle = isProforma ? 'Facture Proforma' : 'FACTURE';
+  const documentLabel = isProforma ? 'facture proforma' : 'facture';
+  // const sectionTitle = (currentInvoice.sectionTitle || '').trim() || 'PROPOSITION COMMERCIALE';
+  const sectionTitle = isProforma ? 'PROPOSITION COMMERCIALE' : 'Fournitures des équipements informatiques';
   const pagesData = paginateItems(currentInvoice.items, true);
   const totalPages = pagesData.length;
   
@@ -348,7 +367,7 @@ function renderInvoice() {
     const isFirstPage = (pageNumber === 1);
     
     const sheetDiv = document.createElement('div');
-    sheetDiv.className = 'sheet' + (!isLastPage ? ' intermediate-page' : '');
+    sheetDiv.className = 'sheet invoice-sheet' + (!isLastPage ? ' intermediate-page' : '');
     sheetDiv.id = 'invoiceSheet_' + pageNumber;
     
     // 1. En-tête officiel
@@ -367,43 +386,43 @@ function renderInvoice() {
       </header>
     `;
     
-    // 2. Section Méta Coordonnées
+    // 2. Section Méta Coordonnées (inspirée de entete-facture.html)
     const metaHtml = `
       <section class="meta-section">
         <!-- Cadre Client (Gauche) -->
         <div class="client-card">
-          <div class="client-header-title">Client</div>
+          <div class="client-header-title"><span>Client</span></div>
           <div class="client-content-body">
-            <div class="client-row">
-              <span class="c-label">Client:</span>&nbsp;<span class="c-name">${escapeHtml(currentInvoice.client.name)}</span>
+            <div class="client-row client-name-row">
+              <span class="c-label">Client:</span><span class="c-name">${escapeHtml(currentInvoice.client.name)}</span>
             </div>
             <div class="client-row client-email">${currentInvoice.client.email ? '<a href="mailto:' + escapeHtml(currentInvoice.client.email) + '" class="client-email-val">' + escapeHtml(currentInvoice.client.email) + '</a>' : ''}</div>
             <div class="client-row">${escapeHtml(currentInvoice.client.line1 || '')}</div>
             <div class="client-row">${escapeHtml(currentInvoice.client.line2 || '')}</div>
-            <div class="client-row client-location">${currentInvoice.client.line3 ? '<u>' + escapeHtml(currentInvoice.client.line3) + '</u>' : ''}</div>
           </div>
+          <div class="client-location">${currentInvoice.client.line3 ? '<u>' + escapeHtml(currentInvoice.client.line3) + '</u>' : ''}</div>
         </div>
 
         <!-- Identification Centrale -->
         <div class="invoice-number-card">
-          <div class="inv-title">FACTURE</div>
+          <div class="inv-title${isProforma ? ' inv-title-proforma' : ''}">${documentTitle}</div>
           <div class="inv-code">${escapeHtml(currentInvoice.invoiceNumber)}</div>
+          ${!isProforma && currentInvoice.proformaReference
+            ? `<div class="inv-ref">Svt PF N° ${escapeHtml(currentInvoice.proformaReference)}</div>`
+            : ''}
         </div>
 
         <!-- Cadre Date & Suivi (Droite) -->
         <div class="tracking-card">
-          <div class="tracking-top-row">
+          <div class="tracking-row tracking-date-row">
             <span class="date-lbl">Date</span>
             <span class="date-underline-val">${escapeHtml(currentInvoice.invoiceDate)}</span>
           </div>
-          <div class="tracking-subline-row">
-            <div class="tracking-subline"></div>
-          </div>
-          <div class="tracking-mid-row">
+          <div class="tracking-row tracking-follow-row">
             <span class="follow-lbl">Dossier suivi par:</span>
             <span class="follow-name">${escapeHtml(currentInvoice.followedBy)}</span>
           </div>
-          <div class="tracking-bot-row">
+          <div class="tracking-row tracking-contact-row">
             <span class="phone-val">${escapeHtml(currentInvoice.phone)}</span>
             <a href="mailto:${escapeHtml(currentInvoice.email)}" class="email-val"><u>${escapeHtml(currentInvoice.email)}</u></a>
           </div>
@@ -426,8 +445,8 @@ function renderInvoice() {
       : '';
     let tableRowsHtml = sectionTitleHtml;
     
-    // Hauteur de chaque ligne calculée dynamiquement : 128mm (hauteur fixe du
-    // tableau) moins l'en-tête du tableau (8.5mm + bordures ≈ 9mm), répartis
+    // Hauteur de chaque ligne calculée dynamiquement : 128mm (hauteur minimale
+    // du tableau) moins l'en-tête du tableau (8.5mm + bordures ≈ 9mm), répartis
     // entre le nombre d'articles réellement présents sur cette page, pour que
     // 1 comme 4 articles remplissent le tableau sans jamais le déborder ni
     // chevaucher la section Conditions/Totaux qui suit.
@@ -461,7 +480,11 @@ function renderInvoice() {
       
       tableRowsHtml += `
         <tr>
-          <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"></div></td>
+          <td class="ref-cell" style="height:${rowHeightMm}mm">
+            ${isProforma
+              ? `<input type="text" class="cell-ref-input" data-ref-index="${itemIndex}" value="${escapeHtml(item.reference || '')}" placeholder="Référence" aria-label="Référence">`
+              : '<div class="cell-pad-center"></div>'}
+          </td>
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"><b>${qty > 0 ? qty : ''}</b></div></td>
           <td class="product-desc-cell" style="height:${rowHeightMm}mm">
             <div class="product-item-wrap">
@@ -548,7 +571,7 @@ function renderInvoice() {
               <div class="cond-line cond-payment-line"><b>Condition de paiement:</b>&nbsp;&nbsp; <span class="payment-condition-value">${escapeHtml(currentInvoice.conditions.paymentCondition || '')}</span></div>
               <div class="cond-line cond-guarantee"><b>Garantie:</b>&nbsp; <span>${escapeHtml(currentInvoice.conditions.guarantee || '')}</span></div>
               <div class="cond-line cond-words-line">
-                <b>Arrêtée la présente facture à la somme de:</b>&nbsp;&nbsp;
+                <b>Arrêtée la présente ${documentLabel} à la somme de:</b>&nbsp;&nbsp;
                 <span class="words-strong">${escapeHtml(amountInWords)}</span>
               </div>
             </div>
@@ -570,8 +593,8 @@ function renderInvoice() {
 
           <!-- Ligne des Signatures sur toute la largeur (Pour Acquit à GAUCHE, Le Service Commercial à DROITE) -->
           <div class="signatures-full-row">
-            <div class="acquit-tag"><u>Pour Acquit</u></div>
-            <div class="commercial-service-tag"><u>Le Service Commercial</u></div>
+            ${isProforma ? '' : '<div class="acquit-tag"><u>Pour Acquit</u></div>'}
+            <div class="commercial-service-tag"${isProforma ? ' style="margin-left:auto"' : ''}><u>Le Service Commercial</u></div>
           </div>
         </section>
       `;
@@ -609,6 +632,12 @@ function renderInvoice() {
         currentInvoice.sectionTitle = sectionTitleCell.textContent.trim();
       });
     }
+    sheetDiv.querySelectorAll('[data-ref-index]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const item = currentInvoice.items[Number(input.getAttribute('data-ref-index'))];
+        if (item) item.reference = input.value;
+      });
+    });
     sheetDiv.querySelectorAll('[data-add-product-image]').forEach((button) => {
       button.addEventListener('click', () => {
         const item = currentInvoice.items[Number(button.getAttribute('data-add-product-image'))];
@@ -651,6 +680,39 @@ function updateZoom(newZoom) {
   document.getElementById('zoomValue').textContent = Math.round(currentZoom) + '%';
 }
 
+function setupConversionButton() {
+  const button = document.getElementById('btnConvertProforma');
+  if (!button) return;
+  const canConvert = currentInvoice.statut === 'proforma' && !currentInvoice.idVente;
+  button.hidden = !canConvert;
+  if (!canConvert) {
+    button.onclick = null;
+    return;
+  }
+  button.onclick = async () => {
+    if (!window.confirm('Convertir cette facture proforma en facture réelle ? Une vente sera créée et le stock sera mis à jour.')) {
+      return;
+    }
+    button.disabled = true;
+    button.textContent = 'Conversion…';
+    try {
+      const response = await AA.convertProforma(currentInvoice.id, {});
+      const invoice = unwrapResponse(response);
+      if (invoice?.id) {
+        history.replaceState(null, '', `${location.pathname}?id=${encodeURIComponent(invoice.id)}`);
+      }
+      await loadInvoiceFromApi();
+      renderInvoice();
+      setupConversionButton();
+    } catch (error) {
+      alert(error.message || 'Impossible de convertir la proforma.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Convertir en facture';
+    }
+  };
+}
+
 // ==========================================================================
 // INITIALISATION & GESTIONNAIRES D'ÉVÉNEMENTS
 // ==========================================================================
@@ -659,6 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
   container.textContent = 'Chargement de la facture…';
   loadInvoiceFromApi().then(() => {
     renderInvoice();
+    setupConversionButton();
   }).catch(error => {
     container.textContent = error.message || 'Impossible de charger la facture.';
     console.error('Impossible de charger la facture :', error);

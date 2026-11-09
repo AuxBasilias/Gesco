@@ -291,6 +291,10 @@
       tables: [{ load: api.getFactures, columns: [["N° document", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total TTC", "montantTotal", "money"], ["Payé", "montantPaye", "money"], ["Solde", "solde", "money"], ["Statut", "statut", "invoiceStatus"]] }],
       create: "facture",
     },
+    "gesco-facturation-proformas.html": {
+      key: "facture",
+      tables: [{ load: () => api.getFactures("proforma"), columns: [["N° devis", "reference"], ["Date", "dateFacture", "date"], ["Client", "idClient"], ["Total TTC", "montantTotal", "money"], ["Statut", "statut", "invoiceStatus"]] }],
+    },
     "gesco-facturation-paiements.html": {
       tables: [
         { load: api.getPaiements, columns: [["Référence", "reference"], ["Date", "datePaiement", "date"], ["Facture", "idFacture"], ["Montant", "montant", "money"], ["Mode", "modePaiement"], ["Enregistré par", "idUtilisateur"]] },
@@ -348,11 +352,6 @@
       title: "Nouvelle facture",
       method: api.createFacture,
       fields: [["idClient", "Client", "client", true], ["dateEcheance", "Échéance", "date"], ["lignes", "Lignes (JSON : designation, quantite, prixUnitaire; idProduit facultatif)", "textarea", true]],
-    },
-    facture_proforma: {
-      title: "Nouvelle facture proforma",
-      method: (data) => api.createFacture({ ...data, statut: "proforma" }),
-      fields: [["idClient", "Client", "client", true], ["dateEcheance", "Validité jusqu'au", "date"], ["lignes", "Lignes (JSON : designation, quantite, prixUnitaire; idProduit facultatif)", "textarea", true]],
     },
     paiement: {
       title: "Enregistrer un paiement",
@@ -569,7 +568,7 @@
         }
         if (name === "motDePasse" && editUser) input.placeholder = "Laisser vide pour conserver le mot de passe actuel";
         if (type === "textarea" && name === "lignes") {
-          input.placeholder = '[{"idProduit":1,"quantite":1,"prixUnitaire":1000}]';
+          input.placeholder = '[{"designation":"Prestation","quantite":1,"prixUnitaire":1000}]';
           input.classList.add("font-monospace");
           input.setAttribute("aria-describedby", `gesco-${name}-help`);
           const help = document.createElement("div");
@@ -2084,7 +2083,7 @@
         if (page === "gesco-stock-inventaires.html" && index === 0) setupInventories(rows, config);
         if (page === "gesco-ventes.html" && index === 0) setupSalesHistory(rows, config);
         if (page === "gesco-ventes-retours.html" && index === 0) await setupReturns(rows, config);
-        if (page === "gesco-facturation.html" && index === 0) setupInvoices(rows, config);
+        if ((page === "gesco-facturation.html" || page === "gesco-facturation-proformas.html") && index === 0) setupInvoices(rows, config);
       } finally {
         clearTableLoader(table);
       }
@@ -3884,6 +3883,7 @@
       api.getParametres(),
     ]);
     const [productRows, clientRows, categoryRows] = [products, clients, categories].map(list);
+    const isProforma = document.body.dataset.posMode === "proforma";
     const cart = new Map();
     const search = document.getElementById("pos-search");
     const clientSelect = document.getElementById("pos-client");
@@ -4033,7 +4033,7 @@
     function addProduct(product) {
       const stock = Number(product.stock ?? 0);
       const item = cart.get(product.id) ?? { ...product, quantite: 0 };
-      if (item.quantite >= stock) {
+      if (!isProforma && item.quantite >= stock) {
         showError(`Stock insuffisant pour ${product.designation}.`);
         return false;
       }
@@ -4054,20 +4054,25 @@
       emptyCatalog?.classList.toggle("d-none", filtered.length > 0);
       filtered.forEach((product) => {
         const stock = Number(product.stock ?? 0);
+        const outOfStock = stock <= 0;
         const column = document.createElement("div");
         column.className = "col-6 col-md-4 col-xl-3";
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `card adminuiux-card border-0 shadow-sm w-100 h-100 text-start p-3 pos-product-card${stock <= 0 ? " out-of-stock" : ""}`;
-        button.disabled = stock <= 0;
+        button.className = `card adminuiux-card border-0 shadow-sm w-100 h-100 text-start p-3 pos-product-card${!isProforma && outOfStock ? " out-of-stock" : ""}`;
+        button.disabled = !isProforma && outOfStock;
         const name = document.createElement("strong");
         name.textContent = product.designation;
         const price = document.createElement("span");
         price.className = "mt-2 fw-bold";
         price.textContent = money(product.prixVente);
         const available = document.createElement("small");
-        available.className = stock > 0 ? "text-success mt-1" : "text-danger mt-1";
-        available.textContent = stock > 0 ? `Stock disponible : ${stock}` : "Rupture de stock";
+        available.className = isProforma
+          ? (outOfStock ? "text-warning mt-1" : "text-success mt-1")
+          : (outOfStock ? "text-danger mt-1" : "text-success mt-1");
+        available.textContent = isProforma
+          ? (outOfStock ? "Stock à zéro — devis possible" : `Stock actuel : ${stock}`)
+          : (outOfStock ? "Rupture de stock" : `Stock disponible : ${stock}`);
         button.append(name, price, available);
         button.addEventListener("click", () => addProduct(product));
         column.append(button);
@@ -4112,9 +4117,9 @@
         plus.className = "btn btn-sm btn-outline-secondary";
         plus.textContent = "+";
         plus.setAttribute("aria-label", `Ajouter un ${item.designation}`);
-        plus.disabled = item.quantite >= Number(item.stock || 0);
+        plus.disabled = !isProforma && item.quantite >= Number(item.stock || 0);
         plus.addEventListener("click", () => {
-          if (item.quantite < Number(item.stock || 0)) item.quantite += 1;
+          if (isProforma || item.quantite < Number(item.stock || 0)) item.quantite += 1;
           drawCart();
         });
         controls.append(minus, quantity, plus);
@@ -4130,7 +4135,7 @@
       if (discountAmount) discountAmount.textContent = discount ? `(${money(discount)})` : "";
       const taxApplied = applyTaxToggle?.checked ?? true;
       document.getElementById("pos-tax-label").textContent = taxApplied ? `TVA (${taxRate}%)` : "TVA — non appliquée";
-      const isCash = paymentMethod() === "especes";
+      const isCash = !isProforma && paymentMethod() === "especes";
       const hasClient = Boolean(clientSelect?.value);
       document.getElementById("pos-cash-row")?.classList.toggle("d-none", !isCash);
       const received = Number(receivedInput?.value || 0);
@@ -4144,7 +4149,9 @@
             ? "Sélectionnez ou créez un client pour continuer."
             : isCash && received < total
               ? `Saisissez au moins ${money(total)} dans « Montant reçu ».`
-              : "";
+              : isProforma
+                ? "Le devis n'affecte ni le stock ni les totaux du client."
+                : "";
       }
     }
     function resetSale() {
@@ -4203,13 +4210,15 @@
         return;
       }
       if (!clientSelect?.value) {
-        showError("Sélectionnez ou créez un client avant d'encaisser.");
+        showError(isProforma
+          ? "Sélectionnez ou créez un client avant d'enregistrer le devis."
+          : "Sélectionnez ou créez un client avant d'encaisser.");
         return;
       }
       const { discount, total } = totals();
       const received = Number(receivedInput?.value || 0);
       const modePaiement = paymentMethod();
-      if (modePaiement === "especes" && received < total) {
+      if (!isProforma && modePaiement === "especes" && received < total) {
         showError("Le montant reçu est inférieur au total à payer.");
         return;
       }
@@ -4233,35 +4242,56 @@
       checkout.disabled = true;
       checkout.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Enregistrement…';
       try {
-        const response = await api.createVente({
+        const payload = {
           idClient: clientSelect?.value ? Number(clientSelect.value) : null,
           tauxTaxe: taxRate,
           tvaAppliquee: applyTaxToggle?.checked ?? true,
-          montantPaye: total,
-          ...(modePaiement === "especes" ? { montantRecu: received } : {}),
-          modePaiement,
           donneesDocument: {
             validity: validityInput?.value.trim() || "",
             guarantee: guaranteeInput?.value.trim() || "",
           },
           lignes: lines,
-        });
-        const sale = response.data ?? response;
-        document.getElementById("ticket-number").textContent = sale.reference;
-        document.getElementById("ticket-date").textContent = new Date(sale.dateVente ?? Date.now()).toLocaleString("fr-FR");
-        document.getElementById("ticket-total").textContent = money(sale.montantTotal ?? total);
-        document.getElementById("ticket-payment").textContent = ({
-          especes: "Espèces",
-          mobile_money: "Mobile Money",
-          carte: "Carte",
-        })[modePaiement];
+        };
+        const response = isProforma
+          ? await api.createFacture({ ...payload, statut: "proforma" })
+          : await api.createVente({
+              ...payload,
+              montantPaye: total,
+              ...(modePaiement === "especes" ? { montantRecu: received } : {}),
+              modePaiement,
+            });
+        const saved = response.data ?? response;
+        const modalTitle = document.querySelector("#modalTicket .modal-title");
+        if (modalTitle) {
+          modalTitle.innerHTML = isProforma
+            ? '<i class="bi bi-file-earmark-check text-success"></i> Facture proforma enregistrée'
+            : '<i class="bi bi-check-circle-fill text-success"></i> Vente enregistrée';
+        }
+        document.getElementById("ticket-number").textContent = saved.reference;
+        document.getElementById("ticket-date").textContent = new Date(saved.dateFacture ?? saved.dateVente ?? Date.now()).toLocaleString("fr-FR");
+        document.getElementById("ticket-total").textContent = money(saved.montantTotal ?? total);
+        const paymentLabel = document.getElementById("ticket-payment-label");
+        if (paymentLabel) paymentLabel.textContent = isProforma ? "Validité" : "Mode de paiement";
+        document.getElementById("ticket-payment").textContent = isProforma
+          ? (validityInput?.value.trim() || "—")
+          : ({
+              especes: "Espèces",
+              mobile_money: "Mobile Money",
+              carte: "Carte",
+            })[modePaiement];
         document.getElementById("ticket-client").textContent = clientSelect?.selectedOptions[0]?.text ?? "—";
         const cashDetail = document.getElementById("ticket-cash-detail");
         if (cashDetail) {
-          cashDetail.classList.toggle("d-none", modePaiement !== "especes");
-          cashDetail.textContent = modePaiement === "especes"
-            ? `Reçu : ${money(received)} — Monnaie rendue : ${money(Math.max(0, received - total))}`
-            : "";
+          if (isProforma) {
+            const guarantee = guaranteeInput?.value.trim();
+            cashDetail.classList.toggle("d-none", !guarantee);
+            cashDetail.textContent = guarantee ? `Garantie : ${guarantee}` : "";
+          } else {
+            cashDetail.classList.toggle("d-none", modePaiement !== "especes");
+            cashDetail.textContent = modePaiement === "especes"
+              ? `Reçu : ${money(received)} — Monnaie rendue : ${money(Math.max(0, received - total))}`
+              : "";
+          }
         }
         const ticketLines = document.getElementById("ticket-lines");
         ticketLines.replaceChildren();
@@ -4276,22 +4306,41 @@
           ticketLines.append(element);
         });
         const trackingNote = document.getElementById("pos-tracking-note");
-        trackingNote.textContent = `Vente ${sale.reference} enregistrée.`;
+        trackingNote.textContent = isProforma
+          ? `Facture proforma ${saved.reference} enregistrée.`
+          : `Vente ${saved.reference} enregistrée.`;
         const invoiceButton = document.getElementById("pos-view-invoice-btn");
         if (invoiceButton) {
-          invoiceButton.href = `gesco-facturation-detail.html?venteId=${encodeURIComponent(sale.id)}`;
+          invoiceButton.href = isProforma
+            ? `gesco-facturation-detail.html?id=${encodeURIComponent(saved.id)}`
+            : `gesco-facturation-detail.html?venteId=${encodeURIComponent(saved.id)}`;
+          invoiceButton.innerHTML = isProforma
+            ? '<i class="bi bi-file-earmark-ruled"></i> Voir la Facture proforma'
+            : '<i class="bi bi-file-earmark-text"></i> Voir la facture';
           invoiceButton.classList.remove("d-none");
         }
         const deliveryButton = document.getElementById("pos-view-delivery-btn");
         if (deliveryButton) {
-          deliveryButton.href = `gesco-livraison-detail.html?venteId=${encodeURIComponent(sale.id)}`;
-          deliveryButton.classList.remove("d-none");
+          if (isProforma) {
+            deliveryButton.classList.add("d-none");
+          } else {
+            deliveryButton.href = `gesco-livraison-detail.html?venteId=${encodeURIComponent(saved.id)}`;
+            deliveryButton.classList.remove("d-none");
+          }
+        }
+        const newSaleButton = document.getElementById("pos-new-sale-btn");
+        if (newSaleButton) {
+          newSaleButton.innerHTML = isProforma
+            ? '<i class="bi bi-plus-lg"></i> Nouveau devis'
+            : "Nouvelle vente";
         }
         resetSale();
         drawCart();
         bootstrap.Modal.getOrCreateInstance(document.getElementById("modalTicket")).show();
       } catch (error) {
-        showError(error.message || "Impossible d'enregistrer la vente.");
+        showError(error.message || (isProforma
+          ? "Impossible d'enregistrer la Facture proforma."
+          : "Impossible d'enregistrer la vente."));
       } finally {
         checkout.innerHTML = buttonText;
         drawCart();
@@ -4304,7 +4353,7 @@
     const preselectId = Number(new URLSearchParams(location.search).get("product"));
     if (Number.isSafeInteger(preselectId) && preselectId > 0) {
       const preselected = productRows.find((item) => Number(item.id) === preselectId);
-      if (preselected && Number(preselected.stock ?? 0) > 0) {
+      if (preselected && (isProforma || Number(preselected.stock ?? 0) > 0)) {
         addProduct(preselected);
         cartContainer.scrollIntoView?.({ block: "nearest" });
       }
@@ -4563,34 +4612,14 @@
     });
   }
 
-  function setupProformaPage() {
-    document.title = "GESCO — Factures proforma | SOLUTECH";
-    const main = document.querySelector("main");
-    if (!main) return;
-    const activeBreadcrumb = main.querySelector(".breadcrumb-item.active");
-    if (activeBreadcrumb) activeBreadcrumb.textContent = "Factures proforma";
-    const heading = main.querySelector("h4");
-    if (heading) heading.textContent = "Factures proforma";
-    const actionLink = main.querySelector(".container-fluid > .row a.btn.btn-theme");
-    if (actionLink) actionLink.innerHTML = '<i class="bi bi-plus-lg"></i> Nouvelle facture proforma';
-    const listHeader = main.querySelector(".card-body > .row.gx-3.align-items-center.mb-3 h6");
-    if (listHeader) listHeader.textContent = "Factures proforma";
-    const listSubtitle = listHeader?.parentElement?.querySelector("p");
-    if (listSubtitle) listSubtitle.textContent = "Liste des factures proforma";
-  }
-
   async function init() {
     try {
-      const isProforma = page === "gesco-facturation.html"
-        && new URLSearchParams(location.search).get("type") === "proforma";
+      if (page === "gesco-facturation.html" && new URLSearchParams(location.search).get("type") === "proforma") {
+        location.replace("gesco-facturation-proformas.html");
+        return;
+      }
       const config = apiPages[page];
       if (config) {
-        if (isProforma) {
-          config.create = "facture_proforma";
-          config.key = "facture_proforma";
-          config.tables = [{ ...config.tables[0], load: () => api.getFactures("proforma") }];
-          setupProformaPage();
-        }
         config.key = config.create ?? config.key;
         config.detail = {
           "gesco-stock-produits.html": "gesco-stock-produit-detail.html",
@@ -4598,6 +4627,7 @@
           "gesco-approvisionnement-commandes.html": "gesco-approvisionnement-commande-detail.html",
           "gesco-ventes.html": "gesco-ventes-detail.html",
           "gesco-facturation.html": "gesco-facturation-detail.html",
+          "gesco-facturation-proformas.html": "gesco-facturation-detail.html",
         }[page];
         await loadPage(config);
         if (config.create) createButton(config.create, config);
@@ -4605,7 +4635,7 @@
       }
       if (page === "gesco-clients-detail.html") await loadClientDetail();
       if (page === "gesco-stock-produit-detail.html") await setupProductDetail();
-      if (page === "gesco-caisse.html" || page === "gesco-ventes-terminal.html") await loadPointOfSale();
+      if (page === "gesco-caisse.html" || page === "gesco-ventes-terminal.html" || page === "gesco-facturation-proforma.html") await loadPointOfSale();
       if (page === "gesco-stock-nouveau-produit.html") await loadProductCreationForm();
       if (page === "gesco-administration.html") {
         const button = document.createElement("button");

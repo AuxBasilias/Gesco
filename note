@@ -1,5 +1,7 @@
 lsof -i :9000
 kill -9 41664
+sudo chown -R $(whoami) "/Users/oth/Documents/test/togotech"
+
 
 En cours
 
@@ -12,11 +14,10 @@ donne moi son schema,son controller, et sa route
 
 
 
-Produit(designation, numéro de série, idCategorie,code-barres,description, prixAchat, prixVente,photo,garantie)
-Categorie(label)
-Stock(idproduit, initial, seuil minimum, idFournisseur)
-Fournisseur(nom,tel,email,adresse)
-nous sommes en node js, express, vanilla js, drizzle
-donne moi les schema convenables, en tenant compte de leur relation
-de plus pour la photo, quel est l alternative la plus simple ?
 
+  qlq instruction : 
+  1. remplace "FACTURE PROFORMA" sur le facture proforma par "Facture Proforma", fais que cela tienne sur la meme ligne
+  2. sur le proforma , comme sur la facuture laisse l utilisateur ecrire dans la colonne Reference dans une celule au milieu du du tableau (le plus au milieu possible), en placeholder met Référence en Italique
+
+  pour le document de Bon de livraison
+  en excluant l entete et le bas de page du document, refais le contenu en adoptant le style de ./corps_bon_livraison.html

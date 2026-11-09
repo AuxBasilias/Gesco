@@ -65,6 +65,7 @@ router.get("/factures/:id", handlers.getFacture);
 router.put("/factures/:id", handlers.updateFacture);
 router.delete("/factures/:id", handlers.deleteFacture);
 router.post("/factures/:id/paiements", handlers.createPaiement);
+router.post("/factures/:id/convertir", handlers.convertProforma);
 router.post("/factures/:id/relance", handlers.remindInvoice);
 router.post("/paiements/:id/annulation", handlers.cancelPaiement);
 router.get("/paiements", handlers.listPaiements);
