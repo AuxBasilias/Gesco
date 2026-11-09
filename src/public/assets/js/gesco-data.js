@@ -338,7 +338,7 @@
     mouvement: {
       title: "Mouvement de stock",
       method: api.createStockMovement,
-      fields: [["idProduit", "Produit", "product", true], ["type", "Type", "select", true, [["entree", "Entrée"], ["sortie", "Sortie"], ["perte", "Perte"]]], ["quantite", "Quantité", "number", true], ["motif", "Motif", "text"]],
+      fields: [["dateMouvement", "Date du mouvement", "date"], ["idProduit", "Produit", "product", true], ["type", "Type", "select", true, [["entree", "Entrée"], ["sortie", "Sortie"], ["perte", "Perte"]]], ["quantite", "Quantité", "number", true], ["motif", "Motif", "text"]],
     },
     inventaire: {
       title: "Nouvel inventaire",
@@ -455,7 +455,9 @@
       return list(await api.getFournisseurs()).map((item) => [item.id, item.nom]);
     }
     if (kind === "product") {
-      return list(await api.getProduits()).map((item) => [item.id, item.designation]);
+      return list(await api.getProduits())
+        .map((item) => [item.id, item.designation])
+        .sort((left, right) => String(left[1] ?? "").localeCompare(String(right[1] ?? ""), "fr", { sensitivity: "base", numeric: true }));
     }
     if (kind === "client") {
       return list(await api.getClients()).map((item) => [item.id, item.nom]);
@@ -531,6 +533,8 @@
         caption.htmlFor = `gesco-${name}`;
         caption.textContent = label;
         let input;
+        let productSearch = null;
+        let productOptions = null;
         if (type === "textarea") {
           input = document.createElement("textarea");
           input.rows = 3;
@@ -539,6 +543,9 @@
           input.append(new Option("— Sélectionner —", ""));
           const selectOptions = options ?? await lookupOptions(type);
           selectOptions.forEach(([value, text]) => input.append(new Option(text, value)));
+          if (type === "product") {
+            productOptions = selectOptions.map(([value, text]) => [String(value), String(text)]);
+          }
         } else {
           input = document.createElement("input");
           input.type = type;
@@ -554,6 +561,29 @@
         input.id = `gesco-${name}`;
         input.name = name;
         input.required = fieldRequired;
+        if (type === "product" && productOptions) {
+          productSearch = document.createElement("input");
+          productSearch.type = "search";
+          productSearch.className = "form-control mb-2";
+          productSearch.placeholder = "Rechercher un produit…";
+          productSearch.setAttribute("aria-label", "Rechercher un produit");
+          productSearch.autocomplete = "off";
+          const searchKey = (value) => String(value ?? "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLocaleLowerCase("fr");
+          productSearch.addEventListener("input", () => {
+            const query = searchKey(productSearch.value);
+            const currentValue = input.value;
+            input.replaceChildren(new Option("— Sélectionner —", ""));
+            productOptions
+              .filter(([, text]) => !query || searchKey(text).includes(query))
+              .forEach(([value, text]) => input.append(new Option(text, value)));
+            if (Array.from(input.options).some((option) => option.value === currentValue)) {
+              input.value = currentValue;
+            }
+          });
+        }
         if (key === "inventaire" && name === "reference") {
           input.maxLength = 50;
           input.placeholder = "Ex. Inventaire du magasin — octobre";
@@ -577,7 +607,9 @@
           help.textContent = "Saisissez les lignes au format JSON indiqué, puis vérifiez les quantités et les prix.";
           group.append(caption, input, help);
         } else {
-          group.append(caption, input);
+          group.append(caption);
+          if (productSearch) group.append(productSearch);
+          group.append(input);
         }
         body.append(group);
       }

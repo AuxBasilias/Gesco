@@ -202,6 +202,15 @@ async function logActivity(
   });
 }
 
+function parseMovementDate(value: unknown): Date | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+  const parsed = new Date(dateOnly ? `${raw}T12:00:00` : raw);
+  if (Number.isNaN(parsed.getTime())) throw new ApiError(400, "Date du mouvement invalide.");
+  return parsed;
+}
+
 async function storeStockMovement(
   tx: DbTransaction,
   req: Request,
@@ -210,6 +219,7 @@ async function storeStockMovement(
   quantite: number,
   ref: string | null,
   motif: string | null,
+  dateMouvement?: Date | null,
 ) {
   await tx.insert(mouvementsStock).values({
     idProduit,
@@ -218,6 +228,7 @@ async function storeStockMovement(
     reference: ref,
     motif,
     idUtilisateur: requestUserId(req) ?? null,
+    ...(dateMouvement ? { createdAt: dateMouvement } : {}),
   });
 }
 
@@ -1193,6 +1204,7 @@ const createStockMovement = endpoint(async (req, res) => {
   const direction = ["entree", "retour", "ajustement_positif"].includes(type) ? 1
     : ["sortie", "perte", "casse", "vol", "ajustement_negatif"].includes(type) ? -1 : 0;
   if (!direction) throw new ApiError(400, "Type de mouvement de stock invalide.");
+  const dateMouvement = parseMovementDate(body.dateMouvement);
   const result = await db.transaction(async (tx) => {
     const [stock] = await tx.select().from(stocks).where(eq(stocks.idProduit, idProduit)).for("update");
     if (!stock) throw new ApiError(404, "Stock du produit introuvable.");
@@ -1200,7 +1212,7 @@ const createStockMovement = endpoint(async (req, res) => {
     if (updatedQuantity < 0) throw new ApiError(409, "Le stock ne peut pas devenir négatif.");
     await tx.update(stocks).set({ quantite: updatedQuantity, updatedAt: new Date() })
       .where(eq(stocks.id, stock.id));
-    await storeStockMovement(tx, req, idProduit, type, direction * qte, null, body.motif ? String(body.motif) : null);
+    await storeStockMovement(tx, req, idProduit, type, direction * qte, null, body.motif ? String(body.motif) : null, dateMouvement);
     await logActivity(tx, req, "stock.mouvement", { idProduit, type, quantite: qte });
     return { idProduit, type, quantite: direction * qte, stock: updatedQuantity };
   });
