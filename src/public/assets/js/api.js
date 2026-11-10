@@ -373,6 +373,14 @@ async function getFactures(status) {
     return request('/stocks/mouvements', { method: 'POST', body: JSON.stringify(data) });
   }
 
+  async function updateStockMovement(id, data) {
+    return request(`/stocks/mouvements/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async function deleteStockMovement(id) {
+    return request(`/stocks/mouvements/${id}`, { method: 'DELETE' });
+  }
+
   async function getInventories() {
     return request('/inventaires');
   }
@@ -598,6 +606,8 @@ async function getFactures(status) {
     getStocks,
     getStockMovements,
     createStockMovement,
+    updateStockMovement,
+    deleteStockMovement,
     getInventories,
     getInventory,
     createInventory,

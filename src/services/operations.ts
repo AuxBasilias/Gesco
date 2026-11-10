@@ -1234,6 +1234,112 @@ const createStockMovement = endpoint(async (req, res) => {
   res.status(201).json({ success: true, data: result });
 });
 
+const updateStockMovement = endpoint(async (req, res) => {
+  const id = idParam(req);
+  const body = record(req.body);
+  const idProduit = positiveId(body.idProduit, "Produit");
+  const qte = quantity(body.quantite, "Quantité");
+  const type = String(body.type ?? "");
+  const dateMouvement = parseMovementDate(body.dateMouvement);
+  const result = await db.transaction(async (tx) => {
+    const [movement] = await tx.select().from(mouvementsStock)
+      .where(eq(mouvementsStock.id, id))
+      .for("update");
+    if (!movement) throw new ApiError(404, "Mouvement de stock introuvable.");
+
+    let newQuantite: number;
+    if (type === "inventaire") {
+      if (movement.type !== "inventaire") {
+        throw new ApiError(400, "Un mouvement d'inventaire ne peut pas être créé depuis cette modification.");
+      }
+      newQuantite = movement.quantite < 0 ? -qte : qte;
+    } else {
+      const direction = ["entree", "retour", "ajustement_positif", "stock_initial", "reception", "annulation_vente"].includes(type) ? 1
+        : ["sortie", "perte", "casse", "vol", "ajustement_negatif", "vente"].includes(type) ? -1 : 0;
+      if (!direction) throw new ApiError(400, "Type de mouvement de stock invalide.");
+      newQuantite = direction * qte;
+    }
+
+    const oldProductId = Number(movement.idProduit);
+    const [oldStock] = await tx.select().from(stocks)
+      .where(eq(stocks.idProduit, oldProductId))
+      .for("update");
+    if (!oldStock) throw new ApiError(404, "Stock du produit d'origine introuvable.");
+
+    if (oldProductId === idProduit) {
+      const updatedQuantity = oldStock.quantite - movement.quantite + newQuantite;
+      if (updatedQuantity < 0) throw new ApiError(409, "Le stock ne peut pas devenir négatif.");
+      await tx.update(stocks)
+        .set({ quantite: updatedQuantity, updatedAt: new Date() })
+        .where(eq(stocks.id, oldStock.id));
+    } else {
+      const revertedOrigin = oldStock.quantite - movement.quantite;
+      if (revertedOrigin < 0) throw new ApiError(409, "Le stock du produit d'origine ne peut pas devenir négatif.");
+      const [newStock] = await tx.select().from(stocks)
+        .where(eq(stocks.idProduit, idProduit))
+        .for("update");
+      if (!newStock) throw new ApiError(404, "Stock du nouveau produit introuvable.");
+      const updatedTarget = newStock.quantite + newQuantite;
+      if (updatedTarget < 0) throw new ApiError(409, "Le stock du nouveau produit ne peut pas devenir négatif.");
+      await tx.update(stocks)
+        .set({ quantite: revertedOrigin, updatedAt: new Date() })
+        .where(eq(stocks.id, oldStock.id));
+      await tx.update(stocks)
+        .set({ quantite: updatedTarget, updatedAt: new Date() })
+        .where(eq(stocks.id, newStock.id));
+    }
+
+    const [updated] = await tx.update(mouvementsStock).set({
+      idProduit,
+      type,
+      quantite: newQuantite,
+      motif: body.motif ? String(body.motif).trim() || null : null,
+      ...(dateMouvement ? { createdAt: dateMouvement } : {}),
+    }).where(eq(mouvementsStock.id, id)).returning();
+
+    await logActivity(tx, req, "stock.mouvement_modifie", {
+      id,
+      idProduit,
+      type,
+      quantite: newQuantite,
+      precedent: {
+        idProduit: oldProductId,
+        type: movement.type,
+        quantite: movement.quantite,
+      },
+    });
+    return updated;
+  });
+  res.json({ success: true, data: result });
+});
+
+const deleteStockMovement = endpoint(async (req, res) => {
+  const id = idParam(req);
+  await db.transaction(async (tx) => {
+    const [movement] = await tx.select().from(mouvementsStock)
+      .where(eq(mouvementsStock.id, id))
+      .for("update");
+    if (!movement) throw new ApiError(404, "Mouvement de stock introuvable.");
+    const [stock] = await tx.select().from(stocks)
+      .where(eq(stocks.idProduit, movement.idProduit))
+      .for("update");
+    if (!stock) throw new ApiError(404, "Stock du produit introuvable.");
+    const updatedQuantity = stock.quantite - movement.quantite;
+    if (updatedQuantity < 0) throw new ApiError(409, "Le stock ne peut pas devenir négatif.");
+    await tx.update(stocks)
+      .set({ quantite: updatedQuantity, updatedAt: new Date() })
+      .where(eq(stocks.id, stock.id));
+    await tx.delete(mouvementsStock).where(eq(mouvementsStock.id, id));
+    await logActivity(tx, req, "stock.mouvement_supprime", {
+      id,
+      idProduit: movement.idProduit,
+      type: movement.type,
+      quantite: movement.quantite,
+    });
+  });
+  res.json({ success: true, data: { id } });
+});
+
 const listStockMovements = endpoint(async (_req, res) => {
   const rows = await db.select({
     id: mouvementsStock.id,
@@ -2015,6 +2121,8 @@ export const operationsHandlers = {
   cancelVente,
   stockList,
   createStockMovement,
+  updateStockMovement,
+  deleteStockMovement,
   listStockMovements,
   createOrder,
   listOrders,

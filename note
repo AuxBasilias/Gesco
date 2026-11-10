@@ -21,3 +21,20 @@ donne moi son schema,son controller, et sa route
 
   pour le document de Bon de livraison
   en excluant l entete et le bas de page du document, refais le contenu en adoptant le style de ./corps_bon_livraison.html
+
+
+
+  ** au niveau des factures met la somme en lettre la en bleu et gras
+  quand nous ouvrons une facture normale, c est pas bon d avoir le bouton convertir en facture meme si il ne marchera pas visible
+
+  au niveau des mouvements de stocks permettre à l'ajout d'un mouvement de choisir la date meme si la date actuelest par defaut
+
+  ** sur une facture proforma quand on clique sur convertir en facture, je veux un modal plus bien que ce qui y est
+
+Fais ces taches dans l'ordre
+  ------XXXX----- 1.Revenons au niveau des factures normale et proforma
+  ------XXXX-----La référence; est plutot sur chaque ligne, permet a l utilisateur de pourvoir ecrire la reference ou non
+  ------XXXX-----3.de plus pour les dates permet à l'utilisateur de pourvoir modifier la date de la facture, sur la facture sans avoir a modifier la date de creation au backend bien sur
+  ------XXXX-----comment faire pour indiquer a l'utilisateur quil peut modifier la date, parceque pour l instant ce n est pas intuitif
+  ------XXXX-----4.et aussi pour les factures normales qui n etais pas des proforma, permet la modification de "Svt PF N° SI 26/XXX"
+  5.au niveau de l'ajout d'un mouvement de stock je veux que la liste des produits listés quand on appuie selectionner, montrer la quantité actuel avec juste un paranthese (quantite). exemple : "clavier simple (2)"

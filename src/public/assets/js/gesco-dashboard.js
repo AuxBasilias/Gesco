@@ -51,10 +51,8 @@
           <div class="col-12 col-md-6 col-xl-3"><article class="card h-100"><div class="card-body"><p class="text-secondary small mb-2">Ventes aujourd'hui</p><h2 class="h4 mb-0" data-stat="ventesJour">—</h2><p class="small text-secondary mb-0">Retours : <span data-stat="retoursJour">—</span></p></div></article></div>
           <div class="col-12 col-md-6 col-xl-3"><article class="card h-100"><div class="card-body"><p class="text-secondary small mb-2">Chiffre d'affaires sur la période</p><h2 class="h4 mb-0" data-stat="chiffreAffairesPeriode">—</h2><p class="small text-secondary mb-0" data-stat="variation">Comparaison indisponible</p></div></article></div>
           <div class="col-12 col-md-6 col-xl-3"><article class="card h-100"><div class="card-body"><p class="text-secondary small mb-2">Clients enregistrés</p><h2 class="h4 mb-0" data-stat="clients">—</h2></div></article></div>
-          <div class="col-12 col-md-6 col-xl-3"><article class="card h-100"><div class="card-body"><p class="text-secondary small mb-2">Valeur d'achat du stock</p><h2 class="h4 mb-0" data-stat="valeurStock">—</h2></div></article></div>
           <div class="col-12 col-md-6 col-xl-3"><article class="card h-100"><div class="card-body"><p class="text-secondary small mb-2">Articles en stock</p><h2 class="h4 mb-0" data-stat="quantiteEnStock">—</h2></div></article></div>
           <div class="col-12 col-md-6 col-xl-3"><article class="card h-100"><div class="card-body"><p class="text-secondary small mb-2">Produits sous le seuil</p><h2 class="h4 mb-0" data-stat="produitsSousSeuil">—</h2><p class="small text-secondary mb-0">Dont en rupture : <span data-stat="produitsEnRupture">—</span></p></div></article></div>
-          <div class="col-12 col-md-6 col-xl-3"><article class="card h-100"><div class="card-body"><p class="text-secondary small mb-2">Montant restant dû</p><h2 class="h4 mb-0" data-stat="montantImpayes">—</h2><p class="small text-secondary mb-0">Factures : <span data-stat="facturesImpayees">—</span></p></div></article></div>
         </div>
         <div class="row gx-3 gy-3 mb-4">
           <div class="col-12 col-xl-8">
@@ -280,12 +278,9 @@
         retoursJour: number(data.retoursJour),
         chiffreAffairesPeriode: money(data.chiffreAffairesPeriode),
         clients: number(data.clients),
-        valeurStock: money(data.valeurStock),
         quantiteEnStock: number(data.quantiteEnStock),
         produitsSousSeuil: number(data.produitsSousSeuil),
         produitsEnRupture: number(data.produitsEnRupture),
-        montantImpayes: money(data.montantImpayes),
-        facturesImpayees: number(data.facturesImpayees),
       };
       Object.entries(stats).forEach(([key, value]) => setText(`[data-stat="${key}"]`, value));
       const variation = data.variationChiffreAffaires;

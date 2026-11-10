@@ -16,6 +16,8 @@ router.get("/stocks", handlers.stockList);
 router.post("/produits/:id/stock", handlers.createStockForProduct);
 router.get("/stocks/mouvements", handlers.listStockMovements);
 router.post("/stocks/mouvements", handlers.createStockMovement);
+router.put("/stocks/mouvements/:id", handlers.updateStockMovement);
+router.delete("/stocks/mouvements/:id", handlers.deleteStockMovement);
 router.get("/inventaires", handlers.listInventories);
 router.post("/inventaires", handlers.createInventory);
 router.post("/inventaires/:id/comptages", handlers.countInventory);

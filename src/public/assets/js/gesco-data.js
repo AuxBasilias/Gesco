@@ -712,6 +712,178 @@
     return form;
   }
 
+  async function showStockMovementEditForm(movement, target) {
+    const overlay = document.createElement("div");
+    overlay.className = "gesco-modal-backdrop";
+    overlay.setAttribute("role", "presentation");
+    const panel = document.createElement("section");
+    panel.className = "card adminuiux-card gesco-form-dialog shadow";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+
+    const title = document.createElement("h2");
+    title.className = "h5 mb-0";
+    title.id = "gesco-stock-movement-edit-title";
+    title.textContent = "Modifier le mouvement de stock";
+    panel.setAttribute("aria-labelledby", title.id);
+
+    const header = document.createElement("div");
+    header.className = "card-header d-flex align-items-center justify-content-between";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "btn-close";
+    close.setAttribute("aria-label", "Fermer");
+    close.addEventListener("click", () => overlay.remove());
+    header.append(title, close);
+
+    const form = document.createElement("form");
+    form.className = "gesco-form";
+    const error = document.createElement("div");
+    error.className = "alert alert-danger d-none";
+    const body = document.createElement("div");
+    body.className = "card-body";
+    body.append(error);
+
+    const addField = (labelText, control) => {
+      const group = document.createElement("div");
+      group.className = "mb-3";
+      const caption = document.createElement("label");
+      caption.className = "form-label";
+      caption.htmlFor = control.id;
+      caption.textContent = labelText;
+      group.append(caption, control);
+      body.append(group);
+    };
+
+    const dateInput = document.createElement("input");
+    dateInput.type = "date";
+    dateInput.className = "form-control";
+    dateInput.id = "gesco-movement-edit-date";
+    dateInput.value = dateInputValue(movement.createdAt);
+
+    const productSelect = document.createElement("select");
+    productSelect.className = "form-select";
+    productSelect.id = "gesco-movement-edit-product";
+    productSelect.required = true;
+    const currentProductLabel = movement.idProduitLabel ?? `Produit ${movement.idProduit}`;
+    productSelect.append(new Option(currentProductLabel, String(movement.idProduit)));
+
+    const typeSelect = document.createElement("select");
+    typeSelect.className = "form-select";
+    typeSelect.id = "gesco-movement-edit-type";
+    typeSelect.required = true;
+    const movementTypeOptions = [
+      ["stock_initial", "Stock initial"],
+      ["entree", "Entrée"],
+      ["reception", "Réception"],
+      ["retour", "Retour client"],
+      ["vente", "Vente"],
+      ["sortie", "Sortie"],
+      ["perte", "Perte"],
+      ["casse", "Casse"],
+      ["vol", "Vol"],
+      ["ajustement_positif", "Ajustement positif"],
+      ["ajustement_negatif", "Ajustement négatif"],
+      ["annulation_vente", "Annulation de vente"],
+    ];
+    if (movement.type === "inventaire") movementTypeOptions.push(["inventaire", "Inventaire"]);
+    if (!movementTypeOptions.some(([value]) => value === movement.type)) {
+      movementTypeOptions.unshift([movement.type, stockMovementTypeLabel(movement.type)]);
+    }
+    movementTypeOptions.forEach(([value, label]) => typeSelect.append(new Option(label, value)));
+    typeSelect.value = movement.type;
+
+    const quantityInput = document.createElement("input");
+    quantityInput.type = "number";
+    quantityInput.className = "form-control";
+    quantityInput.id = "gesco-movement-edit-quantity";
+    quantityInput.min = "1";
+    quantityInput.step = "1";
+    quantityInput.required = true;
+    quantityInput.value = String(Math.abs(Number(movement.quantite) || 1));
+
+    const motifInput = document.createElement("input");
+    motifInput.type = "text";
+    motifInput.className = "form-control";
+    motifInput.id = "gesco-movement-edit-motif";
+    motifInput.value = movement.motif ?? "";
+    motifInput.placeholder = "Motif du mouvement";
+
+    addField("Date du mouvement", dateInput);
+    addField("Produit", productSelect);
+    addField("Type", typeSelect);
+    addField("Quantité", quantityInput);
+    addField("Motif", motifInput);
+
+    if (movement.reference) {
+      const hint = document.createElement("p");
+      hint.className = "form-text text-warning mb-0";
+      hint.textContent = `Ce mouvement est lié au document « ${movement.reference} ». La modification corrige le stock sans modifier ce document.`;
+      body.append(hint);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "card-footer d-flex justify-content-end gap-2";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-outline-secondary";
+    cancel.textContent = "Annuler";
+    cancel.addEventListener("click", () => overlay.remove());
+    const save = document.createElement("button");
+    save.type = "submit";
+    save.className = "btn btn-primary";
+    save.textContent = "Enregistrer";
+    actions.append(cancel, save);
+    form.append(body, actions);
+    panel.append(header, form);
+    overlay.append(panel);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) overlay.remove();
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") overlay.remove();
+    });
+    document.body.append(overlay);
+    productSelect.focus();
+
+    try {
+      const options = await lookupOptions("product");
+      if (!options.some(([value]) => String(value) === String(movement.idProduit))) {
+        options.unshift([movement.idProduit, currentProductLabel]);
+      }
+      productSelect.replaceChildren(...options.map(([value, text]) => new Option(text, String(value))));
+      productSelect.value = String(movement.idProduit);
+    } catch (loadError) {
+      error.textContent = `La liste complète des produits n'a pas pu être chargée : ${loadError.message || "erreur de chargement."}`;
+      error.classList.remove("d-none");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.classList.add("d-none");
+      save.disabled = true;
+      try {
+        const payload = {
+          idProduit: Number(productSelect.value),
+          type: typeSelect.value,
+          quantite: Number(quantityInput.value),
+          motif: motifInput.value.trim(),
+        };
+        if (dateInput.value && dateInput.value !== dateInputValue(movement.createdAt)) {
+          payload.dateMouvement = dateInput.value;
+        }
+        await api.updateStockMovement(movement.id, payload);
+      } catch (submitError) {
+        error.textContent = submitError.message || "Impossible de modifier le mouvement.";
+        error.classList.remove("d-none");
+        save.disabled = false;
+        return;
+      }
+      overlay.remove();
+      await loadPage(target);
+    });
+  }
+
   async function showProductEditForm(product, target) {
     const overlay = document.createElement("div");
     overlay.className = "gesco-modal-backdrop";
@@ -1914,6 +2086,45 @@
       while (tr.cells.length < dataColumnCount + columnOffset) tr.append(document.createElement("td"));
       const actions = document.createElement("td");
       actions.className = "text-end text-nowrap";
+      if (target.key === "mouvement" && row.id) {
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "btn btn-sm btn-square btn-link me-1";
+        edit.title = "Modifier";
+        edit.setAttribute("aria-label", "Modifier");
+        edit.dataset.movementAction = "edit";
+        edit.dataset.movementId = String(row.id);
+        edit.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i>';
+        edit.addEventListener("click", () => showStockMovementEditForm(row, target));
+        actions.append(edit);
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btn btn-sm btn-square btn-link text-danger";
+        remove.title = "Supprimer";
+        remove.setAttribute("aria-label", "Supprimer");
+        remove.dataset.movementAction = "delete";
+        remove.dataset.movementId = String(row.id);
+        remove.innerHTML = '<i class="bi bi-trash" aria-hidden="true"></i>';
+        remove.addEventListener("click", async () => {
+          const productLabel = row.idProduitLabel ?? `Produit ${row.idProduit}`;
+          if (!(await confirmAction({
+            title: "Supprimer le mouvement",
+            message: `Le mouvement « ${stockMovementTypeLabel(row.type)} » de ${Math.abs(Number(row.quantite) || 0)} unité(s) pour « ${productLabel} » sera supprimé. Le stock sera corrigé automatiquement.`,
+            confirmLabel: "Supprimer",
+            tone: "danger",
+          }))) return;
+          remove.disabled = true;
+          try {
+            await api.deleteStockMovement(row.id);
+            await loadPage(target);
+          } catch (error) {
+            remove.disabled = false;
+            window.alert(error.message || "Impossible de supprimer le mouvement.");
+          }
+        });
+        actions.append(remove);
+      }
       if (target.key === "produit" && row.id) {
         const edit = document.createElement("button");
         edit.type = "button";
