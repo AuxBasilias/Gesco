@@ -13,8 +13,10 @@ let currentInvoice = {
   statut: '',
   idVente: null,
   proformaReference: '',
+  proformaReferenceLine: '',
   invoiceNumber: '',
   invoiceDate: '',
+  invoiceDateIso: '',
   followedBy: '',
   phone: '',
   email: '',
@@ -44,7 +46,17 @@ function invoiceDate(value) {
   return Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleDateString('fr-FR');
 }
 
-function documentDataFromInvoice(invoice, client, settings, products) {
+function invoiceDateInputValue(value) {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function documentDataFromInvoice(invoice, client, settings, products = []) {
   const document = invoice.donneesDocument || {};
   const productById = new Map(products.map(product => [Number(product.id), product]));
   const invoiceTotalHT = Number(invoice.montantHT) || 0;
@@ -53,8 +65,10 @@ function documentDataFromInvoice(invoice, client, settings, products) {
     statut: invoice.statut || '',
     idVente: invoice.idVente ?? null,
     proformaReference: document.proformaReference || '',
+    proformaReferenceLine: document.proformaReference ? `Svt PF N° ${document.proformaReference}` : '',
     invoiceNumber: invoice.reference || '',
     invoiceDate: invoiceDate(invoice.dateFacture),
+    invoiceDateIso: invoiceDateInputValue(invoice.dateFacture),
     followedBy: document.followedBy || 'M. BANQUE',
     phone: document.phone || '90 45 51 05',
     email: document.email || 'fredbank@solutechtic.com',
@@ -78,8 +92,9 @@ function documentDataFromInvoice(invoice, client, settings, products) {
         ? Math.max(0, Math.min(100, (gross - Number(line.montantTotal)) / gross * 100))
         : 0;
       const designation = String(line.designation || '').trim();
-      const productDescription = product?.description
-        ? String(product.description)
+      const productDescriptionSource = product?.description || line.productDescription;
+      const productDescription = productDescriptionSource
+        ? String(productDescriptionSource)
             .split(/\r?\n/)
             .map((value) => value.trim())
             .filter((value) => value && value !== designation)
@@ -106,14 +121,6 @@ function documentDataFromInvoice(invoice, client, settings, products) {
 
 async function loadInvoiceFromApi() {
   if (!window.AA) throw new Error("L'API GESCO n'est pas disponible.");
-  const [clientsResponse, settingsResponse, productsResponse] = await Promise.all([
-    AA.getClients(),
-    AA.getParametres(),
-    AA.getProduits()
-  ]);
-  const clients = unwrapResponse(clientsResponse) || [];
-  const settings = unwrapResponse(settingsResponse);
-  const products = unwrapResponse(productsResponse) || [];
   const params = new URLSearchParams(window.location.search);
   const invoiceParam = params.get('id');
   const saleParam = params.get('venteId');
@@ -125,17 +132,16 @@ async function loadInvoiceFromApi() {
   } else if (saleParam) {
     const saleId = Number(saleParam);
     if (!Number.isSafeInteger(saleId) || saleId <= 0) throw new Error('Identifiant de vente invalide.');
-    invoice = unwrapResponse(await AA.createFactureFromVente(saleId));
-    if (invoice?.id) {
-      history.replaceState(null, '', `${location.pathname}?id=${encodeURIComponent(invoice.id)}`);
-    }
+    const created = unwrapResponse(await AA.createFactureFromVente(saleId));
+    if (!created?.id) throw new Error('Facture introuvable.');
+    history.replaceState(null, '', `${location.pathname}?id=${encodeURIComponent(created.id)}`);
+    invoice = unwrapResponse(await AA.getFacture(created.id)) || created;
   } else {
     throw new Error('Ouvrez une facture depuis une vente ou l’historique des factures.');
   }
 
   if (!invoice || invoice.statut === 'deleted') throw new Error('Facture introuvable.');
-  const client = clients.find(item => Number(item.id) === Number(invoice.idClient));
-  currentInvoice = documentDataFromInvoice(invoice, client, settings, products);
+  currentInvoice = documentDataFromInvoice(invoice, invoice.client || null, null);
   const backLink = document.getElementById('backToList');
   if (backLink) {
     const isProforma = invoice.statut === 'proforma';
@@ -408,8 +414,8 @@ function renderInvoice() {
         <div class="invoice-number-card">
           <div class="inv-title${isProforma ? ' inv-title-proforma' : ''}">${documentTitle}</div>
           <div class="inv-code">${escapeHtml(currentInvoice.invoiceNumber)}</div>
-          ${!isProforma && currentInvoice.proformaReference
-            ? `<div class="inv-ref">Svt PF N° ${escapeHtml(currentInvoice.proformaReference)}</div>`
+          ${!isProforma && currentInvoice.proformaReferenceLine
+            ? `<div class="inv-ref"><input type="text" class="inv-ref-input" data-proforma-reference value="${escapeHtml(currentInvoice.proformaReferenceLine)}" placeholder="Svt PF N° SI 26/XXX" title="Cliquer pour modifier la ligne proforma" aria-label="Ligne de référence de la facture proforma"></div>`
             : ''}
         </div>
 
@@ -417,7 +423,10 @@ function renderInvoice() {
         <div class="tracking-card">
           <div class="tracking-row tracking-date-row">
             <span class="date-lbl">Date</span>
-            <span class="date-underline-val">${escapeHtml(currentInvoice.invoiceDate)}</span>
+            <span class="date-field">
+              <input type="date" class="date-underline-val date-input" data-invoice-date value="${escapeHtml(currentInvoice.invoiceDateIso)}" title="Cliquer pour modifier la date de la facture" aria-label="Date de la facture">
+              <button type="button" class="date-edit-btn no-print" data-date-edit title="Modifier la date de la facture">Modifier</button>
+            </span>
           </div>
           <div class="tracking-row tracking-follow-row">
             <span class="follow-lbl">Dossier suivi par:</span>
@@ -625,6 +634,36 @@ function renderInvoice() {
     `;
     
     sheetDiv.innerHTML = headerHtml + metaHtml + tableHtml + settlementHtml + footerHtml;
+    sheetDiv.querySelectorAll('[data-invoice-date]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const value = input.value;
+        currentInvoice.invoiceDateIso = value;
+        currentInvoice.invoiceDate = invoiceDate(value);
+        container.querySelectorAll('[data-invoice-date]').forEach((other) => {
+          if (other !== input) other.value = value;
+        });
+      });
+    });
+    sheetDiv.querySelectorAll('[data-date-edit]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const input = button.closest('.date-field')?.querySelector('[data-invoice-date]');
+        if (!input) return;
+        input.focus();
+        if (typeof input.showPicker === 'function') {
+          try {
+            input.showPicker();
+          } catch {}
+        }
+      });
+    });
+    sheetDiv.querySelectorAll('[data-proforma-reference]').forEach((input) => {
+      input.addEventListener('input', () => {
+        currentInvoice.proformaReferenceLine = input.value;
+        container.querySelectorAll('[data-proforma-reference]').forEach((other) => {
+          if (other !== input) other.value = input.value;
+        });
+      });
+    });
     const sectionTitleCell = sheetDiv.querySelector('[data-section-title]');
     if (sectionTitleCell) {
       sectionTitleCell.addEventListener('input', () => {

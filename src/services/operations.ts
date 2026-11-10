@@ -242,10 +242,25 @@ const getFactures = endpoint(async (req, res) => {
 
 const getFacture = endpoint(async (req, res) => {
   const id = idParam(req);
-  const [facture] = await db.select().from(factures).where(eq(factures.id, id)).limit(1);
-  if (!facture) throw new ApiError(404, "Facture introuvable.");
-  const lignes = await db.select().from(lignesFacture).where(eq(lignesFacture.idFacture, id));
-  res.json({ ...facture, lignes });
+  const [row] = await db
+    .select({
+      facture: getTableColumns(factures),
+      client: getTableColumns(clientsTable),
+    })
+    .from(factures)
+    .leftJoin(clientsTable, eq(factures.idClient, clientsTable.id))
+    .where(eq(factures.id, id))
+    .limit(1);
+  if (!row) throw new ApiError(404, "Facture introuvable.");
+  const lignes = await db
+    .select({
+      ...getTableColumns(lignesFacture),
+      productDescription: produits.description,
+    })
+    .from(lignesFacture)
+    .leftJoin(produits, eq(lignesFacture.idProduit, produits.id))
+    .where(eq(lignesFacture.idFacture, id));
+  res.json({ ...row.facture, client: row.client ?? null, lignes });
 });
 
 const createFacture = endpoint(async (req, res) => {
