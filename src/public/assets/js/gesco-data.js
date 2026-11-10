@@ -456,8 +456,8 @@
     }
     if (kind === "product") {
       return list(await api.getProduits())
-        .map((item) => [item.id, item.designation])
-        .sort((left, right) => String(left[1] ?? "").localeCompare(String(right[1] ?? ""), "fr", { sensitivity: "base", numeric: true }));
+        .sort((left, right) => String(left.designation ?? "").localeCompare(String(right.designation ?? ""), "fr", { sensitivity: "base", numeric: true }))
+        .map((item) => [item.id, `${item.designation} (${Number(item.stock ?? 0)})`]);
     }
     if (kind === "client") {
       return list(await api.getClients()).map((item) => [item.id, item.nom]);
