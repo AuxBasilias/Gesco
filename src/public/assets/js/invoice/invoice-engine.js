@@ -482,9 +482,7 @@ function renderInvoice() {
       tableRowsHtml += `
         <tr>
           <td class="ref-cell" style="height:${rowHeightMm}mm">
-            ${isProforma
-              ? `<input type="text" class="cell-ref-input" data-ref-index="${itemIndex}" value="${escapeHtml(item.reference || '')}" placeholder="Référence" aria-label="Référence">`
-              : '<div class="cell-pad-center"></div>'}
+            <input type="text" class="cell-ref-input" data-ref-index="${itemIndex}" value="${escapeHtml(item.reference || '')}" placeholder="Référence" aria-label="Référence">
           </td>
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"><b>${qty > 0 ? qty : ''}</b></div></td>
           <td class="product-desc-cell" style="height:${rowHeightMm}mm">
