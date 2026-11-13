@@ -512,6 +512,12 @@ html, body {
   text-decoration: underline;
 }
 
+.invoice-sheet .client-email {
+  position: absolute;
+  left: 3.5mm;
+  bottom: 5mm;
+}
+
 .invoice-sheet .client-location {
   position: absolute;
   left: 3.5mm;

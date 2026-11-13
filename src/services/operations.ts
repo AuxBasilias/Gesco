@@ -245,7 +245,12 @@ const getFacture = endpoint(async (req, res) => {
   const [row] = await db
     .select({
       facture: getTableColumns(factures),
-      client: getTableColumns(clientsTable),
+      client: {
+        id: clientsTable.id,
+        nom: clientsTable.nom,
+        email: clientsTable.email,
+        ville: clientsTable.ville,
+      },
     })
     .from(factures)
     .leftJoin(clientsTable, eq(factures.idClient, clientsTable.id))

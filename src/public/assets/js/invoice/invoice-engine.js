@@ -20,7 +20,7 @@ let currentInvoice = {
   followedBy: '',
   phone: '',
   email: '',
-  client: { id: '', name: '', line1: '', line2: '', line3: '' },
+  client: { id: '', name: '', line2: '', line3: '' },
   sectionTitle: 'Fournitures des équipements informatiques',
   orderBanner: '',
   vatRate: 0,
@@ -76,7 +76,6 @@ function documentDataFromInvoice(invoice, client, settings, products = []) {
       id: client?.id ?? invoice.idClient ?? '',
       name: client?.nom || document.clientName || (invoice.idClient ? `Client ${invoice.idClient}` : 'Client non renseigné'),
       email: document.clientEmail ?? client?.email ?? '',
-      line1: document.clientLine1 ?? client?.adresse ?? '',
       line2: document.clientLine2 || '',
       line3: document.clientLine3 ?? client?.ville ?? ''
     },
@@ -403,10 +402,9 @@ function renderInvoice() {
             <div class="client-row client-name-row">
               <span class="c-label">Client:</span><span class="c-name">${escapeHtml(currentInvoice.client.name)}</span>
             </div>
-            <div class="client-row client-email">${currentInvoice.client.email ? '<a href="mailto:' + escapeHtml(currentInvoice.client.email) + '" class="client-email-val">' + escapeHtml(currentInvoice.client.email) + '</a>' : ''}</div>
-            <div class="client-row">${escapeHtml(currentInvoice.client.line1 || '')}</div>
             <div class="client-row">${escapeHtml(currentInvoice.client.line2 || '')}</div>
           </div>
+          <div class="client-row client-email">${currentInvoice.client.email ? '<a href="mailto:' + escapeHtml(currentInvoice.client.email) + '" class="client-email-val">' + escapeHtml(currentInvoice.client.email) + '</a>' : ''}</div>
           <div class="client-location">${currentInvoice.client.line3 ? '<u>' + escapeHtml(currentInvoice.client.line3) + '</u>' : ''}</div>
         </div>
 
