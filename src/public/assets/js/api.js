@@ -279,13 +279,6 @@ async function getFactures(status) {
     });
   }
 
-  async function convertProforma(id, data) {
-    return request(`/factures/${id}/convertir`, {
-      method: 'POST',
-      body: JSON.stringify(data || {})
-    });
-  }
-
   async function factureToDraft(id) {
     const data = {"facture":{
         "status":"draft"
@@ -581,7 +574,6 @@ async function getFactures(status) {
     getFacture,
     getFactureLignes,
     createFacture,
-    convertProforma,
     updateFacture,
     deleteFacture,
     factureToDraft,

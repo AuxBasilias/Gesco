@@ -346,36 +346,35 @@ Les couleurs du modèle sont respectées : bordure `#a8595c`, liens et ville `#1
 
 - Le statut `proforma` est exclu des statistiques de factures, des impayés, du tableau de bord et du nombre de factures client.
 - Le document affiche `FACTURE PROFORMA`, la mention « Arrêtée la présente facture proforma… » et masque « Pour Acquit ».
-- Un bouton « Convertir en facture » est disponible sur le détail d'une proforma.
-- `POST /api/factures/:id/convertir` :
-  - vérifie que la facture est bien une proforma non déjà convertie ;
-  - génère un nouveau numéro de facture `SI 26/XXXX` et crée la vente avec cette référence ;
-  - conserve le numéro du devis dans `donneesDocument.proformaReference` ;
-  - copie les lignes, décrémente le stock et crée les mouvements de stock ;
-  - met à jour les totaux du client ;
-  - enregistre un paiement si `montantPaye` est fourni ;
-  - passe la facture en `partiellement_payee` ou `payee`, conserve le lien `idVente` ;
-  - refuse une seconde conversion avec un statut HTTP `409`.
+- Une proforma est désormais autonome : elle peut être enregistrée sans conversion en vente ou en facture.
+- La conversion en facture a été supprimée : bouton, route `POST /api/factures/:id/convertir`, handler et fonction API.
+- Les lignes libres sont autorisées sur les proformas : `id_produit` peut être `null`, avec désignation, quantité et prix unitaire libres.
+- Les lignes libres n'ont aucun impact sur le stock, les ventes ou les totaux du client.
+- Les anciennes proformas déjà converties conservent leurs données, leur `idVente` et leur référence de proforma.
 
 ## 3. Affichage `Svt PF N°`
 
-- Sur une facture convertie depuis un devis, le bloc affiche le numéro du devis d'origine : `Svt PF N° SI 26/XXX`.
+- Sur une facture réelle, le bloc peut afficher manuellement le numéro du devis d'origine : `Svt PF N° SIG 26/NOXXX`.
 - Le bloc est masqué sur le devis proforma lui-même et sur les factures sans devis d'origine.
 - La valeur n'est plus statique.
 
 ## 4. Interface de création et liste des devis
 
 - Nouvelle page de création sans JSON : `gesco-facturation-proforma.html`.
-  - reprend l'interface du terminal de vente ;
-  - autorise les produits en rupture de stock ;
-  - masque le paiement et le montant reçu ;
+  - éditeur de document direct, sans catalogue produit ni recherche ;
+  - uniquement des lignes libres : désignation, description, quantité, prix unitaire et remise ;
+  - sélection d'un client existant ou création rapide d'un nouveau client ;
+  - informations complémentaires : validité, objet, délai de livraison, garantie, condition de paiement et notes ;
+  - calcul local du sous-total, de la TVA et du total TTC ;
   - appelle `POST /api/factures` avec `statut: "proforma"` ;
-  - permet d'ouvrir le détail du devis après enregistrement ;
+  - redirige vers le détail du devis après enregistrement ;
   - n'écrit ni stock, ni mouvement, ni total client.
 - Nouvelle page de liste dédiée : `gesco-facturation-proformas.html`.
   - charge uniquement les documents `proforma` ;
   - recherche par numéro ou client ;
-  - lien direct vers le détail et la conversion.
+  - lien direct vers le détail ;
+  - icônes de modification et de suppression sur chaque ligne, avec modales dédiées ;
+  - la suppression archive le document en statut `deleted`.
 - L'ancien lien `gesco-facturation.html?type=proforma` redirige vers la nouvelle liste.
 - Le menu Facturation pointe désormais vers « Devis proforma » et « Nouveau devis proforma ».
 
@@ -386,4 +385,19 @@ Les couleurs du modèle sont respectées : bordure `#a8595c`, liens et ville `#1
 - Les pages `gesco-facturation-proforma.html` et `gesco-facturation-proformas.html` répondent en HTTP `200` et les partiels header/sidebar/footer sont bien injectés.
 - Le lien `gesco-facturation.html?type=proforma` redirige côté client vers `gesco-facturation-proformas.html`.
 - Migration appliquée et contrôlée en base : ventes `SI 26/0065` à `SI 26/0068`, factures liées, mouvements de stock et compteur `68`.
-- Test API manuel validé : création d'un devis proforma `SI 26/085`, conversion en vente/facture `SI 26/0069`, décrémentation du stock, mise à jour du client, rejet d'une double conversion en `409`, puis nettoyage du jeu d'essai et restauration des compteurs à `68` et `84`.
+- Test API manuel validé : création d'un devis proforma autonome avec lignes libres, persistance de `donneesDocument.lineDescriptions`, puis nettoyage du jeu d'essai.
+
+# Mise à jour — numérotation SIG avec préfixe mensuel
+
+- Nouveau format des ventes et factures : `SIG AA/MMXXXX` (ex. `SIG 26/NO0001`).
+  - `AA` : deux derniers chiffres de l'année du document ;
+  - `MM` : deux premières lettres du mois en français (`JA`, `FE`, `MA`, `AV`, `MA`, `JU`, `JU`, `AO`, `SE`, `OC`, `NO`, `DE`) ;
+  - `XXXX` : compteur mensuel sur 4 chiffres, réinitialisé à `0001` chaque mois.
+- Les devis / factures proforma conservent une séquence séparée sur 3 chiffres : `SIG AA/MMXXX` (ex. `SIG 26/NO001`).
+- Compteurs stockés par mois : `facture:AAAA-MM` et `proforma:AAAA-MM`.
+- Migration `drizzle/0024_document_numbering_sig.sql` :
+  - renumérote toutes les ventes et factures existantes par mois, en repartant de `0001` ;
+  - renumérote les proformas séparément sur 3 chiffres ;
+  - synchronise les factures liées aux ventes, les mouvements de stock, `orderBanner` et `proformaReference` ;
+  - reconstruit les compteurs mensuels à partir des numéros attribués.
+- Migration `drizzle/0025_dangling_proforma_reference.sql` : convertit les références proforma orphelines restées au format `SI`.

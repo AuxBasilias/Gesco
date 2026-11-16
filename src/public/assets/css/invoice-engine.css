@@ -167,6 +167,34 @@ html, body {
   background: #10b981;
 }
 
+.btn-save-invoice {
+  background: #16a34a;
+}
+
+.btn-save-invoice:hover {
+  background: #15803d;
+}
+
+.btn-save-invoice:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-save-invoice.is-dirty {
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
+}
+
+.save-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: #bbf7d0;
+  min-width: 90px;
+}
+
+.save-status.is-error {
+  color: #fecaca;
+}
+
 /* ==========================================================================
    CONTENEUR DES FEUILLES A4 (SUPPORT MULTI-PAGES)
    ========================================================================== */
@@ -872,6 +900,55 @@ html, body {
   font-weight: 700;
 }
 
+.product-description-edit {
+  white-space: pre-wrap;
+  min-height: 1.5em;
+}
+
+.product-description-edit[contenteditable="true"] {
+  cursor: text;
+  outline: none;
+}
+
+.product-description-edit[contenteditable="true"]:hover {
+  outline: 1px dashed #94a3b8;
+  outline-offset: 2px;
+}
+
+.product-description-edit[contenteditable="true"]:focus {
+  outline: 2px solid #16a34a;
+  outline-offset: 1px;
+}
+
+.product-description-edit:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-style: italic;
+  font-weight: 400;
+}
+
+[data-condition][contenteditable="true"] {
+  cursor: text;
+  outline: none;
+  border-bottom: 1px dashed transparent;
+}
+
+[data-condition][contenteditable="true"]:hover {
+  border-bottom-color: #94a3b8;
+}
+
+[data-condition][contenteditable="true"]:focus {
+  outline: 1px solid #16a34a;
+  outline-offset: 1px;
+}
+
+[data-condition]:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-style: italic;
+  font-weight: 400;
+}
+
 .ref-cell {
   vertical-align: top !important;
   padding: 1.6mm 1.4mm;
@@ -1149,84 +1226,6 @@ html, body {
   max-width: 560px;
 }
 
-.convert-summary {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 4px 14px;
-  margin-bottom: 16px;
-}
-
-.convert-summary-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 9px 0;
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 12.5px;
-}
-
-.convert-summary-row:last-child {
-  border-bottom: none;
-}
-
-.convert-summary-row span {
-  color: #64748b;
-}
-
-.convert-summary-row strong {
-  color: #1e293b;
-  text-align: right;
-}
-
-.convert-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 8px;
-  padding: 12px 14px;
-  color: #9a3412;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.convert-notice-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #fed7aa;
-  color: #9a3412;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.convert-notice strong {
-  display: block;
-  color: #9a3412;
-}
-
-.convert-notice p {
-  margin: 2px 0 0;
-  color: #b45309;
-}
-
-.convert-error {
-  margin-top: 12px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: #b91c1c;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
 .btn-action:disabled {
   opacity: 0.7;
   cursor: not-allowed;
@@ -1481,6 +1480,23 @@ html, body {
 
   .no-print {
     display: none !important;
+  }
+
+  .product-description-edit[contenteditable="true"]:hover,
+  .product-description-edit[contenteditable="true"]:focus,
+  [data-condition][contenteditable="true"]:hover,
+  [data-condition][contenteditable="true"]:focus {
+    outline: none !important;
+    border-bottom-color: transparent !important;
+  }
+
+  .product-description-edit:empty::before,
+  [data-condition]:empty::before {
+    content: none !important;
+  }
+
+  .product-description-edit {
+    min-height: 0 !important;
   }
 
   .page-container {

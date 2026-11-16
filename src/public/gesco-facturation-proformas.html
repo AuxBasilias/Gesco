@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="assets/img/logo-512.png">
 
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>GESCO — Facture proforma | SOLUTECH</title>
+    <title>GESCO — Factures proforma | SOLUTECH</title>
     <meta name="description" content="Liste des Factures proforma dans GESCO.">
     <link rel="icon" type="image/png" href="assets/img/favicon.png">
 
@@ -94,7 +94,7 @@ setTimeout(function () {
             <div class="card-body">
                 <div class="row gx-3 align-items-center mb-3">
                     <div class="col">
-                        <h6 class="mb-0">Facture proforma</h6>
+                        <h6 class="mb-0">Factures proforma</h6>
                         <p class="small text-secondary mb-0">Liste des Factures proforma</p>
                     </div>
                     <div class="col-auto">
@@ -131,6 +131,85 @@ setTimeout(function () {
     </div>
 </main>
 
+<!-- Modification d'une proforma -->
+<div class="modal fade" id="pf-list-edit-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form id="pf-list-edit-form">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-0">Modifier la proforma</h5>
+                        <p class="small text-secondary mb-0" id="pf-list-edit-reference">—</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="pf-list-edit-error" role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-client">Client</label>
+                            <select class="form-select" id="pf-list-edit-client" required></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-date">Date</label>
+                            <input type="date" class="form-control" id="pf-list-edit-date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-validity">Validité</label>
+                            <input type="text" class="form-control" id="pf-list-edit-validity" placeholder="Ex : 30 jours">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-delivery">Délai de livraison</label>
+                            <input type="text" class="form-control" id="pf-list-edit-delivery" placeholder="Ex : 7 jours">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-guarantee">Garantie</label>
+                            <input type="text" class="form-control" id="pf-list-edit-guarantee" placeholder="Ex : 1 an">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-payment">Condition de paiement</label>
+                            <input type="text" class="form-control" id="pf-list-edit-payment" placeholder="Ex : 60% à l'accord et 40% à la livraison">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-section">Objet / titre de la section</label>
+                            <input type="text" class="form-control" id="pf-list-edit-section" placeholder="Ex : Proposition commerciale">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-secondary mb-1" for="pf-list-edit-notes">Notes</label>
+                            <textarea class="form-control" id="pf-list-edit-notes" rows="3" placeholder="Informations visibles sur le document…"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-theme" id="pf-list-edit-submit">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Suppression d'une proforma -->
+<div class="modal fade" id="pf-list-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Supprimer la proforma</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" id="pf-list-delete-error" role="alert"></div>
+                <p class="mb-0" id="pf-list-delete-text">Êtes-vous sûr de vouloir supprimer cette proforma ?</p>
+                <p class="small text-danger mb-0 mt-2">Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="pf-list-delete-confirm">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
     </div>
 
     <!-- include:footer-compact -->
@@ -139,5 +218,6 @@ setTimeout(function () {
     <script src="assets/js/profile.js"></script>
         <script src="assets/js/role-guard.js"></script>
         <script src="assets/js/auth-guard.js"></script>
+    <script src="assets/js/facturation/proformas-list.js"></script>
 </body>
 </html>

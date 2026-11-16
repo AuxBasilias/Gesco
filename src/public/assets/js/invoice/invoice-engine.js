@@ -34,7 +34,36 @@ let currentInvoice = {
   }
 };
 let currentZoom = 100;
-let convertProformaBusy = false;
+let invoiceDirty = false;
+let savingInvoice = false;
+let saveStatusTimeout = null;
+
+function markInvoiceDirty() {
+  invoiceDirty = true;
+  const button = document.getElementById('btnSaveInvoice');
+  if (button) button.classList.add('is-dirty');
+}
+
+function setSaveStatus(message, isError = false) {
+  const status = document.getElementById('invoiceSaveStatus');
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle('is-error', isError);
+  if (saveStatusTimeout) clearTimeout(saveStatusTimeout);
+  if (message) {
+    saveStatusTimeout = setTimeout(() => {
+      status.textContent = '';
+      status.classList.remove('is-error');
+    }, 3000);
+  }
+}
+
+function setSaveButtonBusy(busy) {
+  const button = document.getElementById('btnSaveInvoice');
+  if (!button) return;
+  button.disabled = busy;
+  button.innerHTML = busy ? '<span class="btn-spinner"></span>Enregistrement…' : '✓ Enregistrer';
+}
 
 function unwrapResponse(response) {
   return response?.data ?? response;
@@ -64,11 +93,13 @@ function documentDataFromInvoice(invoice, client, settings, products = []) {
     id: invoice.id ?? null,
     statut: invoice.statut || '',
     idVente: invoice.idVente ?? null,
+    documentData: { ...document },
     proformaReference: document.proformaReference || '',
     proformaReferenceLine: document.proformaReference ? `Svt PF N° ${document.proformaReference}` : '',
     invoiceNumber: invoice.reference || '',
     invoiceDate: invoiceDate(invoice.dateFacture),
     invoiceDateIso: invoiceDateInputValue(invoice.dateFacture),
+    invoiceDateIsoOriginal: invoiceDateInputValue(invoice.dateFacture),
     followedBy: document.followedBy || 'M. BANQUE',
     phone: document.phone || '90 45 51 05',
     email: document.email || 'fredbank@solutechtic.com',
@@ -80,7 +111,7 @@ function documentDataFromInvoice(invoice, client, settings, products = []) {
       line3: document.clientLine3 ?? client?.ville ?? ''
     },
     orderBanner: document.orderBanner || '',
-    sectionTitle: document.sectionTitle || 'Fournitures des équipements informatiques',
+    sectionTitle: document.sectionTitle || '',
     vatRate: Number(document.tauxTaxe ?? (invoiceTotalHT > 0
       ? Number(invoice.montantTaxe) / invoiceTotalHT * 100
       : settings?.tauxTaxe ?? 0)),
@@ -91,7 +122,12 @@ function documentDataFromInvoice(invoice, client, settings, products = []) {
         ? Math.max(0, Math.min(100, (gross - Number(line.montantTotal)) / gross * 100))
         : 0;
       const designation = String(line.designation || '').trim();
-      const productDescriptionSource = product?.description || line.productDescription;
+      const customDescription = !product
+        ? String(document.lineDescriptions?.[index] ?? '').trim()
+        : '';
+      const productDescriptionSource = product
+        ? (product.description || line.productDescription)
+        : customDescription;
       const productDescription = productDescriptionSource
         ? String(productDescriptionSource)
             .split(/\r?\n/)
@@ -99,10 +135,12 @@ function documentDataFromInvoice(invoice, client, settings, products = []) {
             .filter((value) => value && value !== designation)
         : [];
       return {
+        idLigne: line.id,
         idProduit: line.idProduit,
         reference: document.references?.[line.id] ?? document.references?.[index] ?? '',
         qty: Number(line.quantite),
         description: [designation, ...productDescription].filter(Boolean),
+        originalProductDescription: productDescription.join('\n'),
         unitPrice: Number(line.prixUnitaire),
         discount: discount ? String(discount) : '',
         imageDataUrl: ''
@@ -141,6 +179,9 @@ async function loadInvoiceFromApi() {
 
   if (!invoice || invoice.statut === 'deleted') throw new Error('Facture introuvable.');
   currentInvoice = documentDataFromInvoice(invoice, invoice.client || null, null);
+  invoiceDirty = false;
+  const saveButton = document.getElementById('btnSaveInvoice');
+  if (saveButton) saveButton.classList.remove('is-dirty');
   const backLink = document.getElementById('backToList');
   if (backLink) {
     const isProforma = invoice.statut === 'proforma';
@@ -362,8 +403,8 @@ function renderInvoice() {
   const isProforma = currentInvoice.statut === 'proforma';
   const documentTitle = isProforma ? 'Facture Proforma' : 'FACTURE';
   const documentLabel = isProforma ? 'facture proforma' : 'facture';
-  // const sectionTitle = (currentInvoice.sectionTitle || '').trim() || 'PROPOSITION COMMERCIALE';
-  const sectionTitle = isProforma ? 'PROPOSITION COMMERCIALE' : 'Fournitures des équipements informatiques';
+  const defaultSectionTitle = isProforma ? 'PROPOSITION COMMERCIALE' : 'Fournitures des équipements informatiques';
+  const sectionTitle = (currentInvoice.sectionTitle || '').trim() || defaultSectionTitle;
   const pagesData = paginateItems(currentInvoice.items, true);
   const totalPages = pagesData.length;
   
@@ -413,7 +454,7 @@ function renderInvoice() {
           <div class="inv-title${isProforma ? ' inv-title-proforma' : ''}">${documentTitle}</div>
           <div class="inv-code">${escapeHtml(currentInvoice.invoiceNumber)}</div>
           ${!isProforma && currentInvoice.proformaReferenceLine
-            ? `<div class="inv-ref"><input type="text" class="inv-ref-input" data-proforma-reference value="${escapeHtml(currentInvoice.proformaReferenceLine)}" placeholder="Svt PF N° SI 26/XXX" title="Cliquer pour modifier la ligne proforma" aria-label="Ligne de référence de la facture proforma"></div>`
+            ? `<div class="inv-ref"><input type="text" class="inv-ref-input" data-proforma-reference value="${escapeHtml(currentInvoice.proformaReferenceLine)}" placeholder="Svt PF N° SIG 26/NOXXX" title="Cliquer pour modifier la ligne proforma" aria-label="Ligne de référence de la facture proforma"></div>`
             : ''}
         </div>
 
@@ -476,8 +517,9 @@ function renderInvoice() {
       }
       
       let descLines = Array.isArray(item.description) ? item.description : (item.description || '').split('\n');
-      const descHtml = descLines
-        .filter(l => l.trim() !== '')
+      const productName = (descLines[0] || '').trim();
+      const descriptionLines = descLines.slice(1).filter(l => l.trim() !== '');
+      const descHtml = descriptionLines
         .map(l => `<div>${escapeHtml(l)}</div>`)
         .join('');
 
@@ -494,7 +536,8 @@ function renderInvoice() {
           <td style="height:${rowHeightMm}mm"><div class="cell-pad-center"><b>${qty > 0 ? qty : ''}</b></div></td>
           <td class="product-desc-cell" style="height:${rowHeightMm}mm">
             <div class="product-item-wrap">
-              ${descHtml}
+              <div class="product-name-line">${escapeHtml(productName)}</div>
+              <div class="product-description-edit" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" data-description-index="${itemIndex}" data-placeholder="Ajouter une description…" aria-label="Description du produit">${descHtml}</div>
             </div>
             ${imageHtml}
             <button type="button" class="add-product-image no-print" data-add-product-image="${itemIndex}" title="${item.imageDataUrl ? "Changer l'image" : "Ajouter une image dans cette cellule"}">${item.imageDataUrl ? "Changer l'image" : "+ Image"}</button>
@@ -572,13 +615,13 @@ function renderInvoice() {
             <!-- Colonne Gauche (67%) : Conditions Générales -->
             <div class="conditions-col">
               <div class="cond-title"><u>Conditions Générales</u></div>
-              <div class="cond-line"><b>Validité:</b>&nbsp; <span>${escapeHtml(currentInvoice.conditions.validity || '')}</span></div>
-              <div class="cond-line"><b>Délai de livraison:</b>&nbsp; <span>${escapeHtml(currentInvoice.conditions.deliveryTime || '')}</span></div>
-              <div class="cond-line cond-payment-line"><b>Condition de paiement:</b>&nbsp;&nbsp; <span class="payment-condition-value">${escapeHtml(currentInvoice.conditions.paymentCondition || '')}</span></div>
-              <div class="cond-line cond-guarantee"><b>Garantie:</b>&nbsp; <span>${escapeHtml(currentInvoice.conditions.guarantee || '')}</span></div>
+              <div class="cond-line"><b>Validité:</b>&nbsp; <span contenteditable="true" spellcheck="false" role="textbox" data-condition="validity" data-placeholder="À renseigner">${escapeHtml(currentInvoice.conditions.validity || '')}</span></div>
+              <div class="cond-line"><b>Délai de livraison:</b>&nbsp; <span contenteditable="true" spellcheck="false" role="textbox" data-condition="deliveryTime" data-placeholder="À renseigner">${escapeHtml(currentInvoice.conditions.deliveryTime || '')}</span></div>
+              <div class="cond-line cond-payment-line"><b>Condition de paiement:</b>&nbsp;&nbsp; <span class="payment-condition-value" contenteditable="true" spellcheck="false" role="textbox" data-condition="paymentCondition" data-placeholder="À renseigner">${escapeHtml(currentInvoice.conditions.paymentCondition || '')}</span></div>
+              <div class="cond-line cond-guarantee"><b>Garantie:</b>&nbsp; <span contenteditable="true" spellcheck="false" role="textbox" data-condition="guarantee" data-placeholder="À renseigner">${escapeHtml(currentInvoice.conditions.guarantee || '')}</span></div>
               <div class="cond-line cond-words-line">
                 <b>Arrêtée la présente ${documentLabel} à la somme de:</b>&nbsp;&nbsp;
-                <span class="words-strong">${escapeHtml(amountInWords)}</span>
+                <span class="words-strong" contenteditable="true" spellcheck="false" role="textbox" data-condition="amountWords" data-placeholder="Calcul automatique">${escapeHtml(amountInWords)}</span>
               </div>
             </div>
 
@@ -640,6 +683,7 @@ function renderInvoice() {
         container.querySelectorAll('[data-invoice-date]').forEach((other) => {
           if (other !== input) other.value = value;
         });
+        markInvoiceDirty();
       });
     });
     sheetDiv.querySelectorAll('[data-date-edit]').forEach((button) => {
@@ -660,18 +704,59 @@ function renderInvoice() {
         container.querySelectorAll('[data-proforma-reference]').forEach((other) => {
           if (other !== input) other.value = input.value;
         });
+        markInvoiceDirty();
       });
     });
     const sectionTitleCell = sheetDiv.querySelector('[data-section-title]');
     if (sectionTitleCell) {
       sectionTitleCell.addEventListener('input', () => {
         currentInvoice.sectionTitle = sectionTitleCell.textContent.trim();
+        markInvoiceDirty();
       });
     }
     sheetDiv.querySelectorAll('[data-ref-index]').forEach((input) => {
       input.addEventListener('input', () => {
         const item = currentInvoice.items[Number(input.getAttribute('data-ref-index'))];
         if (item) item.reference = input.value;
+        markInvoiceDirty();
+      });
+    });
+    sheetDiv.querySelectorAll('[data-description-index]').forEach((editable) => {
+      editable.addEventListener('input', () => {
+        const item = currentInvoice.items[Number(editable.getAttribute('data-description-index'))];
+        if (!item) return;
+        const designation = Array.isArray(item.description) ? item.description[0] : '';
+        const lines = String(editable.innerText || '')
+          .split(/\n+/)
+          .map((value) => value.trim())
+          .filter(Boolean);
+        item.description = [designation, ...lines].filter(Boolean);
+        markInvoiceDirty();
+      });
+      editable.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') editable.blur();
+      });
+      editable.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const text = (event.clipboardData || window.clipboardData)?.getData('text') || '';
+        document.execCommand('insertText', false, text);
+      });
+    });
+    sheetDiv.querySelectorAll('[data-condition]').forEach((editable) => {
+      editable.addEventListener('input', () => {
+        const key = editable.getAttribute('data-condition');
+        if (!key || !(key in currentInvoice.conditions)) return;
+        currentInvoice.conditions[key] = String(editable.innerText || '').replace(/\s+/g, ' ').trim();
+        markInvoiceDirty();
+      });
+      editable.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') event.preventDefault();
+        if (event.key === 'Escape') editable.blur();
+      });
+      editable.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const text = (event.clipboardData || window.clipboardData)?.getData('text') || '';
+        document.execCommand('insertText', false, text);
       });
     });
     sheetDiv.querySelectorAll('[data-add-product-image]').forEach((button) => {
@@ -731,132 +816,122 @@ function invoiceTotalTTC() {
   return totalHT + totalVAT;
 }
 
-function setConvertProformaBusy(busy) {
-  convertProformaBusy = busy;
-  const confirm = document.getElementById('btnConfirmConvertProforma');
-  const cancel = document.getElementById('btnCancelConvertProforma');
-  const close = document.getElementById('btnCloseConvertProforma');
-  if (confirm) {
-    confirm.disabled = busy;
-    confirm.innerHTML = busy
-      ? '<span class="btn-spinner"></span>Conversion en cours…'
-      : 'Confirmer la conversion';
-  }
-  if (cancel) cancel.disabled = busy;
-  if (close) close.disabled = busy;
+function itemProductDescription(item) {
+  return (Array.isArray(item.description) ? item.description.slice(1) : [])
+    .map((value) => String(value).trim())
+    .filter(Boolean)
+    .join('\n');
 }
 
-function openConvertProformaModal() {
-  const modal = document.getElementById('convertProformaModal');
-  if (!modal) {
-    if (window.confirm('Convertir cette facture proforma en facture réelle ? Une vente sera créée et le stock sera mis à jour.')) {
-      void convertCurrentProforma();
-    }
-    return;
-  }
-
-  const setText = (id, value) => {
-    const element = document.getElementById(id);
-    if (element) element.textContent = value;
-  };
-  setText('convert-proforma-reference', currentInvoice.invoiceNumber || '—');
-  setText('convert-proforma-client', currentInvoice.client?.name || 'Client non renseigné');
-  setText('convert-proforma-lines', String(currentInvoice.items.length));
-  setText('convert-proforma-total', `${formatMoney(invoiceTotalTTC())} FCFA`);
-
-  const error = document.getElementById('convertProformaError');
-  if (error) {
-    error.textContent = '';
-    error.hidden = true;
-  }
-
-  setConvertProformaBusy(false);
-  modal.hidden = false;
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-  setTimeout(() => document.getElementById('btnConfirmConvertProforma')?.focus(), 50);
-}
-
-function closeConvertProformaModal(force = false) {
-  if (convertProformaBusy && !force) return;
-  const modal = document.getElementById('convertProformaModal');
-  if (!modal) return;
-  modal.classList.remove('open');
-  modal.hidden = true;
-  modal.setAttribute('aria-hidden', 'true');
-}
-
-async function convertCurrentProforma() {
-  if (convertProformaBusy || !currentInvoice.id) return;
-  const error = document.getElementById('convertProformaError');
-  if (error) {
-    error.textContent = '';
-    error.hidden = true;
-  }
-  setConvertProformaBusy(true);
+async function saveInvoice() {
+  if (savingInvoice || !currentInvoice.id || !window.AA) return false;
+  savingInvoice = true;
+  setSaveButtonBusy(true);
+  setSaveStatus('');
+  const productIdsToUpdate = [];
 
   try {
-    const response = await AA.convertProforma(currentInvoice.id, {});
-    const invoice = unwrapResponse(response);
-    if (invoice?.id) {
-      history.replaceState(null, '', `${location.pathname}?id=${encodeURIComponent(invoice.id)}`);
+    for (const item of currentInvoice.items) {
+      if (!item.idProduit) continue;
+      const description = itemProductDescription(item);
+      if (description !== (item.originalProductDescription || '')) {
+        await AA.updateProduit(item.idProduit, { description });
+        productIdsToUpdate.push(item);
+      }
     }
-    setConvertProformaBusy(false);
-    closeConvertProformaModal(true);
-    await loadInvoiceFromApi();
-    renderInvoice();
-    setupConversionButton();
-  } catch (conversionError) {
-    setConvertProformaBusy(false);
-    const message = conversionError.message || 'Impossible de convertir la proforma.';
-    if (error) {
-      error.textContent = message;
-      error.hidden = false;
-    } else {
-      window.alert(message);
-    }
-  }
-}
 
-function setupConversionButton() {
-  const button = document.getElementById('btnConvertProforma');
-  if (!button) return;
-  const canConvert = currentInvoice.statut === 'proforma' && !currentInvoice.idVente;
-  button.hidden = !canConvert;
-  button.style.display = canConvert ? '' : 'none';
-  if (!canConvert) {
-    button.onclick = null;
-    return;
+    const documentData = {
+      ...(currentInvoice.documentData || {}),
+      validity: currentInvoice.conditions.validity || '',
+      deliveryTime: currentInvoice.conditions.deliveryTime || '',
+      paymentCondition: currentInvoice.conditions.paymentCondition || '',
+      guarantee: currentInvoice.conditions.guarantee || '',
+      amountWords: currentInvoice.conditions.amountWords || '',
+      sectionTitle: currentInvoice.sectionTitle || ''
+    };
+
+    const lineDescriptions = currentInvoice.items.map((item) =>
+      item.idProduit ? '' : itemProductDescription(item),
+    );
+    if (lineDescriptions.some(Boolean)) documentData.lineDescriptions = lineDescriptions;
+    else delete documentData.lineDescriptions;
+
+    const proformaReference = String(currentInvoice.proformaReferenceLine || '')
+      .replace(/^Svt\s+PF\s+N[°o]\s*/i, '')
+      .trim();
+    if (proformaReference) documentData.proformaReference = proformaReference;
+    else delete documentData.proformaReference;
+
+    const references = { ...(documentData.references || {}) };
+    currentInvoice.items.forEach((item) => {
+      if (!item.idLigne) return;
+      if (item.reference) references[item.idLigne] = item.reference;
+      else delete references[item.idLigne];
+    });
+    if (Object.keys(references).length) documentData.references = references;
+    else delete documentData.references;
+
+    const updatePayload = {
+      reference: currentInvoice.invoiceNumber,
+      donneesDocument: documentData
+    };
+    if (currentInvoice.invoiceDateIso && currentInvoice.invoiceDateIso !== currentInvoice.invoiceDateIsoOriginal) {
+      updatePayload.dateFacture = currentInvoice.invoiceDateIso;
+    }
+    await AA.updateFacture(currentInvoice.id, updatePayload);
+
+    currentInvoice.documentData = documentData;
+    currentInvoice.invoiceDateIsoOriginal = currentInvoice.invoiceDateIso;
+    currentInvoice.proformaReference = proformaReference;
+    currentInvoice.proformaReferenceLine = proformaReference ? `Svt PF N° ${proformaReference}` : '';
+    productIdsToUpdate.forEach((item) => {
+      item.originalProductDescription = itemProductDescription(item);
+    });
+    currentInvoice.items.forEach((item) => {
+      if (!item.idProduit) item.originalProductDescription = itemProductDescription(item);
+    });
+
+    invoiceDirty = false;
+    const button = document.getElementById('btnSaveInvoice');
+    if (button) button.classList.remove('is-dirty');
+    renderInvoice();
+    setSaveStatus('Facture enregistrée.');
+    return true;
+  } catch (error) {
+    console.error('Impossible d’enregistrer la facture :', error);
+    setSaveStatus(error.message || 'Échec de l’enregistrement.', true);
+    window.alert(error.message || 'Impossible d’enregistrer la facture.');
+    return false;
+  } finally {
+    savingInvoice = false;
+    setSaveButtonBusy(false);
   }
-  button.textContent = 'Convertir en facture';
-  button.onclick = () => openConvertProformaModal();
 }
 
 // ==========================================================================
 // INITIALISATION & GESTIONNAIRES D'ÉVÉNEMENTS
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  const convertModal = document.getElementById('convertProformaModal');
-  if (convertModal) {
-    document.getElementById('btnCloseConvertProforma')?.addEventListener('click', () => closeConvertProformaModal());
-    document.getElementById('btnCancelConvertProforma')?.addEventListener('click', () => closeConvertProformaModal());
-    document.getElementById('btnConfirmConvertProforma')?.addEventListener('click', convertCurrentProforma);
-    convertModal.addEventListener('click', (event) => {
-      if (event.target === convertModal) closeConvertProformaModal();
-    });
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && convertModal.classList.contains('open')) closeConvertProformaModal();
-    });
-  }
-
   const container = document.getElementById('pageContainer');
   container.textContent = 'Chargement de la facture…';
   loadInvoiceFromApi().then(() => {
     renderInvoice();
-    setupConversionButton();
   }).catch(error => {
     container.textContent = error.message || 'Impossible de charger la facture.';
     console.error('Impossible de charger la facture :', error);
+  });
+
+  document.getElementById('btnSaveInvoice')?.addEventListener('click', saveInvoice);
+  document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      void saveInvoice();
+    }
+  });
+  window.addEventListener('beforeunload', (event) => {
+    if (!invoiceDirty) return;
+    event.preventDefault();
+    event.returnValue = '';
   });
   
   // Zoom

@@ -169,6 +169,20 @@
       "when": 1794178373082,
       "tag": "0023_proforma_numbering",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794787200000,
+      "tag": "0024_document_numbering_sig",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794787260000,
+      "tag": "0025_dangling_proforma_reference",
+      "breakpoints": true
     }
   ]
 }

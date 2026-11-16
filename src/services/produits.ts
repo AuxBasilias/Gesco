@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/db.js";
 import { categories, fournisseurs, journalActivite, mouvementsStock, produits, stocks } from "../db/schema.js";
@@ -88,9 +88,28 @@ export async function getProduitById(req: Request, res: Response) {
     if (!Number.isSafeInteger(id) || id <= 0) {
       return res.status(400).json({ success: false, message: "ID de produit invalide." });
     }
-    const [row] = await db.select({ produit: produits, stock: stocks })
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const sold30 = sql<string>`coalesce((
+      select sum(case
+        when ${mouvementsStock.type} = 'vente' then abs(${mouvementsStock.quantite})
+        when ${mouvementsStock.type} = 'annulation_vente' then -abs(${mouvementsStock.quantite})
+        else 0
+      end)
+      from ${mouvementsStock}
+      where ${mouvementsStock.idProduit} = ${produits.id}
+        and ${mouvementsStock.createdAt} >= ${since.toISOString()}::timestamptz
+    ), 0)`;
+    const [row] = await db.select({
+      produit: produits,
+      stock: stocks,
+      categorieLabel: categories.label,
+      fournisseurLabel: fournisseurs.nom,
+      sold30,
+    })
       .from(produits)
       .leftJoin(stocks, eq(stocks.idProduit, produits.id))
+      .leftJoin(categories, eq(categories.id, produits.idCategorie))
+      .leftJoin(fournisseurs, eq(fournisseurs.id, stocks.idFournisseur))
       .where(eq(produits.id, id))
       .limit(1);
     if (!row) return res.status(404).json({ success: false, message: "Produit introuvable." });
@@ -101,6 +120,9 @@ export async function getProduitById(req: Request, res: Response) {
         stock: row.stock?.quantite ?? 0,
         seuilMinimum: row.stock?.seuilMinimum ?? 0,
         idFournisseur: row.stock?.idFournisseur ?? null,
+        categorieLabel: row.categorieLabel ?? null,
+        fournisseurLabel: row.fournisseurLabel ?? null,
+        sold30: Math.max(0, Number(row.sold30 ?? 0)),
       },
     });
   } catch (error) {
